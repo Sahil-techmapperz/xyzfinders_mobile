@@ -79,7 +79,9 @@ class ProductModel {
       } : null,
       images: json['images'] != null 
           ? List<Map<String, dynamic>>.from(json['images'] as List) 
-          : null,
+          : (json['primary_image_id'] != null 
+              ? [{'id': json['primary_image_id']}] 
+              : null),
     );
   }
 
@@ -113,7 +115,8 @@ class ProductModel {
   String? get firstImageUrl {
     if (images != null && images!.isNotEmpty) {
       final imageId = images!.first['id'];
-      return '/api/images/product/$imageId';
+      // Add timestamp to force refresh and bypass cache for broken images
+      return '/api/images/product/$imageId?t=${DateTime.now().millisecondsSinceEpoch}';
     }
     return null;
   }

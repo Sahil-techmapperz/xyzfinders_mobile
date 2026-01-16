@@ -3,6 +3,7 @@ import 'package:velocity_x/velocity_x.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../data/models/product_model.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductModel product;
@@ -29,7 +30,7 @@ class ProductCard extends StatelessWidget {
             if (imageUrl != null)
               Image.network(
                 imageUrl,
-                height: 150,
+                height: 110,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 loadingBuilder: (context, child, loadingProgress) {
@@ -37,7 +38,7 @@ class ProductCard extends StatelessWidget {
                   return Shimmer.fromColors(
                     baseColor: Colors.grey[300]!,
                     highlightColor: Colors.grey[100]!,
-                    child: Container(color: Colors.white, height: 150),
+                    child: Container(color: Colors.white, height: 110),
                   );
                 },
                 errorBuilder: (_, __, ___) => _buildPlaceholder(),
@@ -45,47 +46,51 @@ class ProductCard extends StatelessWidget {
             else
               _buildPlaceholder(),
 
-            // Sold Badge
-            if (product.isSold)
-              "SOLD".text.xs.bold.white.make()
-                  .px8()
-                  .py4()
-                  .box.red500.roundedSM.make()
-                  .positioned(top: 8, right: 8),
+            // Heart Icon (Top Right)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.favorite_border, color: Colors.white, size: 18),
+              ),
+            ),
           ],
         ),
 
         // Info Section
         VStack([
-          product.title.text.sm.semiBold.maxLines(2).ellipsis.make(),
+          product.title.text.base.semiBold.black.maxLines(2).ellipsis.make(),
           
-          4.heightBox,
+          6.heightBox,
           
           HStack([
-            "\$${product.price.toStringAsFixed(0)}".text.bold.color(context.theme.primaryColor).make(),
-            if (product.hasDiscount) ...[
-              6.widthBox,
-              "\$${product.originalPrice!.toStringAsFixed(0)}"
-                  .text.xs.lineThrough.gray400.make(),
-            ]
+            "\$${product.price.toStringAsFixed(0)}".text.bold.xl.color(AppTheme.secondaryColor).make(), // Orange Price
           ]),
 
-          4.heightBox,
+          6.heightBox,
 
           HStack([
-             product.condition.toUpperCase().text.xs.gray500.make(),
-             Spacer(),
-             // Location icon if needed, or just keep it simple
-             const Icon(Icons.location_on, size: 12, color: Vx.gray400),
-             2.widthBox,
-             (product.location != null ? product.location!['name'] : 'N/A').toString().text.xs.gray400.ellipsis.make().expand(),
+             // Location
+             (product.location != null ? product.location!['name'] : 'N/A').toString().text.sm.color(const Color(0xFF666666)).ellipsis.make().expand(),
           ]),
         ]).p8(),
       ]),
     )
-    .white
-    .roundedLg
-    .shadowSm
+    .withDecoration(BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ))
     .clip(Clip.antiAlias)
     .make()
     .onInkTap(onTap);
@@ -93,7 +98,7 @@ class ProductCard extends StatelessWidget {
 
   Widget _buildPlaceholder() {
     return Container(
-      height: 150,
+      height: 110,
       color: Vx.gray200,
       child: const Center(
         child: Icon(Icons.image, color: Vx.gray400),

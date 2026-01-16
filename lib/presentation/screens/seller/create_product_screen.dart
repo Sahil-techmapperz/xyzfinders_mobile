@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:velocity_x/velocity_x.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/services/product_service.dart';
 import '../../../core/utils/toast_utils.dart';
+import '../../../core/theme/app_theme.dart';
 import 'add_product_images_screen.dart';
 
 class CreateProductScreen extends StatefulWidget {
@@ -158,21 +160,25 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Add New Product'),
+        title: "Sell Your Item".text.color(Colors.black).xl2.bold.make(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24),
           children: [
             // Title
+            _buildLabel('Product Title'),
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
-                labelText: 'Product Title *',
                 hintText: 'e.g., iPhone 13 Pro Max',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.title),
               ),
               validator: (value) {
@@ -183,17 +189,16 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               },
               textCapitalization: TextCapitalization.words,
             ),
-
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             // Description
+            _buildLabel('Description'),
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
-                labelText: 'Description *',
                 hintText: 'Describe your product in detail',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.description),
+                alignLabelWithHint: true,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -204,180 +209,222 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
             ),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 16),
-
-            // Category
-            DropdownButtonFormField<int>(
-              value: _selectedCategoryId,
-              decoration: const InputDecoration(
-                labelText: 'Category *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.category),
-              ),
-              items: _categories.map((category) {
-                return DropdownMenuItem<int>(
-                  value: category['id'] as int,
-                  child: Text(category['name'] as String),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() => _selectedCategoryId = value);
-              },
-              validator: (value) {
-                if (value == null) return 'Please select a category';
-                return null;
-              },
+            // Category & Location Row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('Category'),
+                      DropdownButtonFormField<int>(
+                        value: _selectedCategoryId,
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.category),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                        ),
+                        isExpanded: true,
+                        hint: const Text('Select'),
+                        items: _categories.map((category) {
+                          return DropdownMenuItem<int>(
+                            value: category['id'] as int,
+                            child: Text(
+                                category['name'] as String,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 14),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) => setState(() => _selectedCategoryId = value),
+                        validator: (value) => value == null ? 'Required' : null,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('Location'),
+                      DropdownButtonFormField<int>(
+                        value: _selectedLocationId,
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.location_on),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                        ),
+                        isExpanded: true,
+                        hint: const Text('Select'),
+                        items: _locations.map((location) {
+                          return DropdownMenuItem<int>(
+                            value: location['id'] as int,
+                            child: Text(
+                                location['name'] as String,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 14),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) => setState(() => _selectedLocationId = value),
+                        validator: (value) => value == null ? 'Required' : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 16),
-
-            // Location
-            DropdownButtonFormField<int>(
-              value: _selectedLocationId,
-              decoration: const InputDecoration(
-                labelText: 'Location *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_on),
-              ),
-              items: _locations.map((location) {
-                return DropdownMenuItem<int>(
-                  value: location['id'] as int,
-                  child: Text(location['name'] as String),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() => _selectedLocationId = value);
-              },
-              validator: (value) {
-                if (value == null) return 'Please select a location';
-                return null;
-              },
+            // Price & Condition Row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                 Expanded(
+                   child: Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       _buildLabel('Price'),
+                       TextFormField(
+                          controller: _priceController,
+                          decoration: const InputDecoration(
+                            hintText: '0.00',
+                            prefixIcon: Icon(Icons.attach_money),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          validator: (value) {
+                             if (value == null || value.isEmpty) return 'Required';
+                             if (double.tryParse(value) == null) return 'Invalid';
+                             return null;
+                          },
+                       ),
+                     ],
+                   ),
+                 ),
+                 const SizedBox(width: 16),
+                 Expanded(
+                   child: Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       _buildLabel('Condition'),
+                       DropdownButtonFormField<String>(
+                         value: _selectedCondition,
+                         decoration: const InputDecoration(
+                           prefixIcon: Icon(Icons.check_circle),
+                           contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                         ),
+                         isExpanded: true,
+                         hint: const Text('Select'),
+                         items: _conditions.map((condition) {
+                           return DropdownMenuItem<String>(
+                             value: condition['value'],
+                             child: Text(
+                                 condition['label']!,
+                                 style: const TextStyle(fontSize: 14),
+                             ),
+                           );
+                         }).toList(),
+                         onChanged: (value) => setState(() => _selectedCondition = value),
+                         validator: (value) => value == null ? 'Required' : null,
+                       ),
+                     ],
+                   ),
+                 ),
+              ],
             ),
+            
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 16),
-
-            // Condition
-            DropdownButtonFormField<String>(
-              value: _selectedCondition,
-              decoration: const InputDecoration(
-                labelText: 'Condition *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.check_circle),
-              ),
-              items: _conditions.map((condition) {
-                return DropdownMenuItem<String>(
-                  value: condition['value'],
-                  child: Text(condition['label']!),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _selectedCondition = value);
-                }
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Price
-            TextFormField(
-              controller: _priceController,
-              decoration: const InputDecoration(
-                labelText: 'Price *',
-                hintText: '0.00',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.attach_money),
-                prefixText: '\$',
-              ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a price';
-                }
-                final price = double.tryParse(value);
-                if (price == null || price <= 0) {
-                  return 'Please enter a valid price';
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Original Price (optional)
+            // Original Price (Optional)
+            _buildLabel('Original Price (Optional)'),
             TextFormField(
               controller: _originalPriceController,
               decoration: const InputDecoration(
-                labelText: 'Original Price (optional)',
                 hintText: '0.00',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.money_off),
-                prefixText: '\$',
-                helperText: 'If product is on sale',
+                helperText: 'Enter if item is on sale',
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 if (value != null && value.isNotEmpty) {
                   final originalPrice = double.tryParse(value);
-                  if (originalPrice == null || originalPrice <= 0) {
-                    return 'Please enter a valid price';
-                  }
                   final price = double.tryParse(_priceController.text);
+                  if (originalPrice == null) return 'Invalid price';
                   if (price != null && originalPrice <= price) {
-                    return 'Original price must be greater than sale price';
+                    return 'Must be > sale price';
                   }
                 }
                 return null;
               },
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 40),
 
             // Submit Button
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submitForm,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text(
-                      'Create Product',
-                      style: TextStyle(fontSize: 16),
-                    ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Note
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.blue[700]),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'You can add images after creating the product',
-                      style: TextStyle(
-                        color: Colors.blue[900],
-                        fontSize: 13,
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _submitForm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  elevation: 5,
+                  shadowColor: AppTheme.secondaryColor.withOpacity(0.4),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text(
+                        'Post And Continue',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  ),
-                ],
               ),
             ),
+            
+            const SizedBox(height: 20),
+            
+            Container(
+               padding: const EdgeInsets.all(16),
+               decoration: BoxDecoration(
+                 color: AppTheme.primaryColor.withOpacity(0.05),
+                 borderRadius: BorderRadius.circular(16),
+                 border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1)),
+               ),
+               child: Row(
+                 children: [
+                   const Icon(Icons.info_outline, color: AppTheme.primaryColor),
+                   const SizedBox(width: 12),
+                   const Expanded(
+                     child: Text(
+                       'You can upload photos in the next step.',
+                       style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w500),
+                     ),
+                   ),
+                 ],
+               ),
+            ),
+            
+            const SizedBox(height: 20),
           ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: AppTheme.textColor,
         ),
       ),
     );

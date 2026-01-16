@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../providers/product_provider.dart';
 import '../../widgets/products/product_card.dart';
 import '../../widgets/featured_carousel.dart';
@@ -48,11 +49,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: "Discover".text.xl2.bold.make(),
+        title: "Discover".text.color(AppTheme.textColor).xl2.bold.make(),
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        centerTitle: false,
         actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.filter_list), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.search, color: AppTheme.textColor),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list, color: AppTheme.textColor),
+            onPressed: () {},
+          ),
         ],
       ),
       body: Consumer<ProductProvider>(
@@ -70,6 +81,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 16.heightBox,
                 ElevatedButton(
                   onPressed: _onRefresh,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    shape: const StadiumBorder(),
+                  ),
                   child: const Text('Retry'),
                 ),
               ], crossAlignment: CrossAxisAlignment.center).p16(),
@@ -78,26 +93,29 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
           return RefreshIndicator(
             onRefresh: _onRefresh,
+            color: AppTheme.primaryColor,
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
                 SliverToBoxAdapter(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      20.heightBox,
+                      10.heightBox,
                       FeaturedCarousel(products: provider.products),
                       20.heightBox,
-                      "Recent Listings".text.xl.bold.make().pOnly(left: 16, bottom: 12),
+                      "Recent Listings".text.xl.semiBold.color(AppTheme.textColor).make().pOnly(left: 16, bottom: 12),
                     ],
                   ),
                 ),
                 if (provider.products.isEmpty)
                    SliverFillRemaining(
-                     child: Center(child: "No products found".text.make()),
+                     hasScrollBody: false,
+                     child: Center(child: "No products found".text.color(Vx.gray500).make()),
                    )
                 else
                   SliverPadding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     sliver: SliverGrid(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -114,15 +132,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 ),
                               );
                             },
-                          ).animate().fadeIn(duration: 400.ms, delay: (50 * index).ms).slideY(begin: 0.1);
+                          ).animate().fadeIn(duration: 400.ms, delay: (50 * index).ms).slideY(begin: 0.1, end: 0);
                         },
                         childCount: provider.products.length,
                       ),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        childAspectRatio: 0.7,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.75, // Adjusted for card height
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
                       ),
                     ),
                   ),
@@ -130,9 +148,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
                     ),
                   ),
+                // Bottom padding for navigation bar
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
               ],
             ),
           );
@@ -146,18 +166,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
       child: GridView.builder(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
         ),
         itemCount: 6,
         itemBuilder: (_, __) => Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
       ),

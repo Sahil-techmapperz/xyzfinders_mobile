@@ -55,4 +55,42 @@ class ImageUploadService {
   Future<void> deleteProductImage(int imageId) async {
     await _apiService.delete('${ApiConstants.uploadProductImages}/$imageId');
   }
+
+  // Upload profile image
+  Future<Map<String, dynamic>> uploadProfileImage(File imageFile) async {
+    try {
+      // Get filename properly for both platforms
+      final fileName = imageFile.path.split(Platform.pathSeparator).last;
+      
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+        ),
+      });
+
+      print('Uploading with filename: $fileName');
+      
+      final response = await _apiService.post(
+        '/upload/profile-image',
+        data: formData,
+      );
+
+      return response.data['data'];
+    } catch (e) {
+      print('Upload error - Full details: $e');
+      rethrow;
+    }
+  }
+
+  // Delete profile image
+  Future<void> deleteProfileImage() async {
+    await _apiService.delete('/upload/profile-image');
+  }
+
+  // Get profile image URL for a user
+  String getProfileImageUrl(int userId) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+    return '$baseUrl/api/images/user/$userId';
+  }
 }

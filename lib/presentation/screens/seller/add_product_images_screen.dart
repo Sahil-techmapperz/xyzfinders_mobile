@@ -4,8 +4,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:cross_file/cross_file.dart';
+import 'package:velocity_x/velocity_x.dart';
 import '../../../data/services/image_upload_service.dart';
 import '../../../core/utils/toast_utils.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AddProductImagesScreen extends StatefulWidget {
   final int productId;
@@ -97,8 +99,13 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: Text('Data for: ${widget.productTitle}'),
+        title: "Add Photos".text.color(AppTheme.textColor).xl2.bold.make(),
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: AppTheme.textColor),
       ),
       body: Column(
         children: [
@@ -132,41 +139,44 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: _isDragging ? Colors.blue : Colors.grey[300]!,
+                    color: _isDragging ? AppTheme.primaryColor : Colors.grey[300]!,
                     width: _isDragging ? 3 : 2,
                     strokeAlign: BorderSide.strokeAlignInside,
+                    style: BorderStyle.none 
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                  color: _isDragging ? Colors.blue[50] : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(20),
+                  color: _isDragging ? AppTheme.primaryColor.withOpacity(0.1) : Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      _isDragging ? Icons.file_upload : Icons.add_photo_alternate,
+                      _isDragging ? Icons.file_upload : Icons.add_photo_alternate_outlined,
                       size: 48,
-                      color: _isDragging ? Colors.blue : Colors.grey[400],
+                      color: _isDragging ? AppTheme.primaryColor : Colors.grey[400],
                     ),
                     const SizedBox(height: 12),
                     Text(
                       _isDragging
                           ? 'Drop images here'
-                          : 'Drag & drop images here',
+                          : 'Tap buttons below to add photos',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: _isDragging ? Colors.blue : Colors.grey[700],
+                        color: _isDragging ? AppTheme.primaryColor : Colors.grey[700],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'or',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -174,12 +184,20 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                           onPressed: _isUploading ? null : _pickImages,
                           icon: const Icon(Icons.photo_library),
                           label: const Text('Gallery'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         OutlinedButton.icon(
                           onPressed: _isUploading ? null : _takePhoto,
                           icon: const Icon(Icons.camera_alt),
                           label: const Text('Camera'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          ),
                         ),
                       ],
                     ),
@@ -196,8 +214,6 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_photo_alternate,
-                            size: 80, color: Colors.grey[400]),
                         const SizedBox(height: 16),
                         Text(
                           'No images selected',
@@ -205,11 +221,6 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                             fontSize: 16,
                             color: Colors.grey[600],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tap Gallery or Camera to add images',
-                          style: TextStyle(color: Colors.grey[500]),
                         ),
                       ],
                     ),
@@ -229,6 +240,11 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                                 color: Colors.grey[600],
                               ),
                             ),
+                            const Spacer(),
+                            Text(
+                              '${_selectedImages.length} images',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ],
                         ),
                       ),
@@ -238,8 +254,8 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                           padding: const EdgeInsets.all(16),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
                           ),
                           itemCount: _selectedImages.length,
                           onReorder: (oldIndex, newIndex) {
@@ -257,7 +273,7 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                               fit: StackFit.expand,
                               children: [
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(12),
                                   child: Image.file(
                                     _selectedImages[index],
                                     fit: BoxFit.cover,
@@ -266,16 +282,16 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                                 // First image badge
                                 if (index == 0)
                                   Positioned(
-                                    top: 4,
-                                    left: 4,
+                                    top: 6,
+                                    left: 6,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
+                                        horizontal: 8,
+                                        vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.blue,
-                                        borderRadius: BorderRadius.circular(4),
+                                        color: AppTheme.primaryColor,
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: const Text(
                                         'Cover',
@@ -289,8 +305,8 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                                   ),
                                 // Remove button
                                 Positioned(
-                                  top: 4,
-                                  right: 4,
+                                  top: 6,
+                                  right: 6,
                                   child: GestureDetector(
                                     onTap: () => _removeImage(index),
                                     child: Container(
@@ -298,11 +314,12 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                                       decoration: const BoxDecoration(
                                         color: Colors.red,
                                         shape: BoxShape.circle,
+                                        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
                                       ),
                                       child: const Icon(
                                         Icons.close,
                                         color: Colors.white,
-                                        size: 16,
+                                        size: 14,
                                       ),
                                     ),
                                   ),
@@ -318,28 +335,48 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
 
           // Upload button
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isUploading || _selectedImages.isEmpty
-                  ? null
-                  : _uploadImages,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: _isUploading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+            decoration: BoxDecoration(
+               color: Colors.white,
+               borderRadius: const BorderRadius.only(
+                 topLeft: Radius.circular(20),
+                 topRight: Radius.circular(20),
+               ),
+               boxShadow: [
+                 BoxShadow(
+                   color: Colors.black.withOpacity(0.05),
+                   blurRadius: 10,
+                   offset: const Offset(0, -5),
+                 ),
+               ],
+            ),
+            child: SafeArea(
+              child: ElevatedButton(
+                onPressed: _isUploading || _selectedImages.isEmpty
+                    ? null
+                    : _uploadImages,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: AppTheme.primaryColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  elevation: 5,
+                  shadowColor: AppTheme.primaryColor.withOpacity(0.4),
+                ),
+                child: _isUploading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        'Upload ${_selectedImages.length} Image${_selectedImages.length != 1 ? 's' : ''}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
-                    )
-                  : Text(
-                      'Upload ${_selectedImages.length} Image${_selectedImages.length != 1 ? 's' : ''}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
+              ),
             ),
           ),
         ],

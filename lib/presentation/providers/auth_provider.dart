@@ -123,6 +123,19 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Refresh current user data
+  Future<void> refreshUser() async {
+    if (_user == null) return;
+    
+    try {
+      _user = await _authService.getCurrentUser();
+      notifyListeners();
+    } catch (e) {
+      // Silently fail, user data will update on next login
+      print('Failed to refresh user: $e');
+    }
+  }
+
   // Clear error
   void clearError() {
     _error = null;
