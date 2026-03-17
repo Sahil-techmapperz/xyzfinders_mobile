@@ -4,7 +4,6 @@ import 'package:velocity_x/velocity_x.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/services/product_service.dart';
 import '../../providers/auth_provider.dart';
-import '../products/product_detail_screen.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/api_constants.dart';

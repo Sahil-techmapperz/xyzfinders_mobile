@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../data/models/product_model.dart';
 import '../../../core/constants/api_constants.dart';
-import '../screens/products/product_detail_screen.dart';
+import '../screens/categories/real_estate/real_estate_detail_screen.dart';
 
 class FeaturedCarousel extends StatelessWidget {
   final List<ProductModel> products;
@@ -40,7 +40,7 @@ class FeaturedCarousel extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ProductDetailScreen(
+                    builder: (_) => RealEstateDetailScreen(
                       productId: product.id,
                       title: product.title,
                     ),

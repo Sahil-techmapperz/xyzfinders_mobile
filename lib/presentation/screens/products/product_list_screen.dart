@@ -7,7 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../providers/product_provider.dart';
 import '../../widgets/products/product_card.dart';
 import '../../widgets/featured_carousel.dart';
-import 'product_detail_screen.dart';
+import '../categories/real_estate/real_estate_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -126,7 +126,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => ProductDetailScreen(
+                                  builder: (_) => RealEstateDetailScreen(
                                     productId: product.id,
                                   ),
                                 ),

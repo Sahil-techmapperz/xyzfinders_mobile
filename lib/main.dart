@@ -49,15 +49,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.checkAuthStatus();
+    // For now, always go to HomeScreen as requested
+    await Future.delayed(const Duration(seconds: 2));
 
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => authProvider.isAuthenticated
-              ? const HomeScreen()
-              : const LoginScreen(),
+          builder: (_) => const HomeScreen(),
         ),
       );
     }
