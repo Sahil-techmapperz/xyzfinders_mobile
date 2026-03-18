@@ -7,7 +7,8 @@ workflows:
     scripts:
       - flutter clean
       - flutter pub get
-      - cd ios && pod repo update
+      - cd ios && pod cache clean --all
+      - cd ios && rm -rf ~/.cocoapods/repos
       - flutter build ios --simulator --debug
     artifacts:
       - build/ios/iphonesimulator/Runner.app
