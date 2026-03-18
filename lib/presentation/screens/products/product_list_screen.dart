@@ -10,7 +10,16 @@ import '../../widgets/featured_carousel.dart';
 import '../categories/real_estate/real_estate_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({super.key});
+  final String? searchQuery;
+  final int? categoryId;
+  final String? categoryName;
+
+  const ProductListScreen({
+    super.key,
+    this.searchQuery,
+    this.categoryId,
+    this.categoryName,
+  });
 
   @override
   State<ProductListScreen> createState() => _ProductListScreenState();
@@ -23,7 +32,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ProductProvider>().fetchProducts(refresh: true);
+      context.read<ProductProvider>().fetchProducts(
+            refresh: true,
+            search: widget.searchQuery,
+            categoryId: widget.categoryId,
+          );
     });
     _scrollController.addListener(_onScroll);
   }
@@ -38,28 +51,40 @@ class _ProductListScreenState extends State<ProductListScreen> {
     if (_scrollController.hasClients &&
         _scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent * 0.8) {
-      context.read<ProductProvider>().loadMore();
+      context.read<ProductProvider>().loadMore(
+            search: widget.searchQuery,
+            categoryId: widget.categoryId,
+          );
     }
   }
 
   Future<void> _onRefresh() async {
-    await context.read<ProductProvider>().fetchProducts(refresh: true);
+    await context.read<ProductProvider>().fetchProducts(
+          refresh: true,
+          search: widget.searchQuery,
+          categoryId: widget.categoryId,
+        );
   }
 
   @override
   Widget build(BuildContext context) {
+    final title = widget.searchQuery != null
+        ? "Results for '${widget.searchQuery}'"
+        : widget.categoryName ?? "Discover";
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: "Discover".text.color(AppTheme.textColor).xl2.bold.make(),
+        title: title.text.color(AppTheme.textColor).xl2.bold.make(),
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: AppTheme.textColor),
-            onPressed: () {},
-          ),
+          if (widget.searchQuery == null && widget.categoryId == null)
+            IconButton(
+              icon: const Icon(Icons.search, color: AppTheme.textColor),
+              onPressed: () {},
+            ),
           IconButton(
             icon: const Icon(Icons.filter_list, color: AppTheme.textColor),
             onPressed: () {},
@@ -102,9 +127,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       10.heightBox,
-                      FeaturedCarousel(products: provider.products),
-                      20.heightBox,
-                      "Recent Listings".text.xl.semiBold.color(AppTheme.textColor).make().pOnly(left: 16, bottom: 12),
+                      if (widget.searchQuery == null && widget.categoryId == null)
+                        FeaturedCarousel(products: provider.products),
+                      if (widget.searchQuery == null && widget.categoryId == null)
+                        20.heightBox,
+                      (widget.searchQuery != null ? "Search Results" : "Recent Listings")
+                          .text
+                          .xl
+                          .semiBold
+                          .color(AppTheme.textColor)
+                          .make()
+                          .pOnly(left: 16, bottom: 12),
                     ],
                   ),
                 ),

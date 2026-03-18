@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/auth_service.dart';
 import '../../core/errors/api_exception.dart';
@@ -81,6 +82,53 @@ class AuthProvider with ChangeNotifier {
       return false;
     } catch (e, stackTrace) {
       _error = 'An unexpected error occurred: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Google Login
+  Future<bool> signInWithGoogle() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        // User canceled the sign-in flow
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? accessToken = googleAuth.accessToken;
+
+      if (accessToken == null) {
+        throw Exception('Failed to retrieve access token from Google');
+      }
+
+      final result = await _authService.googleLogin(accessToken);
+      
+      _user = result['user'] as UserModel;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+      
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to sign in with Google: $e';
       _isLoading = false;
       notifyListeners();
       return false;

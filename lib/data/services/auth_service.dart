@@ -75,6 +75,33 @@ class AuthService {
     };
   }
 
+  // Google Login
+  Future<Map<String, dynamic>> googleLogin(String accessToken) async {
+    final response = await _apiService.post(
+      '/auth/google/callback', // Adjust endpoint according to your backend config
+      data: {
+        'access_token': accessToken,
+      },
+    );
+
+    final data = response.data['data'];
+    final user = UserModel.fromJson(data['user']);
+    final token = data['token'] as String;
+
+    // Save token and user data
+    await _apiService.setAuthToken(token);
+    await _apiService.saveUserData(
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    );
+
+    return {
+      'user': user,
+      'token': token,
+    };
+  }
+
   // Get current authenticated user
   Future<UserModel> getCurrentUser() async {
     final response = await _apiService.get(ApiConstants.me);

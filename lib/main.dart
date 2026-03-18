@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light,
         home: const SplashScreen(),
       ),
     );
@@ -68,21 +68,15 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.shopping_bag,
-              size: 80,
-              color: Color(0xFF2563EB),
+            Image.asset(
+              'assets/images/logo.png',
+              width: 200,
+              fit: BoxFit.contain,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'XYZ Finders',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
+            const SizedBox(height: 48),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
             ),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(),
           ],
         ),
       ),

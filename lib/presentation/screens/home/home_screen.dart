@@ -14,6 +14,14 @@ import '../categories/pets/pets_accessories_list_screen.dart';
 import '../categories/services/services_list_screen.dart';
 import '../categories/mobiles/mobiles_list_screen.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
+import '../profile/profile_screen.dart';
+import '../wishlist/wishlist_screen.dart';
+import '../notifications/notification_screen.dart';
+import '../chats/chat_list_screen.dart';
+import '../products/product_list_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/config/api_service.dart';
+import '../../../core/constants/api_constants.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,15 +33,29 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
+  // List of screens corresponding to bottom nav bar indices
+  List<Widget> get _screens => [
+    const HomeTab(),
+    const WishlistScreen(),
+    const SizedBox.shrink(),
+    const ChatListScreen(),
+    const ProfileScreen(),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: const HomeTab(),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       extendBody: true,
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,
-        onItemSelected: (index) => setState(() => _selectedIndex = index),
+        onItemSelected: (index) {
+          // Prevent switching to the FAB index natively
+          if (index != 2) {
+            setState(() => _selectedIndex = index);
+          }
+        },
       ),
       floatingActionButton: CustomFab(onPressed: () {}),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -41,8 +63,140 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class HomeTab extends StatelessWidget {
+class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
+
+  @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
+  String _selectedLocation = "Bidhannagar, Kolkata";
+  int? _selectedLocationId;
+  List<dynamic> _locations = [];
+  bool _isLoadingLocations = false;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLocation();
+    _fetchLocations();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleSearch(String query) {
+    if (query.trim().isEmpty) return;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductListScreen(
+          searchQuery: query.trim(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadSavedLocation() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedLocation = prefs.getString('selected_location_name') ?? "Bidhannagar, Kolkata";
+      _selectedLocationId = prefs.getInt('selected_location_id');
+    });
+  }
+
+  Future<void> _fetchLocations() async {
+    setState(() => _isLoadingLocations = true);
+    try {
+      final response = await ApiService().get(ApiConstants.locations);
+      if (response.statusCode == 200) {
+        setState(() {
+          _locations = response.data['data'];
+          _isLoadingLocations = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching locations: $e');
+      setState(() => _isLoadingLocations = false);
+    }
+  }
+
+  Future<void> _saveLocation(int id, String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('selected_location_id', id);
+    await prefs.setString('selected_location_name', name);
+    setState(() {
+      _selectedLocation = name;
+      _selectedLocationId = id;
+    });
+  }
+
+  void _showLocationPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  "Select Location".text.xl2.bold.make(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              if (_isLoadingLocations)
+                const Center(child: CircularProgressIndicator())
+              else if (_locations.isEmpty)
+                "No locations available".text.make().centered().p20()
+              else
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _locations.length,
+                    itemBuilder: (context, index) {
+                      final loc = _locations[index];
+                      final name = "${loc['name']}, ${loc['city_name']}";
+                      final isSelected = loc['id'] == _selectedLocationId;
+
+                      return ListTile(
+                        leading: Icon(
+                          Icons.location_on,
+                          color: isSelected ? AppTheme.primaryColor : Colors.grey,
+                        ),
+                        title: name.text.semiBold.color(isSelected ? AppTheme.primaryColor : Colors.black).make(),
+                        subtitle: "${loc['state_name']}".text.xs.make(),
+                        onTap: () {
+                          _saveLocation(loc['id'], name);
+                          Navigator.pop(context);
+                        },
+                        trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +206,7 @@ class HomeTab extends StatelessWidget {
         SliverToBoxAdapter(child: _buildHeader(context)),
 
         // 2. Search Section
-        SliverToBoxAdapter(child: _buildSearchSection()),
+        SliverToBoxAdapter(child: _buildSearchSection(context)),
 
         // 3. Category Grid
         SliverToBoxAdapter(child: _buildCategoryGrid()),
@@ -81,7 +235,7 @@ class HomeTab extends StatelessWidget {
             ),
           ]),
         ),
-        
+
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
@@ -95,55 +249,59 @@ class HomeTab extends StatelessWidget {
         right: 20,
         bottom: 10,
       ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.secondaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.shopping_bag, color: AppTheme.secondaryColor, size: 20),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: "XYZFinders".text.xl.bold.color(AppTheme.secondaryColor).ellipsis.make(),
-              ),
-            ],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+          Flexible(
+            child: Image.asset(
+              'assets/images/logo.png',
+              height: 40,
+              fit: BoxFit.contain,
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Flexible(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-              const SizedBox(width: 4),
-              Flexible(
-                child: "Bidhannagar, Kolkata".text.semiBold.gray600.size(12).ellipsis.make(),
-              ),
-              const Icon(Icons.arrow_drop_down, color: Colors.grey, size: 16),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: InkWell(
+              onTap: _showLocationPicker,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: _selectedLocation.text.semiBold.gray600
+                        .size(12)
+                        .ellipsis
+                        .make(),
+                  ),
+                  const Icon(Icons.arrow_drop_down, color: Colors.grey, size: 16),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildSearchSection() {
+  Widget _buildSearchSection(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
@@ -156,18 +314,49 @@ class HomeTab extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.business, color: AppTheme.secondaryColor, size: 20),
-                  const SizedBox(width: 8),
-                  "Search Anything...".text.gray400.size(12).make().expand(),
-                  const Icon(Icons.search, color: Colors.grey, size: 20),
-                ],
+              child: TextField(
+                controller: _searchController,
+                onSubmitted: _handleSearch,
+                decoration: InputDecoration(
+                  hintText: "Search Anything...",
+                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
+                  prefixIcon: const Icon(
+                    Icons.business,
+                    color: AppTheme.secondaryColor,
+                    size: 20,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.search, color: Colors.grey, size: 20),
+                    onPressed: () => _handleSearch(_searchController.text),
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
               ),
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.notifications_none, size: 24, color: Colors.grey),
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationScreen(),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: const Padding(
+              padding: EdgeInsets.all(4.0),
+              child: Icon(
+                Icons.notifications_none,
+                size: 24,
+                color: Colors.grey,
+              ),
+            ),
+          ),
           const SizedBox(width: 8),
           const Icon(Icons.favorite_border, size: 24, color: Colors.grey),
         ],
@@ -177,18 +366,54 @@ class HomeTab extends StatelessWidget {
 
   Widget _buildCategoryGrid() {
     final categories = [
-      {'name': 'Automobiles', 'icon': Icons.directions_car_filled_rounded, 'color': Colors.red},
+      {
+        'name': 'Automobiles',
+        'icon': Icons.directions_car_filled_rounded,
+        'color': Colors.red,
+      },
       {'name': 'Beauty', 'icon': Icons.flare_rounded, 'color': Colors.pink},
-      {'name': 'Electronics', 'icon': Icons.kitchen_rounded, 'color': Colors.blueGrey},
-      {'name': 'Fashion & Accessories', 'icon': Icons.checkroom_rounded, 'color': Colors.deepPurple},
+      {
+        'name': 'Electronics',
+        'icon': Icons.kitchen_rounded,
+        'color': Colors.blueGrey,
+      },
+      {
+        'name': 'Fashion & Accessories',
+        'icon': Icons.checkroom_rounded,
+        'color': Colors.deepPurple,
+      },
       {'name': 'Furniture', 'icon': Icons.chair_rounded, 'color': Colors.blue},
       {'name': 'Jobs', 'icon': Icons.work_rounded, 'color': Colors.brown},
-      {'name': 'Learning & Education', 'icon': Icons.school_rounded, 'color': Colors.indigo},
-      {'name': 'Local Events', 'icon': Icons.event_available_rounded, 'color': Colors.orange},
-      {'name': 'Mobiles', 'icon': Icons.phone_iphone_rounded, 'color': Colors.teal},
-      {'name': 'Pets & Animals Accessories', 'icon': Icons.pets_rounded, 'color': Colors.amber},
-      {'name': 'Real Estate', 'icon': Icons.business_rounded, 'color': Colors.green},
-      {'name': 'Services', 'icon': Icons.handyman_rounded, 'color': Colors.blueAccent},
+      {
+        'name': 'Learning & Education',
+        'icon': Icons.school_rounded,
+        'color': Colors.indigo,
+      },
+      {
+        'name': 'Local Events',
+        'icon': Icons.event_available_rounded,
+        'color': Colors.orange,
+      },
+      {
+        'name': 'Mobiles',
+        'icon': Icons.phone_iphone_rounded,
+        'color': Colors.teal,
+      },
+      {
+        'name': 'Pets & Animals Accessories',
+        'icon': Icons.pets_rounded,
+        'color': Colors.amber,
+      },
+      {
+        'name': 'Real Estate',
+        'icon': Icons.business_rounded,
+        'color': Colors.green,
+      },
+      {
+        'name': 'Services',
+        'icon': Icons.handyman_rounded,
+        'color': Colors.blueAccent,
+      },
     ];
 
     return GridView.builder(
@@ -252,32 +477,39 @@ class HomeTab extends StatelessWidget {
           },
           child: Container(
             decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
-              ),
-            ],
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  cat['icon'] as IconData,
+                  size: 32,
+                  color: cat['color'] as Color,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  cat['name'] as String,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(cat['icon'] as IconData, size: 32, color: cat['color'] as Color),
-              const SizedBox(height: 8),
-              Text(
-                cat['name'] as String,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
-      ).animate().scale(delay: (50 * index).ms, duration: 300.ms);
-    },
+        ).animate().scale(delay: (50 * index).ms, duration: 300.ms);
+      },
     );
   }
 
@@ -292,28 +524,36 @@ class HomeTab extends StatelessWidget {
             title: "Ready to List Your Home?",
             subtitle: "Reach Buyers and Rentals Fast.",
             tag: "PROPERTY",
-            imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=500&q=60",
+            imageUrl:
+                "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=500&q=60",
           ),
           const SizedBox(width: 15),
           _buildPromoCard(
             title: "Ready to List Your Car?",
             subtitle: "Reach Buyers and Rentals Fast.",
             tag: "VEHICLES",
-            imageUrl: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=500&q=60",
+            imageUrl:
+                "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=500&q=60",
           ),
           const SizedBox(width: 15),
           _buildPromoCard(
             title: "Coming Soon - Fashion",
             subtitle: "Find the latest trends.",
             tag: "FASHION",
-            imageUrl: "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=500&q=60",
+            imageUrl:
+                "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=500&q=60",
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPromoCard({required String title, required String subtitle, required String tag, required String imageUrl}) {
+  Widget _buildPromoCard({
+    required String title,
+    required String subtitle,
+    required String tag,
+    required String imageUrl,
+  }) {
     return SizedBox(
       width: 280,
       child: Column(
@@ -334,7 +574,10 @@ class HomeTab extends StatelessWidget {
                     top: 12,
                     left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(4),
@@ -354,7 +597,10 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildHorizontalSection({required String title, required List<Map<String, dynamic>> items}) {
+  Widget _buildHorizontalSection({
+    required String title,
+    required List<Map<String, dynamic>> items,
+  }) {
     return Column(
       children: [
         Padding(
@@ -377,7 +623,10 @@ class HomeTab extends StatelessWidget {
               final item = items[index];
               return Container(
                 width: 180,
-                margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 5), // Added vertical margin to avoid shadow clipping
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 5,
+                  vertical: 5,
+                ), // Added vertical margin to avoid shadow clipping
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -397,7 +646,9 @@ class HomeTab extends StatelessWidget {
                       flex: 6,
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
                           image: DecorationImage(
                             image: NetworkImage(item['image'] as String),
                             fit: BoxFit.cover,
@@ -415,9 +666,7 @@ class HomeTab extends StatelessWidget {
                             "₹ ${item['price']}/-".text.lg.bold.red600.make(),
                             const SizedBox(height: 2),
                             Flexible(
-                              child: (item['title'] as String)
-                                  .text
-                                  .semiBold
+                              child: (item['title'] as String).text.semiBold
                                   .size(12)
                                   .maxLines(1)
                                   .ellipsis
@@ -425,9 +674,7 @@ class HomeTab extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Flexible(
-                              child: (item['location'] as String)
-                                  .text
-                                  .gray500
+                              child: (item['location'] as String).text.gray500
                                   .size(9)
                                   .maxLines(1)
                                   .ellipsis
@@ -454,13 +701,15 @@ class HomeTab extends StatelessWidget {
         'title': '3 BHK Luxury Apartment',
         'price': '45,000',
         'location': 'Greater Kailash, New Delhi',
-        'image': 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=300&q=60'
+        'image':
+            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=300&q=60',
       },
       {
         'title': 'Studio Flat Near Metro',
         'price': '15,000',
         'location': 'Sector 62, Noida',
-        'image': 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=300&q=60'
+        'image':
+            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=300&q=60',
       },
     ];
   }
@@ -471,13 +720,15 @@ class HomeTab extends StatelessWidget {
         'title': 'BMW M5 Competition',
         'price': '2,29,000',
         'location': 'Sector 62 Dwarka, New Delhi',
-        'image': 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=300&q=60'
+        'image':
+            'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=300&q=60',
       },
       {
         'title': 'Premium Hyundai i10',
         'price': '90,000',
         'location': 'Greater Kailash, New Delhi',
-        'image': 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=300&q=60'
+        'image':
+            'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=300&q=60',
       },
     ];
   }
@@ -488,13 +739,15 @@ class HomeTab extends StatelessWidget {
         'title': 'Intel i9 14gen -High-end Processor',
         'price': '45,000',
         'location': 'Greater Kailash, New Delhi',
-        'image': 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=300&q=60'
+        'image':
+            'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=300&q=60',
       },
       {
         'title': 'Honor Tablet S9+ Ultra 12GB, 512GB',
         'price': '29,000',
         'location': 'Sector 62 Duarka, New Delhi',
-        'image': 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=300&q=60'
+        'image':
+            'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=300&q=60',
       },
     ];
   }
@@ -505,13 +758,15 @@ class HomeTab extends StatelessWidget {
         'title': 'Honor Tab A4+ with Keypad, 12GB...',
         'price': '90,000',
         'location': 'Greater Kailash, New Delhi',
-        'image': 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=300&q=60'
+        'image':
+            'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=300&q=60',
       },
       {
         'title': 'iPhone 16 Pro Max 12GB 256GB,Go...',
         'price': '56,000',
         'location': 'Sector 62 Duarka, New Delhi',
-        'image': 'https://images.unsplash.com/photo-1616348436168-de43ad0db179?auto=format&fit=crop&w=300&q=60'
+        'image':
+            'https://images.unsplash.com/photo-1616348436168-de43ad0db179?auto=format&fit=crop&w=300&q=60',
       },
     ];
   }
