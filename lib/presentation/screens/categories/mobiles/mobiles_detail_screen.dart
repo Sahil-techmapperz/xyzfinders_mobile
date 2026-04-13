@@ -4,7 +4,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class MobilesDetailScreen extends StatefulWidget {
-  const MobilesDetailScreen({super.key});
+  final int productId;
+  final String? title;
+
+  const MobilesDetailScreen({
+    super.key,
+    required this.productId,
+    this.title,
+  });
 
   @override
   State<MobilesDetailScreen> createState() => _MobilesDetailScreenState();

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../core/constants/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'mobiles_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 
 class MobilesListScreen extends StatefulWidget {
-  const MobilesListScreen({super.key});
+  final int? categoryId;
+  const MobilesListScreen({super.key, this.categoryId});
 
   @override
   State<MobilesListScreen> createState() => _MobilesListScreenState();
@@ -15,6 +20,40 @@ class MobilesListScreen extends StatefulWidget {
 class _MobilesListScreenState extends State<MobilesListScreen> {
   bool _isVerifiedOnly = false;
   int _currentNavIndex = 0;
+
+  final ProductService _productService = ProductService();
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +71,19 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
             _buildFilterBar(),
             _buildResultsSummary(),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                itemCount: _getMockMobiles().length,
-                itemBuilder: (context, index) {
-                  return _buildProductCard(context, _getMockMobiles()[index]);
-                },
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No mobiles found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          return _buildProductCard(context, _products[index]);
+                        },
+                      ),
             ),
           ],
         ),
@@ -103,7 +148,7 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          "Showing Results - ${_getMockMobiles().length}".text.italic.gray600.size(12).make(),
+          "Showing Results - ${_products.length}".text.italic.gray600.size(12).make(),
           Row(
             children: [
               "Verified Only".text.semiBold.size(12).make(),
@@ -125,11 +170,16 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
     );
   }
 
-  Widget _buildProductCard(BuildContext context, Map<String, dynamic> mobile) {
+  Widget _buildProductCard(BuildContext context, ProductModel item) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+
     return InkWell(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const MobilesDetailScreen()),
+        MaterialPageRoute(builder: (context) => MobilesDetailScreen(
+          productId: item.id,
+          title: item.title,
+        )),
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
@@ -147,31 +197,47 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  child: Image.network(
-                    mobile['image'],
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                  child: item.firstImageUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: item.firstImageUrl != null && item.firstImageUrl!.startsWith('http')
+                            ? item.firstImageUrl!
+                            : '$baseUrl${item.firstImageUrl}',
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => Container(
+                          height: 200,
+                          color: Colors.grey[100],
+                          width: double.infinity,
+                          child: const Icon(Icons.phone_android_outlined, color: Colors.grey, size: 50).centered(),
+                        ),
+                      )
+                    : Container(
+                        height: 200,
+                        color: Colors.grey[100],
+                        width: double.infinity,
+                        child: const Icon(Icons.phone_android_outlined, color: Colors.grey, size: 50).centered(),
+                      ),
                 ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle, color: Colors.white, size: 10),
-                        const SizedBox(width: 4),
-                        "VERIFIED SELLER".text.white.size(8).bold.make(),
-                      ],
+                if (item.isFeatured)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.white, size: 10),
+                          const SizedBox(width: 4),
+                          "VERIFIED SELLER".text.white.size(8).bold.make(),
+                        ],
+                      ),
                     ),
                   ),
-                ),
                  Positioned(
                   top: 12,
                   right: 12,
@@ -179,24 +245,6 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
                     padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                     child: const Icon(Icons.favorite_border, color: Colors.grey, size: 20),
-                  ),
-                ),
-                Positioned(
-                  bottom: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.image_outlined, color: Colors.white, size: 10),
-                        const SizedBox(width: 4),
-                        "1/5".text.white.size(8).bold.make(),
-                      ],
-                    ),
                   ),
                 ),
               ],
@@ -209,27 +257,43 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      "₹ ${mobile['price']}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
-                      mobile['condition'].toString().text.gray500.size(12).semiBold.make(),
+                      "₹ ${item.price}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
+                      item.condition.text.gray500.size(12).semiBold.make(),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  mobile['title'].toString().text.lg.bold.make(),
+                  item.title.text.lg.bold.make(),
+                  "Category ID: ${item.categoryId}".text.gray500.size(12).make(),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _buildSpec(Icons.memory_rounded, mobile['storage']),
-                      _buildSpec(Icons.speed_rounded, mobile['ram']),
-                      _buildSpec(Icons.phone_android_rounded, mobile['brand']),
+                      const Icon(Icons.remove_red_eye_outlined, size: 16, color: Colors.grey),
+                      const SizedBox(width: 6),
+                      "Views: ${item.viewsCount}".text.gray500.size(12).make(),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
                       Expanded(
-                        child: mobile['location'].toString().text.gray500.size(11).ellipsis.make(),
+                        child: InkWell(
+                          onTap: () {},
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE3F2FD),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.chat_bubble, color: Color(0xFF1E88E5), size: 18),
+                                const SizedBox(width: 8),
+                                "Chat Now".text.color(const Color(0xFF1E88E5)).semiBold.make(),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -240,53 +304,5 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildSpec(IconData icon, String label) {
-    return Expanded(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: Colors.grey),
-          const SizedBox(width: 4),
-          Flexible(child: label.text.gray600.size(11).ellipsis.make()),
-        ],
-      ),
-    );
-  }
-
-  List<Map<String, dynamic>> _getMockMobiles() {
-    return [
-      {
-        'title': 'iPhone 15 Pro Max - 256GB - Blue Titanium',
-        'price': '1,15,000',
-        'condition': 'Like New',
-        'storage': '256 GB',
-        'ram': '8 GB',
-        'brand': 'Apple',
-        'location': 'Salt Lake, Kolkata',
-        'image': 'https://images.unsplash.com/photo-1696446701796-da61225697cc?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'title': 'Samsung Galaxy S24 Ultra - 512GB - Gray',
-        'price': '1,05,000',
-        'condition': 'Brand New',
-        'storage': '512 GB',
-        'ram': '12 GB',
-        'brand': 'Samsung',
-        'location': 'Whitefield, Bangalore',
-        'image': 'https://images.unsplash.com/photo-1707231494002-8636ba906757?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'title': 'Google Pixel 8 Pro - 128GB - Bay Blue',
-        'price': '75,000',
-        'condition': 'Slightly Used',
-        'storage': '128 GB',
-        'ram': '12 GB',
-        'brand': 'Google',
-        'location': 'Indiranagar, Bangalore',
-        'image': 'https://images.unsplash.com/photo-1621330396173-e41b1cafd17f?auto=format&fit=crop&w=800&q=80',
-      },
-    ];
   }
 }

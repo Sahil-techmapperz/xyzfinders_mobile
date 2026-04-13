@@ -42,24 +42,37 @@ class ProductModel {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      return int.tryParse(value.toString()) ?? 0;
+    }
+
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      return double.tryParse(value.toString()) ?? 0.0;
+    }
+
     return ProductModel(
-      id: json['id'] as int,
-      userId: json['user_id'] as int,
-      categoryId: json['category_id'] as int,
-      locationId: json['location_id'] as int,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      price: double.parse(json['price'].toString()),
+      id: parseInt(json['id']),
+      userId: parseInt(json['user_id']),
+      categoryId: parseInt(json['category_id']),
+      locationId: parseInt(json['location_id']),
+      title: (json['title'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      price: parseDouble(json['price']),
       originalPrice: json['original_price'] != null 
-          ? double.parse(json['original_price'].toString()) 
+          ? parseDouble(json['original_price']) 
           : null,
-      condition: json['condition'] as String,
-      status: json['status'] as String,
+      condition: (json['condition'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
       // Handle both int (0/1) and bool
       isFeatured: json['is_featured'] == 1 || json['is_featured'] == true,
-      viewsCount: (json['views'] ?? 0) as int,
-      createdAt: json['created_at'] as String,
-      updatedAt: json['updated_at'] as String,
+      viewsCount: parseInt(json['views']),
+      createdAt: (json['created_at'] ?? '').toString(),
+      updatedAt: (json['updated_at'] ?? '').toString(),
       // Build user object from flat fields if available
       user: json['seller_name'] != null ? {
         'name': json['seller_name'],
@@ -114,10 +127,19 @@ class ProductModel {
   
   String? get firstImageUrl {
     if (images != null && images!.isNotEmpty) {
-      final imageId = images!.first['id'];
-      // Add timestamp to force refresh and bypass cache for broken images
+      final imageId = images!.first['id'].toString();
+      if (imageId.startsWith('http')) {
+        return imageId;
+      }
       return '/api/images/product/$imageId?t=${DateTime.now().millisecondsSinceEpoch}';
     }
     return null;
+  }
+
+  String? resolveImageUrl(String baseUrl) {
+    final url = firstImageUrl;
+    if (url == null) return null;
+    if (url.startsWith('http')) return url;
+    return '$baseUrl$url';
   }
 }

@@ -4,12 +4,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class LocalEventsDetailScreen extends StatefulWidget {
-  final int eventId;
+  final int productId;
   final String? title;
 
   const LocalEventsDetailScreen({
     super.key,
-    required this.eventId,
+    required this.productId,
     this.title,
   });
 

@@ -5,7 +5,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class AutomobileDetailScreen extends StatefulWidget {
-  const AutomobileDetailScreen({super.key});
+  final int productId;
+  final String? title;
+
+  const AutomobileDetailScreen({
+    super.key,
+    required this.productId,
+    this.title,
+  });
 
   @override
   State<AutomobileDetailScreen> createState() => _AutomobileDetailScreenState();

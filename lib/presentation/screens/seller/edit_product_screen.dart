@@ -4,6 +4,8 @@ import '../../../data/models/product_model.dart';
 import '../../../data/services/product_service.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/models/category_model.dart';
+import '../../../data/services/category_service.dart';
 import 'add_product_images_screen.dart';
 
 class EditProductScreen extends StatefulWidget {
@@ -26,9 +28,10 @@ class _EditProductScreenState extends State<EditProductScreen> {
   late TextEditingController _originalPriceController;
 
   final ProductService _productService = ProductService();
+  final CategoryService _categoryService = CategoryService();
   bool _isLoading = false;
 
-  List<Map<String, dynamic>> _categories = [];
+  List<CategoryModel> _categories = [];
   List<Map<String, dynamic>> _locations = [];
   final List<Map<String, String>> _conditions = [
     {'value': 'new', 'label': 'New'},
@@ -60,15 +63,18 @@ class _EditProductScreenState extends State<EditProductScreen> {
   }
 
   Future<void> _loadData() async {
-    // In a real app, these would come from an API
+    try {
+      final categories = await _categoryService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading categories: $e');
+    }
+
     setState(() {
-      _categories = [
-        {'id': 1, 'name': 'Electronics'},
-        {'id': 2, 'name': 'Computers'},
-        {'id': 3, 'name': 'Furniture'},
-        {'id': 4, 'name': 'Sports'},
-        {'id': 5, 'name': 'Fashion'},
-      ];
       _locations = [
         {'id': 1, 'name': 'New York'},
         {'id': 2, 'name': 'Los Angeles'},
@@ -227,9 +233,9 @@ class _EditProductScreenState extends State<EditProductScreen> {
                         hint: const Text('Select'),
                         items: _categories.map((category) {
                           return DropdownMenuItem<int>(
-                            value: category['id'] as int,
+                            value: category.id,
                             child: Text(
-                                category['name'] as String,
+                                category.name,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(fontSize: 14),
                             ),

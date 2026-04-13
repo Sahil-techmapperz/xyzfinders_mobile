@@ -3,12 +3,12 @@ import 'package:velocity_x/velocity_x.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class EducationDetailScreen extends StatefulWidget {
-  final int educationId;
+  final int productId;
   final String? title;
 
   const EducationDetailScreen({
     super.key,
-    required this.educationId,
+    required this.productId,
     this.title,
   });
 

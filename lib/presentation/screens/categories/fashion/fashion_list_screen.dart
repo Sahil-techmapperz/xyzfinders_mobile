@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../core/constants/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'fashion_detail_screen.dart';
+
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 
 class FashionListScreen extends StatefulWidget {
-  const FashionListScreen({super.key});
+  final int? categoryId;
+  const FashionListScreen({super.key, this.categoryId});
 
   @override
   State<FashionListScreen> createState() => _FashionListScreenState();
@@ -16,6 +22,40 @@ class FashionListScreen extends StatefulWidget {
 class _FashionListScreenState extends State<FashionListScreen> {
   bool _isVerifiedOnly = false;
   int _currentNavIndex = 0;
+
+  final ProductService _productService = ProductService();
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,13 +73,19 @@ class _FashionListScreenState extends State<FashionListScreen> {
             _buildFilterBar(),
             _buildResultsSummary(),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                itemCount: _getMockFashion().length,
-                itemBuilder: (context, index) {
-                  return _buildProductCard(context, _getMockFashion()[index]);
-                },
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No fashion items found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          return _buildProductCard(context, _products[index]);
+                        },
+                      ),
             ),
           ],
         ),
@@ -103,7 +149,7 @@ class _FashionListScreenState extends State<FashionListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          "Showing Results - 12,500".text.italic.gray600.size(12).make(),
+          "Showing Results - ${_products.length}".text.italic.gray600.size(12).make(),
           Row(
             children: [
               "Verified Only".text.semiBold.size(12).make(),
@@ -125,7 +171,9 @@ class _FashionListScreenState extends State<FashionListScreen> {
     );
   }
 
-  Widget _buildProductCard(BuildContext context, Map<String, dynamic> item) {
+  Widget _buildProductCard(BuildContext context, ProductModel item) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -147,37 +195,46 @@ class _FashionListScreenState extends State<FashionListScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.network(
-                  item['image'],
-                  width: double.infinity,
-                  height: 250,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 250,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 50).centered(),
+                child: item.firstImageUrl != null
+                  ? CachedNetworkImage(
+                        imageUrl: item.resolveImageUrl(baseUrl) ?? '',
+                      width: double.infinity,
+                      height: 250,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Container(
+                        height: 250,
+                        color: Colors.grey[200],
+                        width: double.infinity,
+                        child: const Icon(Icons.checkroom, color: Colors.grey, size: 50).centered(),
+                      ),
+                    )
+                  : Container(
+                      height: 250,
+                      color: Colors.grey[200],
+                      width: double.infinity,
+                      child: const Icon(Icons.checkroom, color: Colors.grey, size: 50).centered(),
+                    ),
+              ),
+              if (item.isFeatured)
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 10),
+                        const SizedBox(width: 4),
+                        "FEATURED".text.white.bold.size(8).make(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "VERIFIED SELLER".text.white.bold.size(8).make(),
-                    ],
-                  ),
-                ),
-              ),
               Positioned(
                 top: 10,
                 right: 10,
@@ -199,40 +256,24 @@ class _FashionListScreenState extends State<FashionListScreen> {
               children: [
                 Row(
                   children: [
-                    "₹ ${item['price']}".text.xl2.bold.black.make(),
-                    const SizedBox(width: 12),
-                    if (item['oldPrice'] != null)
-                      "₹ ${item['oldPrice']}".text.gray400.size(14).lineThrough.make(),
+                    "₹ ${item.price}".text.xl2.bold.black.make(),
                   ],
                 ),
                 const SizedBox(height: 12),
-                "Fashion  •  ${item['brand']}".text.gray600.medium.size(13).make(),
+                "Category ID: ${item.categoryId}  •  ${item.condition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 4),
-                (item['title'] as String).text.semiBold.xl.black.make(),
+                item.title.text.semiBold.xl.black.make(),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.remove_red_eye_outlined, size: 14, color: Colors.blue),
+                    const SizedBox(width: 4),
+                    "Views: ${item.viewsCount}".text.blue600.semiBold.size(11).make(),
+                  ],
+                ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {},
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFE8F0),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.shopping_bag, color: Color(0xFFD81B60), size: 18),
-                              const SizedBox(width: 8),
-                              "Add to Bag".text.color(const Color(0xFFD81B60)).semiBold.make(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: InkWell(
                         onTap: () {},
@@ -263,32 +304,11 @@ class _FashionListScreenState extends State<FashionListScreen> {
     ).onTap(() {
        Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const FashionDetailScreen()),
+          MaterialPageRoute(builder: (context) => FashionDetailScreen(
+            productId: item.id,
+            title: item.title,
+          )),
         );
     });
-  }
-
-  List<Map<String, dynamic>> _getMockFashion() {
-    return [
-      {
-        'title': 'Premium Cotton Oversized T-Shirt',
-        'brand': 'ZARA',
-        'price': '1,990',
-        'oldPrice': '2,990',
-        'image': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'title': 'High-Waist Straight Fit Jeans',
-        'brand': 'LEVI\'S',
-        'price': '4,500',
-        'image': 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'title': 'Floral Summer Maxi Dress',
-        'brand': 'H&M',
-        'price': '3,290',
-        'image': 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=800&q=80',
-      }
-    ];
   }
 }

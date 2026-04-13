@@ -3,7 +3,14 @@ import 'package:velocity_x/velocity_x.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class FashionDetailScreen extends StatefulWidget {
-  const FashionDetailScreen({super.key});
+  final int productId;
+  final String? title;
+
+  const FashionDetailScreen({
+    super.key,
+    required this.productId,
+    this.title,
+  });
 
   @override
   State<FashionDetailScreen> createState() => _FashionDetailScreenState();

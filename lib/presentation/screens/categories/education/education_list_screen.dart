@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../core/constants/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'education_detail_screen.dart';
+
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 
 class EducationListScreen extends StatefulWidget {
-  const EducationListScreen({super.key});
+  final int? categoryId;
+  const EducationListScreen({super.key, this.categoryId});
 
   @override
   State<EducationListScreen> createState() => _EducationListScreenState();
@@ -15,6 +21,40 @@ class EducationListScreen extends StatefulWidget {
 class _EducationListScreenState extends State<EducationListScreen> {
   bool _isVerifiedOnly = false;
   int _currentNavIndex = 0;
+
+  final ProductService _productService = ProductService();
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +72,19 @@ class _EducationListScreenState extends State<EducationListScreen> {
             _buildFilterBar(),
             _buildResultsSummary(),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                itemCount: _getMockEducation().length,
-                itemBuilder: (context, index) {
-                  return _buildEducationCard(context, _getMockEducation()[index]);
-                },
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No education listings found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          return _buildEducationCard(context, _products[index]);
+                        },
+                      ),
             ),
           ],
         ),
@@ -102,7 +148,7 @@ class _EducationListScreenState extends State<EducationListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          "Showing Results - 150 Listings".text.italic.gray600.size(12).make(),
+          "Showing Results - ${_products.length} Listings".text.italic.gray600.size(12).make(),
           Row(
             children: [
               "Verified Only".text.semiBold.size(12).make(),
@@ -124,7 +170,9 @@ class _EducationListScreenState extends State<EducationListScreen> {
     );
   }
 
-  Widget _buildEducationCard(BuildContext context, Map<String, dynamic> item) {
+  Widget _buildEducationCard(BuildContext context, ProductModel item) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -146,37 +194,46 @@ class _EducationListScreenState extends State<EducationListScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.network(
-                  item['image'],
-                  width: double.infinity,
-                  height: 220,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 220,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.school_outlined, color: Colors.grey, size: 50).centered(),
+                child: item.firstImageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: item.resolveImageUrl(baseUrl) ?? '',
+                      width: double.infinity,
+                      height: 220,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Container(
+                        height: 220,
+                        color: Colors.grey[200],
+                        width: double.infinity,
+                        child: const Icon(Icons.school_outlined, color: Colors.grey, size: 50).centered(),
+                      ),
+                    )
+                  : Container(
+                      height: 220,
+                      color: Colors.grey[200],
+                      width: double.infinity,
+                      child: const Icon(Icons.school_outlined, color: Colors.grey, size: 50).centered(),
+                    ),
+              ),
+              if (item.isFeatured)
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 10),
+                        const SizedBox(width: 4),
+                        "VERIFIED TUTOR".text.white.bold.size(8).make(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "VERIFIED TUTOR".text.white.bold.size(8).make(),
-                    ],
-                  ),
-                ),
-              ),
               Positioned(
                 top: 10,
                 right: 10,
@@ -189,41 +246,6 @@ class _EducationListScreenState extends State<EducationListScreen> {
                   child: const Icon(Icons.favorite_border, color: Colors.grey, size: 20),
                 ),
               ),
-              Positioned(
-                bottom: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.image_outlined, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "1/6".text.white.size(9).make(),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 15,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(4, (i) => Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    height: 6,
-                    width: 6,
-                    decoration: BoxDecoration(
-                      color: i == 0 ? Colors.white : Colors.white.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                  )),
-                ),
-              ),
             ],
           ),
           Padding(
@@ -233,68 +255,24 @@ class _EducationListScreenState extends State<EducationListScreen> {
               children: [
                 Row(
                   children: [
-                    "₹ ${item['price']}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
-                    "${item['unit']}".text.gray700.semiBold.size(14).make(),
+                    "₹ ${item.price}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
                   ],
                 ),
                 const SizedBox(height: 12),
-                "Category  •  Education  •  ${item['mode']}".text.gray600.medium.size(13).make(),
+                "Category ID: ${item.categoryId}  •  ${item.condition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 4),
-                (item['title'] as String).text.semiBold.xl.black.make(),
+                item.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          "Subject: ".text.gray500.size(13).make(),
-                          "${item['subject']}".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          "Level: ".text.gray500.size(13).make(),
-                          "Class 10-12".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(Icons.person_outline, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    item['tutor'].toString().text.gray600.size(12).ellipsis.make().expand(),
+                    const Icon(Icons.remove_red_eye_outlined, size: 16, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    "Views: ${item.viewsCount}".text.gray500.size(12).make(),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {},
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFE8F0),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.call, color: Color(0xFFD81B60), size: 18),
-                              const SizedBox(width: 8),
-                              "Call".text.color(const Color(0xFFD81B60)).semiBold.make(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: InkWell(
                         onTap: () {},
@@ -309,7 +287,7 @@ class _EducationListScreenState extends State<EducationListScreen> {
                             children: [
                               const Icon(Icons.chat_bubble, color: Color(0xFF1E88E5), size: 18),
                               const SizedBox(width: 8),
-                              "Chat".text.color(const Color(0xFF1E88E5)).semiBold.make(),
+                              "Chat Now".text.color(const Color(0xFF1E88E5)).semiBold.make(),
                             ],
                           ),
                         ),
@@ -323,50 +301,15 @@ class _EducationListScreenState extends State<EducationListScreen> {
         ],
       ),
     ).onTap(() {
-       Navigator.push(
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => EducationDetailScreen(
-              educationId: item['id'],
-              title: item['title'],
+              productId: item.id,
+              title: item.title,
             ),
           ),
         );
     });
-  }
-
-  List<Map<String, dynamic>> _getMockEducation() {
-    return [
-      {
-        'id': 301,
-        'title': 'Mathematics Home Tuition (Class 10-12)',
-        'tutor': 'Sumit Sharma',
-        'subject': 'Mathematics',
-        'price': '500',
-        'unit': '/Hr',
-        'mode': 'Offline',
-        'image': 'https://images.unsplash.com/photo-1596495573105-08246bc6ec68?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'id': 302,
-        'title': 'Spoken English & Personality Development',
-        'tutor': 'Elite Academy',
-        'subject': 'English',
-        'price': '2,500',
-        'unit': '/Mo',
-        'mode': 'Hybrid',
-        'image': 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'id': 303,
-        'title': 'Python Programming Bootcamp',
-        'tutor': 'CodeWithFun',
-        'subject': 'Computer Science',
-        'price': '4,999',
-        'unit': '/Course',
-        'mode': 'Online',
-        'image': 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80',
-      }
-    ];
   }
 }

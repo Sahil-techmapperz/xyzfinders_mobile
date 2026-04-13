@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../core/constants/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'services_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 
 class ServicesListScreen extends StatefulWidget {
-  const ServicesListScreen({super.key});
+  final int? categoryId;
+  const ServicesListScreen({super.key, this.categoryId});
 
   @override
   State<ServicesListScreen> createState() => _ServicesListScreenState();
@@ -15,6 +20,40 @@ class ServicesListScreen extends StatefulWidget {
 class _ServicesListScreenState extends State<ServicesListScreen> {
   bool _isVerifiedOnly = false;
   int _currentNavIndex = 0;
+
+  final ProductService _productService = ProductService();
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +71,19 @@ class _ServicesListScreenState extends State<ServicesListScreen> {
             _buildFilterBar(),
             _buildResultsSummary(),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                itemCount: _getMockServices().length,
-                itemBuilder: (context, index) {
-                  return _buildServiceCard(context, _getMockServices()[index]);
-                },
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No services found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          return _buildServiceCard(context, _products[index]);
+                        },
+                      ),
             ),
           ],
         ),
@@ -102,7 +147,7 @@ class _ServicesListScreenState extends State<ServicesListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          "Showing Results - 1.2k nearby".text.italic.gray600.size(12).make(),
+          "Showing Results - ${_products.length} nearby".text.italic.gray600.size(12).make(),
           Row(
             children: [
               "Verified Only".text.semiBold.size(12).make(),
@@ -124,7 +169,9 @@ class _ServicesListScreenState extends State<ServicesListScreen> {
     );
   }
 
-  Widget _buildServiceCard(BuildContext context, Map<String, dynamic> item) {
+  Widget _buildServiceCard(BuildContext context, ProductModel item) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -146,55 +193,46 @@ class _ServicesListScreenState extends State<ServicesListScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.network(
-                  item['image'],
-                  width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 200,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.handyman_outlined, color: Colors.grey, size: 50).centered(),
+                child: item.firstImageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: item.resolveImageUrl(baseUrl) ?? '',
+                      width: double.infinity,
+                      height: 200,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Container(
+                        height: 200,
+                        color: Colors.grey[100],
+                        width: double.infinity,
+                        child: const Icon(Icons.handyman_outlined, color: Colors.grey, size: 50).centered(),
+                      ),
+                    )
+                  : Container(
+                      height: 200,
+                      color: Colors.grey[100],
+                      width: double.infinity,
+                      child: const Icon(Icons.handyman_outlined, color: Colors.grey, size: 50).centered(),
+                    ),
+              ),
+              if (item.isFeatured)
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 10),
+                        const SizedBox(width: 4),
+                        "VERIFIED PROVIDER".text.white.bold.size(8).make(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "VERIFIED PROVIDER".text.white.bold.size(8).make(),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.amber,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.white, size: 12),
-                      const SizedBox(width: 4),
-                      item['rating'].toString().text.white.bold.size(10).make(),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
           Padding(
@@ -204,43 +242,19 @@ class _ServicesListScreenState extends State<ServicesListScreen> {
               children: [
                 Row(
                   children: [
-                    "₹ ${item['price']}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
-                    const SizedBox(width: 4),
-                    item['unit'].toString().text.gray700.semiBold.size(14).make(),
+                    "₹ ${item.price}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
                   ],
                 ),
                 const SizedBox(height: 12),
-                "Category  •  Services  •  ${item['type']}".text.gray600.medium.size(13).make(),
+                "Category ID: ${item.categoryId}  •  ${item.condition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 4),
-                (item['title'] as String).text.semiBold.xl.black.make(),
+                item.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          "Experience: ".text.gray500.size(13).make(),
-                          "${item['exp']}".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          "Completed: ".text.gray500.size(13).make(),
-                          "${item['jobs']}+ Jobs".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    item['location'].toString().text.gray600.size(12).ellipsis.make().expand(),
+                    const Icon(Icons.remove_red_eye_outlined, size: 16, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    "Views: ${item.viewsCount}".text.gray500.size(12).make(),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -252,24 +266,17 @@ class _ServicesListScreenState extends State<ServicesListScreen> {
                         child: Container(
                           height: 48,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFE8F0),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: "Call Expert".text.color(const Color(0xFFD81B60)).semiBold.make().centered(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {},
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
                             color: const Color(0xFFE3F2FD),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: "Quick Chat".text.color(const Color(0xFF1E88E5)).semiBold.make().centered(),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.chat_bubble, color: Color(0xFF1E88E5), size: 18),
+                              const SizedBox(width: 8),
+                              "Chat Now".text.color(const Color(0xFF1E88E5)).semiBold.make(),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -281,56 +288,16 @@ class _ServicesListScreenState extends State<ServicesListScreen> {
         ],
       ),
     ).onTap(() {
-       Navigator.push(
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ServicesDetailScreen(
-              serviceId: item['id'],
-              title: item['title'],
+              productId: item.id,
+              title: item.title,
             ),
           ),
         );
     });
   }
 
-  List<Map<String, dynamic>> _getMockServices() {
-    return [
-      {
-        'id': 501,
-        'title': 'Professional Home Cleaning & Sanitization',
-        'type': 'Cleaning',
-        'price': '1,999',
-        'unit': '/Service',
-        'rating': 4.8,
-        'exp': '10+ Yrs',
-        'jobs': '500',
-        'location': 'Sector 1, Kashipur',
-        'image': 'https://images.unsplash.com/photo-1581578731548-c64695cc6954?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'id': 502,
-        'title': 'Emergency Plumbing & Leak Repair',
-        'type': 'Plumbing',
-        'price': '499',
-        'unit': '/Visit',
-        'rating': 4.9,
-        'exp': '15+ Yrs',
-        'jobs': '1200',
-        'location': 'Awas Vikas, Kashipur',
-        'image': 'https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'id': 503,
-        'title': 'Electrician & Home Appliance Repair',
-        'type': 'Electrical',
-        'price': '299',
-        'unit': '/Visit',
-        'rating': 4.7,
-        'exp': '8+ Yrs',
-        'jobs': '350',
-        'location': 'Mahua Khera, Kashipur',
-        'image': 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80',
-      }
-    ];
-  }
 }

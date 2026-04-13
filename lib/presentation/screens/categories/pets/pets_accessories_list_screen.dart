@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../core/constants/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'pets_accessories_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 
 class PetsAccessoriesListScreen extends StatefulWidget {
-  const PetsAccessoriesListScreen({super.key});
+  final int? categoryId;
+  const PetsAccessoriesListScreen({super.key, this.categoryId});
 
   @override
   State<PetsAccessoriesListScreen> createState() => _PetsAccessoriesListScreenState();
@@ -15,6 +20,40 @@ class PetsAccessoriesListScreen extends StatefulWidget {
 class _PetsAccessoriesListScreenState extends State<PetsAccessoriesListScreen> {
   bool _isVerifiedOnly = false;
   int _currentNavIndex = 0;
+
+  final ProductService _productService = ProductService();
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +71,19 @@ class _PetsAccessoriesListScreenState extends State<PetsAccessoriesListScreen> {
             _buildFilterBar(),
             _buildResultsSummary(),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                itemCount: _getMockAccessories().length,
-                itemBuilder: (context, index) {
-                  return _buildProductCard(context, _getMockAccessories()[index]);
-                },
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No pet accessories found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          return _buildProductCard(context, _products[index]);
+                        },
+                      ),
             ),
           ],
         ),
@@ -102,7 +147,7 @@ class _PetsAccessoriesListScreenState extends State<PetsAccessoriesListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          "Showing Results - 850 items".text.italic.gray600.size(12).make(),
+          "Showing Results - ${_products.length} items".text.italic.gray600.size(12).make(),
           Row(
             children: [
               "Verified Only".text.semiBold.size(12).make(),
@@ -124,7 +169,9 @@ class _PetsAccessoriesListScreenState extends State<PetsAccessoriesListScreen> {
     );
   }
 
-  Widget _buildProductCard(BuildContext context, Map<String, dynamic> item) {
+  Widget _buildProductCard(BuildContext context, ProductModel item) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -146,37 +193,46 @@ class _PetsAccessoriesListScreenState extends State<PetsAccessoriesListScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.network(
-                  item['image'],
-                  width: double.infinity,
-                  height: 220,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 220,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 50).centered(),
+                child: item.firstImageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: item.resolveImageUrl(baseUrl) ?? '',
+                      width: double.infinity,
+                      height: 220,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Container(
+                        height: 220,
+                        color: Colors.grey[200],
+                        width: double.infinity,
+                        child: const Icon(Icons.pets, color: Colors.grey, size: 50).centered(),
+                      ),
+                    )
+                  : Container(
+                      height: 220,
+                      color: Colors.grey[200],
+                      width: double.infinity,
+                      child: const Icon(Icons.pets, color: Colors.grey, size: 50).centered(),
+                    ),
+              ),
+              if (item.isFeatured)
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 10),
+                        const SizedBox(width: 4),
+                        "VERIFIED SELLER".text.white.bold.size(8).make(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "VERIFIED SELLER".text.white.bold.size(8).make(),
-                    ],
-                  ),
-                ),
-              ),
               Positioned(
                 top: 10,
                 right: 10,
@@ -189,41 +245,6 @@ class _PetsAccessoriesListScreenState extends State<PetsAccessoriesListScreen> {
                   child: const Icon(Icons.favorite_border, color: Colors.grey, size: 20),
                 ),
               ),
-              Positioned(
-                bottom: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.image_outlined, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "1/4".text.white.size(9).make(),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 15,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(4, (i) => Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    height: 6,
-                    width: 6,
-                    decoration: BoxDecoration(
-                      color: i == 0 ? Colors.white : Colors.white.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                  )),
-                ),
-              ),
             ],
           ),
           Padding(
@@ -233,69 +254,24 @@ class _PetsAccessoriesListScreenState extends State<PetsAccessoriesListScreen> {
               children: [
                 Row(
                   children: [
-                    "₹ ${item['price']}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
-                    const SizedBox(width: 4),
-                    item['unit'].toString().text.gray700.semiBold.size(14).make(),
+                    "₹ ${item.price}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
                   ],
                 ),
                 const SizedBox(height: 12),
-                "Category  •  Pets Accessories  •  ${item['category']}".text.gray600.medium.size(13).make(),
+                "Category ID: ${item.categoryId}  •  ${item.condition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 4),
-                (item['title'] as String).text.semiBold.xl.black.make(),
+                item.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          "For: ".text.gray500.size(13).make(),
-                          "${item['pet_type']}".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          "Brand: ".text.gray500.size(13).make(),
-                          "${item['brand']}".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    item['location'].toString().text.gray600.size(12).ellipsis.make().expand(),
+                    const Icon(Icons.remove_red_eye_outlined, size: 16, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    "Views: ${item.viewsCount}".text.gray500.size(12).make(),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {},
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFE8F0),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.call, color: Color(0xFFD81B60), size: 18),
-                              const SizedBox(width: 8),
-                              "Call".text.color(const Color(0xFFD81B60)).semiBold.make(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: InkWell(
                         onTap: () {},
@@ -310,7 +286,7 @@ class _PetsAccessoriesListScreenState extends State<PetsAccessoriesListScreen> {
                             children: [
                               const Icon(Icons.chat_bubble, color: Color(0xFF1E88E5), size: 18),
                               const SizedBox(width: 8),
-                              "Chat".text.color(const Color(0xFF1E88E5)).semiBold.make(),
+                              "Chat Now".text.color(const Color(0xFF1E88E5)).semiBold.make(),
                             ],
                           ),
                         ),
@@ -328,49 +304,12 @@ class _PetsAccessoriesListScreenState extends State<PetsAccessoriesListScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => PetsAccessoriesDetailScreen(
-              productId: item['id'],
-              title: item['title'],
+              productId: item.id,
+              title: item.title,
             ),
           ),
         );
     });
   }
 
-  List<Map<String, dynamic>> _getMockAccessories() {
-    return [
-      {
-        'id': 401,
-        'title': 'Premium Leather Dog Collar with Name Tag',
-        'category': 'Collars & Leashes',
-        'pet_type': 'Dogs',
-        'brand': 'PetStyle',
-        'price': '899',
-        'unit': '',
-        'location': 'Civil Lines, Kashipur',
-        'image': 'https://images.unsplash.com/photo-1591500732359-646c84382994?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'id': 402,
-        'title': 'Interactive Cat Tree with Scratching Post',
-        'category': 'Toys & Accessories',
-        'pet_type': 'Cats',
-        'brand': 'MeowKingdom',
-        'price': '2,499',
-        'unit': '',
-        'location': 'Ramnagar Road, Kashipur',
-        'image': 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'id': 403,
-        'title': 'High-Protein Puppy Food (10kg)',
-        'category': 'Food & Nutrition',
-        'pet_type': 'Dogs',
-        'brand': 'RoyalCanin',
-        'price': '3,750',
-        'unit': '',
-        'location': 'Bazpur Road, Kashipur',
-        'image': 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?auto=format&fit=crop&w=800&q=80',
-      }
-    ];
-  }
 }

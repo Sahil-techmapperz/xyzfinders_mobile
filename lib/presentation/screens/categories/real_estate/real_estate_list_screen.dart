@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../core/constants/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'real_estate_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
-import 'real_estate_detail_screen.dart';
 
 class RealEstateListScreen extends StatefulWidget {
-  const RealEstateListScreen({super.key});
+  final int? categoryId;
+  const RealEstateListScreen({super.key, this.categoryId});
 
   @override
   State<RealEstateListScreen> createState() => _RealEstateListScreenState();
@@ -18,6 +23,40 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
   String _selectedFurnishing = "All";
   int _selectedBedrooms = 3;
   int _selectedBathrooms = 2;
+
+  final ProductService _productService = ProductService();
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,11 +73,17 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
             _buildFilterBar(),
             _buildResultsSummary(),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                itemCount: _getMockProperties().length,
-                itemBuilder: (context, index) => _buildPropertyCard(context, _getMockProperties()[index]),
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No properties found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) => _buildPropertyCard(context, _products[index]),
+                      ),
             ),
           ],
         ),
@@ -368,7 +413,7 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          "Showing Results - 14,256".text.italic.gray600.size(12).make(),
+          "Showing Results - ${_products.length}".text.italic.gray600.size(12).make(),
           Row(
             children: [
               "Verified Only".text.semiBold.size(12).make(),
@@ -390,14 +435,16 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
     );
   }
 
-  Widget _buildPropertyCard(BuildContext context, Map<String, dynamic> property) {
+  Widget _buildPropertyCard(BuildContext context, ProductModel item) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+
     return InkWell(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => RealEstateDetailScreen(
-            productId: property['id'] ?? 0,
-            title: property['title'],
+            productId: item.id,
+            title: item.title,
           ),
         ),
       ),
@@ -423,49 +470,45 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  child: Image.network(
-                    property['image'],
-                    height: 220,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                  child: item.firstImageUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: item.resolveImageUrl(baseUrl) ?? '',
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => Container(
+                          height: 220,
+                          color: Colors.grey[100],
+                          width: double.infinity,
+                          child: const Icon(Icons.home_work_outlined, color: Colors.grey, size: 50).centered(),
+                        ),
+                      )
+                    : Container(
+                        height: 220,
+                        color: Colors.grey[100],
+                        width: double.infinity,
+                        child: const Icon(Icons.home_work_outlined, color: Colors.grey, size: 50).centered(),
+                      ),
                 ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle, color: Colors.white, size: 10),
-                        const SizedBox(width: 4),
-                        "VERIFIED SELLER".text.white.size(8).bold.make(),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.image_outlined, color: Colors.white, size: 10),
-                        const SizedBox(width: 4),
-                        "1/10".text.white.size(8).bold.make(),
-                      ],
+                if (item.isFeatured)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.white, size: 10),
+                          const SizedBox(width: 4),
+                          "VERIFIED SELLER".text.white.size(8).bold.make(),
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 Positioned(
                   top: 12,
                   right: 12,
@@ -473,26 +516,6 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
                     padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                     child: const Icon(Icons.favorite_border, color: Colors.grey, size: 20),
-                  ),
-                ),
-                Positioned(
-                  bottom: 15,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      4,
-                      (i) => Container(
-                        width: 6,
-                        height: 6,
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        decoration: BoxDecoration(
-                          color: i == 0 ? Colors.white : Colors.white.withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -505,94 +528,23 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
                 children: [
                   Row(
                     children: [
-                      "₹ ${property['price']}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
-                      "/Monthly".text.gray500.make(),
+                      "₹ ${item.price}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  (property['title'] as String).text.lg.bold.make(),
-                  (property['type'] as String).text.gray500.size(12).make(),
+                  item.title.text.lg.bold.make(),
+                  "Category ID: ${item.categoryId}  •  ${item.condition}".text.gray500.size(12).make(),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.king_bed_outlined, size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            (property['bedrooms'] as String).text.gray600.size(11).maxLines(1).ellipsis.make().expand(),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.kitchen_outlined, size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            (property['kitchen'] as String).text.gray600.size(11).maxLines(1).ellipsis.make().expand(),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.bathtub_outlined, size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            (property['baths'] as String).text.gray600.size(11).maxLines(1).ellipsis.make().expand(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      "Spacious Plot".text.gray600.size(11).make(),
-                      _buildDivider(),
-                      (property['furnishing'] as String).text.gray600.size(11).make(),
-                      _buildDivider(),
-                      "Ready to Shift".text.gray600.size(11).make(),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: (property['location'] as String)
-                            .text
-                            .gray500
-                            .size(11)
-                            .ellipsis
-                            .make(),
-                      ),
+                      const Icon(Icons.remove_red_eye_outlined, size: 16, color: Colors.grey),
+                      const SizedBox(width: 6),
+                      "Views: ${item.viewsCount}".text.gray500.size(12).make(),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {},
-                          child: Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFE8F0),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.call, color: Color(0xFFD81B60), size: 18),
-                                const SizedBox(width: 8),
-                                "Call".text.color(const Color(0xFFD81B60)).semiBold.make(),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
                       Expanded(
                         child: InkWell(
                           onTap: () {},
@@ -607,7 +559,7 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
                               children: [
                                 const Icon(Icons.chat_bubble, color: Color(0xFF1E88E5), size: 18),
                                 const SizedBox(width: 8),
-                                "Chat".text.color(const Color(0xFF1E88E5)).semiBold.make(),
+                                "Chat Now".text.color(const Color(0xFF1E88E5)).semiBold.make(),
                               ],
                             ),
                           ),
@@ -621,56 +573,6 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  List<Map<String, dynamic>> _getMockProperties() {
-    return [
-      {
-        'id': 101,
-        'title': 'Premium 4BHK Apartment for Rent',
-        'price': '11,000',
-        'type': 'Apartment',
-        'bedrooms': '4 Bedrooms',
-        'kitchen': '1 Kitchen',
-        'baths': '3 Baths',
-        'furnishing': 'Un-Furnished',
-        'location': 'Kundeshwari Road, Kashipur, Udham Singh Nagar, Uttam...',
-        'image': 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'id': 102,
-        'title': 'Luxury Penthouse with City View',
-        'price': '45,000',
-        'type': 'Penthouse',
-        'bedrooms': '5 Bedrooms',
-        'kitchen': '2 Kitchen',
-        'baths': '4 Baths',
-        'furnishing': 'Full-Furnished',
-        'location': 'Civil Lines, Delhi, India',
-        'image': 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
-      },
-      {
-        'id': 103,
-        'title': '3 BHK Villa with Private Garden',
-        'price': '35,000',
-        'type': 'Villa',
-        'bedrooms': '3 Bedrooms',
-        'kitchen': '1 Kitchen',
-        'baths': '3 Baths',
-        'furnishing': 'Semi-Furnished',
-        'location': 'Banjara Hills, Hyderabad, Telangana',
-        'image': 'https://images.unsplash.com/photo-1512918728675-ed7a9ecddfe0?auto=format&fit=crop&w=800&q=80',
-      },
-    ];
-  }
-
-  Widget _buildDivider() {
-    return Container(
-      height: 10,
-      width: 1,
-      color: Colors.grey.shade300,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
 }

@@ -4,12 +4,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class ServicesDetailScreen extends StatefulWidget {
-  final int serviceId;
+  final int productId;
   final String? title;
 
   const ServicesDetailScreen({
     super.key,
-    required this.serviceId,
+    required this.productId,
     this.title,
   });
 

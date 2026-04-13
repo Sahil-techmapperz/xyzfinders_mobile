@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../core/constants/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'beauty_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 
 class BeautyListScreen extends StatefulWidget {
-  const BeautyListScreen({super.key});
+  final int? categoryId;
+  const BeautyListScreen({super.key, this.categoryId});
 
   @override
   State<BeautyListScreen> createState() => _BeautyListScreenState();
@@ -16,6 +21,40 @@ class BeautyListScreen extends StatefulWidget {
 class _BeautyListScreenState extends State<BeautyListScreen> {
   bool _isVerifiedOnly = false;
   int _currentNavIndex = 0;
+  
+  final ProductService _productService = ProductService();
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,13 +72,19 @@ class _BeautyListScreenState extends State<BeautyListScreen> {
             _buildFilterBar(),
             _buildResultsSummary(),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                itemCount: _getMockBeauty().length,
-                itemBuilder: (context, index) {
-                  return _buildProductCard(context, _getMockBeauty()[index]);
-                },
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No beauty products found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          return _buildProductCard(context, _products[index]);
+                        },
+                      ),
             ),
           ],
         ),
@@ -103,7 +148,7 @@ class _BeautyListScreenState extends State<BeautyListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          "Showing Results - 6,842".text.italic.gray600.size(12).make(),
+          "Showing Results - ${_products.length}".text.italic.gray600.size(12).make(),
           Row(
             children: [
               "Verified Only".text.semiBold.size(12).make(),
@@ -125,7 +170,9 @@ class _BeautyListScreenState extends State<BeautyListScreen> {
     );
   }
 
-  Widget _buildProductCard(BuildContext context, Map<String, dynamic> item) {
+  Widget _buildProductCard(BuildContext context, ProductModel item) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -147,37 +194,46 @@ class _BeautyListScreenState extends State<BeautyListScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.network(
-                  item['image'],
-                  width: double.infinity,
-                  height: 220,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 220,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 50).centered(),
+                child: item.firstImageUrl != null
+                  ? CachedNetworkImage(
+                        imageUrl: item.resolveImageUrl(baseUrl) ?? '',
+                      width: double.infinity,
+                      height: 220,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Container(
+                        height: 220,
+                        color: Colors.grey[200],
+                        width: double.infinity,
+                        child: const Icon(Icons.spa, color: Colors.grey, size: 50).centered(),
+                      ),
+                    )
+                  : Container(
+                      height: 220,
+                      color: Colors.grey[200],
+                      width: double.infinity,
+                      child: const Icon(Icons.spa, color: Colors.grey, size: 50).centered(),
+                    ),
+              ),
+              if (item.isFeatured)
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 10),
+                        const SizedBox(width: 4),
+                        "FEATURED".text.white.bold.size(8).make(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "VERIFIED SELLER".text.white.bold.size(8).make(),
-                    ],
-                  ),
-                ),
-              ),
               Positioned(
                 top: 10,
                 right: 10,
@@ -197,43 +253,22 @@ class _BeautyListScreenState extends State<BeautyListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                "₹ ${item['price']}".text.xl2.bold.pink600.make(),
+                "₹ ${item.price}".text.xl2.bold.pink600.make(),
                 const SizedBox(height: 12),
-                "Beauty  •  ${item['brand']}".text.gray600.medium.size(13).make(),
+                "Category ID: ${item.categoryId}  •  ${item.condition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 4),
-                (item['title'] as String).text.semiBold.xl.black.make(),
+                item.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     const Icon(Icons.star, color: Colors.amber, size: 16),
                     const SizedBox(width: 4),
-                    "${item['rating']} Rating".text.bold.size(12).make(),
+                    "Views: ${item.viewsCount}".text.bold.size(12).make(),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {},
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFE8F0),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.call, color: Color(0xFFD81B60), size: 18),
-                              const SizedBox(width: 8),
-                              "Call".text.color(const Color(0xFFD81B60)).semiBold.make(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: InkWell(
                         onTap: () {},
@@ -264,34 +299,12 @@ class _BeautyListScreenState extends State<BeautyListScreen> {
     ).onTap(() {
        Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const BeautyDetailScreen()),
+          MaterialPageRoute(builder: (context) => BeautyDetailScreen(
+            productId: item.id,
+            title: item.title,
+          )),
         );
     });
   }
 
-  List<Map<String, dynamic>> _getMockBeauty() {
-    return [
-      {
-        'title': 'Premium Hydrating Face Serum',
-        'brand': 'The Ordinary',
-        'price': '890',
-        'image': 'https://images.unsplash.com/photo-1620916566398-39f114352c42?auto=format&fit=crop&w=800&q=80',
-        'rating': '4.8',
-      },
-      {
-        'title': 'Matte Liquid Lipstick Set',
-        'brand': 'Rare Beauty',
-        'price': '2,450',
-        'image': 'https://images.unsplash.com/photo-1586776977607-310e9c725c37?auto=format&fit=crop&w=800&q=80',
-        'rating': '4.9',
-      },
-      {
-         'title': 'Luxury Perfume - Night Bloom',
-         'brand': 'Chanel',
-         'price': '12,500',
-         'image': 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
-         'rating': '4.7',
-      }
-    ];
-  }
 }

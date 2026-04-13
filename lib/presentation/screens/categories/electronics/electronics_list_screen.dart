@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../core/constants/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'electronics_detail_screen.dart';
+
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 
 class ElectronicsListScreen extends StatefulWidget {
-  const ElectronicsListScreen({super.key});
+  final int? categoryId;
+  const ElectronicsListScreen({super.key, this.categoryId});
 
   @override
   State<ElectronicsListScreen> createState() => _ElectronicsListScreenState();
@@ -16,6 +22,40 @@ class ElectronicsListScreen extends StatefulWidget {
 class _ElectronicsListScreenState extends State<ElectronicsListScreen> {
   bool _isVerifiedOnly = false;
   int _currentNavIndex = 0;
+
+  final ProductService _productService = ProductService();
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,13 +73,19 @@ class _ElectronicsListScreenState extends State<ElectronicsListScreen> {
             _buildFilterBar(),
             _buildResultsSummary(),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                itemCount: _getMockElectronics().length,
-                itemBuilder: (context, index) {
-                  return _buildProductCard(context, _getMockElectronics()[index]);
-                },
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No electronics found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          return _buildProductCard(context, _products[index]);
+                        },
+                      ),
             ),
           ],
         ),
@@ -103,7 +149,7 @@ class _ElectronicsListScreenState extends State<ElectronicsListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          "Showing Results - 8,142".text.italic.gray600.size(12).make(),
+          "Showing Results - ${_products.length}".text.italic.gray600.size(12).make(),
           Row(
             children: [
               "Verified Only".text.semiBold.size(12).make(),
@@ -125,7 +171,9 @@ class _ElectronicsListScreenState extends State<ElectronicsListScreen> {
     );
   }
 
-  Widget _buildProductCard(BuildContext context, Map<String, dynamic> item) {
+  Widget _buildProductCard(BuildContext context, ProductModel item) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -147,41 +195,46 @@ class _ElectronicsListScreenState extends State<ElectronicsListScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Container(
-                  color: Colors.grey[50],
-                  width: double.infinity,
-                  height: 220,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Image.network(
-                        item['image'],
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
+                child: item.firstImageUrl != null
+                  ? CachedNetworkImage(
+                        imageUrl: item.resolveImageUrl(baseUrl) ?? '',
+                      width: double.infinity,
+                      height: 220,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Container(
+                        height: 220,
+                        color: Colors.grey[200],
+                        width: double.infinity,
+                        child: const Icon(Icons.laptop, color: Colors.grey, size: 50).centered(),
                       ),
+                    )
+                  : Container(
+                      height: 220,
+                      color: Colors.grey[200],
+                      width: double.infinity,
+                      child: const Icon(Icons.laptop, color: Colors.grey, size: 50).centered(),
+                    ),
+              ),
+              if (item.isFeatured)
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 10),
+                        const SizedBox(width: 4),
+                        "FEATURED".text.white.bold.size(8).make(),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "VERIFIED SELLER".text.white.bold.size(8).make(),
-                    ],
-                  ),
-                ),
-              ),
               Positioned(
                 top: 10,
                 right: 10,
@@ -201,43 +254,22 @@ class _ElectronicsListScreenState extends State<ElectronicsListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                "₹ ${item['price']}".text.xl2.bold.blue700.make(),
+                "₹ ${item.price}".text.xl2.bold.blue700.make(),
                 const SizedBox(height: 12),
-                "Electronics  •  ${item['brand']}".text.gray600.medium.size(13).make(),
+                "Category ID: ${item.categoryId}  •  ${item.condition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 4),
-                (item['title'] as String).text.semiBold.xl.black.make(),
+                item.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 8),
                 Row(
-                   children: [
-                    const Icon(Icons.verified_user_outlined, size: 14, color: Colors.green),
+                  children: [
+                    const Icon(Icons.remove_red_eye_outlined, size: 14, color: Colors.blue),
                     const SizedBox(width: 4),
-                    (item['warranty'] as String).text.green600.semiBold.size(11).make(),
+                    "Views: ${item.viewsCount}".text.blue600.semiBold.size(11).make(),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {},
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFE8F0),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.call, color: Color(0xFFD81B60), size: 18),
-                              const SizedBox(width: 8),
-                              "Call".text.color(const Color(0xFFD81B60)).semiBold.make(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: InkWell(
                         onTap: () {},
@@ -268,34 +300,11 @@ class _ElectronicsListScreenState extends State<ElectronicsListScreen> {
     ).onTap(() {
        Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ElectronicsDetailScreen()),
+          MaterialPageRoute(builder: (context) => ElectronicsDetailScreen(
+            productId: item.id,
+            title: item.title,
+          )),
         );
     });
-  }
-
-  List<Map<String, dynamic>> _getMockElectronics() {
-    return [
-      {
-        'title': 'MacBook Pro 14" M3 Chip',
-        'brand': 'Apple',
-        'price': '1,69,900',
-        'image': 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
-        'warranty': '1 Year Brand Warranty',
-      },
-      {
-        'title': 'Sony WH-1000XM5 ANC',
-        'brand': 'Sony',
-        'price': '29,990',
-        'image': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
-        'warranty': '1 Year Sony Warranty',
-      },
-      {
-        'title': 'Samsung Odyssey G9 49"',
-        'brand': 'Samsung',
-        'price': '1,45,000',
-        'image': 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80',
-        'warranty': '3 Years Samsung Warranty',
-      },
-    ];
   }
 }

@@ -1,8 +1,8 @@
 class ApiConstants {
   // Base URL - Update this when deploying
-  // static const String baseUrl = 'http://10.0.2.2:3000/api'; // Android emulator
-  static const String baseUrl = 'http://192.168.1.7:3000/api'; // Android emulator
-  static const String socketUrl = 'http://192.168.1.7:3001'; // WebSocket server
+  static const String baseUrl = 'http://10.0.2.2:3000/api'; // Android emulator
+  // static const String baseUrl = 'http://192.168.1.7:3000/api'; // Physical device
+  static const String socketUrl = 'http://10.0.2.2:3001'; // WebSocket server
   // For iOS simulator use: http://localhost:3000/api
   // For physical device use your computer's IP: http://192.168.x.x:3000/api
   

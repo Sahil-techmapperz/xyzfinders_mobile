@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../core/constants/api_constants.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'automobile_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 
 class AutomobileListScreen extends StatefulWidget {
-  const AutomobileListScreen({super.key});
+  final int? categoryId;
+  const AutomobileListScreen({super.key, this.categoryId});
 
   @override
   State<AutomobileListScreen> createState() => _AutomobileListScreenState();
@@ -16,6 +21,40 @@ class AutomobileListScreen extends StatefulWidget {
 class _AutomobileListScreenState extends State<AutomobileListScreen> {
   bool _isVerifiedOnly = false;
   int _currentNavIndex = 0;
+  
+  final ProductService _productService = ProductService();
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,13 +72,19 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
             _buildFilterBar(),
             _buildResultsSummary(),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100), // Extra padding for bottom nav
-                itemCount: _getMockCars().length,
-                itemBuilder: (context, index) {
-                  return _buildProductCard(context, _getMockCars()[index]);
-                },
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No automobiles found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          return _buildProductCard(context, _products[index]);
+                        },
+                      ),
             ),
           ],
         ),
@@ -103,7 +148,7 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          "Showing Results - 14,256".text.italic.gray600.size(12).make(),
+          "Showing Results - ${_products.length}".text.italic.gray600.size(12).make(),
           Row(
             children: [
               "Verified Only".text.semiBold.size(12).make(),
@@ -125,7 +170,9 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
     );
   }
 
-  Widget _buildProductCard(BuildContext context, Map<String, dynamic> car) {
+  Widget _buildProductCard(BuildContext context, ProductModel car) {
+    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -148,38 +195,47 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.network(
-                  car['image'],
-                  width: double.infinity,
-                  height: 220,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 220,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 50).centered(),
-                  ),
-                ),
+                child: car.firstImageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: car.resolveImageUrl(baseUrl) ?? '',
+                      width: double.infinity,
+                      height: 220,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Container(
+                        height: 220,
+                        color: Colors.grey[200],
+                        width: double.infinity,
+                        child: const Icon(Icons.directions_car, color: Colors.grey, size: 50).centered(),
+                      ),
+                    )
+                  : Container(
+                      height: 220,
+                      color: Colors.grey[200],
+                      width: double.infinity,
+                      child: const Icon(Icons.directions_car, color: Colors.grey, size: 50).centered(),
+                    ),
               ),
               // Verified Tag
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "VERIFIED SELLER".text.white.bold.size(8).make(),
-                    ],
+              if (car.isFeatured)
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 10),
+                        const SizedBox(width: 4),
+                        "FEATURED".text.white.bold.size(8).make(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
               // Favorite Icon
               Positioned(
                 top: 10,
@@ -207,29 +263,33 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
                     children: [
                       const Icon(Icons.image_outlined, color: Colors.white, size: 10),
                       const SizedBox(width: 4),
-                      "1/10".text.white.size(9).make(),
+                      "${car.images?.length ?? 0} Photos".text.white.size(9).make(),
                     ],
                   ),
                 ),
               ),
               // DOTS indicator
-              Positioned(
-                bottom: 15,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(4, (i) => Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    height: 6,
-                    width: 6,
-                    decoration: BoxDecoration(
-                      color: i == 0 ? Colors.white : Colors.white.withOpacity(0.5),
-                      shape: BoxShape.circle,
+              if ((car.images?.length ?? 0) > 1)
+                Positioned(
+                  bottom: 15,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      (car.images!.length > 4 ? 4 : car.images!.length), 
+                      (i) => Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        height: 6,
+                        width: 6,
+                        decoration: BoxDecoration(
+                          color: i == 0 ? Colors.white : Colors.white.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                      )
                     ),
-                  )),
+                  ),
                 ),
-              ),
             ],
           ),
           
@@ -241,22 +301,21 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
               children: [
                 Row(
                   children: [
-                    "₹ ${car['price']}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
-                    "/Monthly".text.gray700.semiBold.size(14).make(),
+                    "₹ ${car.price}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
                   ],
                 ),
                 const SizedBox(height: 12),
-                "Car  •  ${car['brand'] ?? 'Volvo'}  •  ${car['model'] ?? 'XL330'}".text.gray600.medium.size(13).make(),
+                "Category ID: ${car.categoryId}  •  ${car.condition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 4),
-                (car['title'] as String).text.semiBold.xl.black.make(),
+                car.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: Row(
                         children: [
-                          "Year: ".text.gray500.size(13).make(),
-                          "${car['year']}".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
+                          "Status: ".text.gray500.size(13).make(),
+                          car.status.text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
                         ],
                       ),
                     ),
@@ -264,8 +323,8 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
                     Expanded(
                       child: Row(
                         children: [
-                          "Mileage: ".text.gray500.size(13).make(),
-                          "${car['mileage']}".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
+                          "Views: ".text.gray500.size(13).make(),
+                          "${car.viewsCount}".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
                         ],
                       ),
                     ),
@@ -278,7 +337,7 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
                     const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: (car['location'] as String).text.gray500.size(12).maxLines(2).ellipsis.make(),
+                      child: (car.location?['name'] ?? 'Unknown Location').toString().text.gray500.size(12).maxLines(2).ellipsis.make(),
                     ),
                   ],
                 ),
@@ -287,27 +346,6 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
                 // Action Buttons
                 Row(
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {},
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFE8F0),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.call, color: Color(0xFFD81B60), size: 18),
-                              const SizedBox(width: 8),
-                              "Call".text.color(const Color(0xFFD81B60)).semiBold.make(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: InkWell(
                         onTap: () {},
@@ -338,53 +376,11 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
     ).onTap(() {
        Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const AutomobileDetailScreen()),
+          MaterialPageRoute(builder: (context) => AutomobileDetailScreen(
+            productId: car.id,
+            title: car.title,
+          )),
         );
     });
-  }
-
-  List<Map<String, dynamic>> _getMockCars() {
-    return [
-      {
-        'title': 'Volvo XC90 T6 Inscription Highline',
-        'brand': 'Volvo',
-        'model': 'XL330',
-        'price': '11,000',
-        'location': 'Kundeshwari Road, Kashipur, Udham Singh Nagar, Utta...',
-        'image': 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80',
-        'mileage': '54,000 kms',
-        'year': '2016',
-      },
-      {
-        'title': 'BMW M5 Competition 2023',
-        'brand': 'BMW',
-        'model': 'M5',
-        'price': '45,000',
-        'location': 'Dwarka, New Delhi, India',
-        'image': 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
-        'mileage': '8,500 kms',
-        'year': '2023',
-      },
-      {
-        'title': 'Audi RS E-Tron GT 2024',
-        'brand': 'Audi',
-        'model': 'RS',
-        'price': '65,000',
-        'location': 'Worli, Mumbai, Maharashtra',
-        'image': 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
-        'mileage': '1,200 kms',
-        'year': '2024',
-      },
-      {
-        'title': 'Mercedes-Benz G-Wagon G63',
-        'brand': 'Mercedes',
-        'model': 'G-Class',
-        'price': '2,55,00,000',
-        'location': 'Banjara Hills, Hyderabad',
-        'image': 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80',
-        'mileage': '6,200 kms',
-        'year': '2022',
-      },
-    ];
   }
 }
