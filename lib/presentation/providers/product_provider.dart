@@ -7,6 +7,7 @@ class ProductProvider with ChangeNotifier {
   final ProductService _productService = ProductService();
   
   List<ProductModel> _products = [];
+  ProductModel? _selectedProduct;
   bool _isLoading = false;
   bool _isLoadingMore = false;
   String? _error;
@@ -17,6 +18,7 @@ class ProductProvider with ChangeNotifier {
   bool _hasMore = true;
 
   List<ProductModel> get products => _products;
+  ProductModel? get selectedProduct => _selectedProduct;
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
   String? get error => _error;
@@ -86,58 +88,6 @@ class ProductProvider with ChangeNotifier {
         updatedAt: DateTime.now().toIso8601String(),
         category: {'id': 3, 'name': 'Furniture'},
         location: {'id': 2, 'name': 'Los Angeles'},
-      ),
-      ProductModel(
-        id: 4,
-        userId: 2,
-        categoryId: 1,
-        locationId: 2,
-        title: 'Sony WH-1000XM4 Headphones',
-        description: 'Premium noise-cancelling headphones with excellent sound quality. Barely used, includes original case.',
-        price: 280.00,
-        originalPrice: 349.99,
-        condition: 'like_new',
-        status: 'active',
-        isFeatured: true,
-        viewsCount: 312,
-        createdAt: DateTime.now().toIso8601String(),
-        updatedAt: DateTime.now().toIso8601String(),
-        category: {'id': 1, 'name': 'Electronics'},
-        location: {'id': 2, 'name': 'Los Angeles'},
-      ),
-      ProductModel(
-        id: 5,
-        userId: 3,
-        categoryId: 4,
-        locationId: 3,
-        title: 'Mountain Bike',
-        description: '21-speed mountain bike in great condition. Perfect for trails and city riding.',
-        price: 320.00,
-        condition: 'good',
-        status: 'active',
-        isFeatured: false,
-        viewsCount: 145,
-        createdAt: DateTime.now().toIso8601String(),
-        updatedAt: DateTime.now().toIso8601String(),
-        category: {'id': 4, 'name': 'Sports'},
-        location: {'id': 3, 'name': 'Chicago'},
-      ),
-      ProductModel(
-        id: 6,
-        userId: 3,
-        categoryId: 5,
-        locationId: 3,
-        title: 'Designer Leather Jacket',
-        description: 'Genuine leather jacket from premium brand. Size L, black color, timeless style.',
-        price: 180.00,
-        condition: 'like_new',
-        status: 'sold',
-        isFeatured: false,
-        viewsCount: 423,
-        createdAt: DateTime.now().toIso8601String(),
-        updatedAt: DateTime.now().toIso8601String(),
-        category: {'id': 5, 'name': 'Fashion'},
-        location: {'id': 3, 'name': 'Chicago'},
       ),
     ];
   }
@@ -234,6 +184,29 @@ class ProductProvider with ChangeNotifier {
     } catch (e) {
       _error = 'An unexpected error occurred';
       _isLoadingMore = false;
+      notifyListeners();
+    }
+  }
+
+  // Fetch single product detail
+  Future<void> fetchProductDetail(int id) async {
+    _isLoading = true;
+    _error = null;
+    _selectedProduct = null;
+    notifyListeners();
+
+    try {
+      final product = await _productService.getProductById(id);
+      _selectedProduct = product;
+      _isLoading = false;
+      notifyListeners();
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _error = 'An unexpected error occurred: $e';
+      _isLoading = false;
       notifyListeners();
     }
   }

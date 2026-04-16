@@ -98,17 +98,17 @@ class _EditProductScreenState extends State<EditProductScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCategoryId == null) {
-      ToastUtils.showError(context, 'Please select a category');
+      ToastUtils.showError('Please select a category');
       return;
     }
 
     if (_selectedLocationId == null) {
-      ToastUtils.showError(context, 'Please select a location');
+      ToastUtils.showError('Please select a location');
       return;
     }
 
     if (_selectedCondition == null) {
-      ToastUtils.showError(context, 'Please select a condition');
+      ToastUtils.showError('Please select a condition');
       return;
     }
 
@@ -129,12 +129,12 @@ class _EditProductScreenState extends State<EditProductScreen> {
       );
 
       if (mounted) {
-        ToastUtils.showSuccess(context, 'Product updated successfully!');
+        ToastUtils.showSuccess('Product updated successfully!');
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showError(context, 'Error: $e');
+        ToastUtils.showError('Error: $e');
       }
     } finally {
       if (mounted) {

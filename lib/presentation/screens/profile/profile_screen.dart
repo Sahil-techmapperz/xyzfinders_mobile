@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../auth/login_screen.dart';
-import '../auth/register_screen.dart';
+import '../../widgets/auth/auth_modal.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -99,7 +98,7 @@ class ProfileScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                  onPressed: () => AuthModal.show(context, initialIsLogin: true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.secondaryColor,
                     foregroundColor: Colors.white,
@@ -113,7 +112,7 @@ class ProfileScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                  onPressed: () => AuthModal.show(context, initialIsLogin: false),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.secondaryColor,
                     side: const BorderSide(color: AppTheme.secondaryColor),
@@ -257,7 +256,14 @@ class ProfileScreen extends StatelessWidget {
         // Logout Tile
         ListTile(
           contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-          leading: const Icon(Icons.logout, color: Colors.red),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.logout_rounded, color: Colors.red, size: 20),
+          ),
           title: const Text(
             'Logout',
             style: TextStyle(
@@ -266,16 +272,36 @@ class ProfileScreen extends StatelessWidget {
               fontSize: 16,
             ),
           ),
+          trailing: const Icon(Icons.chevron_right, color: Colors.red, size: 20),
           onTap: () async {
-            final authProvider = Provider.of<AuthProvider>(context, listen: false);
-            await authProvider.logout();
-            
-            // Navigate to login screen
-            if (context.mounted) {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
-              );
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.bold)),
+                content: const Text('Are you sure you want to logout?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Logout'),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirmed == true && context.mounted) {
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              await authProvider.logout();
+              // Consumer<AuthProvider> automatically shows the unauthenticated view
             }
           },
         ),

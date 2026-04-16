@@ -12,6 +12,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  static final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+  
   const MyApp({super.key});
 
   @override
@@ -24,6 +26,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'XYZ Finders',
+        scaffoldMessengerKey: scaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
@@ -49,8 +52,12 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    // For now, always go to HomeScreen as requested
-    await Future.delayed(const Duration(seconds: 2));
+    // Check if user is logged in
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.checkAuthStatus();
+    
+    // Give splash screen some minimum time
+    await Future.delayed(const Duration(seconds: 1));
 
     if (mounted) {
       Navigator.of(context).pushReplacement(

@@ -1,8 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../../providers/product_provider.dart';
+import '../../../../data/models/product_model.dart';
 
 class BeautyDetailScreen extends StatefulWidget {
   final int productId;
@@ -19,79 +26,154 @@ class BeautyDetailScreen extends StatefulWidget {
 }
 
 class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
-  int _selectedSizeIndex = 1;
+  int _activeImageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductProvider>().fetchProductDetail(widget.productId);
+    });
+  }
+
+  Widget _buildProductImage(String? imageVal, {double? height, double? width, BoxFit fit = BoxFit.cover}) {
+    if (imageVal == null || imageVal.isEmpty) {
+      return Container(
+        height: height,
+        width: width,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.image, color: Colors.grey),
+      );
+    }
+
+    if (imageVal.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: imageVal,
+        height: height,
+        width: width,
+        fit: fit,
+        placeholder: (context, url) => Container(color: Colors.grey.shade100),
+        errorWidget: (context, url, error) => const Icon(Icons.error),
+      );
+    }
+
+    // Assume base64
+    try {
+      return Image.memory(
+        base64Decode(imageVal),
+        height: height,
+        width: width,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+      );
+    } catch (e) {
+      return const Icon(Icons.error);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              _buildImageHeader(),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildPriceSection(),
-                      const SizedBox(height: 12),
-                      "Advanced Night Repair Synchronized Multi-Recovery Complex".text.xl.bold.make(),
-                      const SizedBox(height: 16),
-                      Row(
+    return Consumer<ProductProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading && provider.selectedProduct == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final product = provider.selectedProduct;
+        if (product == null) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.title ?? "Detail")),
+            body: Center(child: (provider.error ?? "Product not found").text.make()),
+          );
+        }
+
+        // Parse attributes
+        final attrs = product.productAttributes ?? {};
+        final specs = attrs['specs'] as Map<String, dynamic>? ?? {};
+        
+        final List<Map<String, String>> specsList = [];
+        specs.forEach((key, value) {
+          specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+        });
+
+        if (specsList.isEmpty) {
+          specsList.add({"label": "Category", "value": product.categoryName ?? "Beauty"});
+          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              CustomScrollView(
+                slivers: [
+                  _buildImageHeader(product),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          "Kundeshwari Rd, Kundeshwari, Kashipur, Uttarakhand..".text.gray500.size(12).ellipsis.make().expand(),
+                          _buildPriceSection(product),
+                          const SizedBox(height: 12),
+                          product.title.text.xl.bold.make(),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              "${product.locationName ?? product.cityName ?? 'N/A'}, ${product.stateName ?? ''}".text.gray500.size(12).ellipsis.make().expand(),
+                            ],
+                          ),
+                          const Divider(height: 32),
+                          (attrs['highlights']?.toString() ?? "Recommended | High Quality | Trusted Product").text.bold.size(13).make(),
+                          const SizedBox(height: 20),
+                          "Specification".text.bold.size(15).make(),
+                          const SizedBox(height: 16),
+                          _buildSpecsTable(specsList),
+                          const Divider(height: 40),
+                          "Description".text.bold.size(15).make(),
+                          const SizedBox(height: 8),
+                          product.description.text.gray600.size(13).lineHeight(1.5).make(),
+                          const SizedBox(height: 16),
+                          "Posted on : ${product.createdAt.split('T')[0]}".text.gray500.size(13).make(),
+                          const Divider(height: 48),
+                          "Amenities".text.bold.size(15).make(),
+                          const SizedBox(height: 16),
+                          _buildAmenities(attrs['amenities']),
+                          const SizedBox(height: 32),
+                          _buildMapView(product),
+                          const SizedBox(height: 32),
+                          _buildSellerCard(product),
+                          const SizedBox(height: 100),
                         ],
                       ),
-                      const Divider(height: 32),
-                      "Recommended | High Quality | Trusted Brand".text.bold.size(13).make(),
-                      const SizedBox(height: 20),
-                      "Specification".text.bold.size(15).make(),
-                      const SizedBox(height: 16),
-                      _buildSpecsTable(),
-                      const SizedBox(height: 12),
-                      Center(
-                        child: TextButton(
-                          onPressed: () {},
-                          child: "See More Details".text.orange500.semiBold.make(),
-                        ),
-                      ),
-                      const Divider(height: 40),
-                      "Description".text.bold.size(15).make(),
-                      const SizedBox(height: 8),
-                      "The #1 prestige serum in the world. This deep- and fast-penetrating face serum reduces the look of multiple signs of aging caused by environmental assaults."
-                          .text.gray600.size(13).lineHeight(1.5).maxLines(3).ellipsis.make(),
-                      const SizedBox(height: 12),
-                      "Read More".text.orange500.bold.make(),
-                      const SizedBox(height: 16),
-                      "Posted on : 13-Jan-2026".text.gray500.size(13).make(),
-                      const Divider(height: 48),
-                      "Amenities".text.bold.size(15).make(),
-                      const SizedBox(height: 16),
-                      _buildAmenities(),
-                      const SizedBox(height: 32),
-                      _buildMapView(),
-                      const SizedBox(height: 32),
-                      _buildSellerCard(),
-                      const SizedBox(height: 100),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
+              _buildBackButton(),
             ],
           ),
-          _buildBackButton(),
-        ],
-      ),
-      bottomNavigationBar: _buildStickyBottomBar(),
+          bottomNavigationBar: _buildStickyBottomBar(product),
+        );
+      },
     );
   }
 
-  Widget _buildImageHeader() {
+  Widget _buildImageHeader(ProductModel product) {
+    final images = product.allImageUrls;
+    if (images.isEmpty) {
+      return SliverAppBar(
+        expandedHeight: 350,
+        flexibleSpace: FlexibleSpaceBar(
+          background: Container(color: Colors.grey.shade200, child: const Icon(Icons.image, size: 50)),
+        ),
+      );
+    }
+
     return SliverAppBar(
       expandedHeight: 350,
       automaticallyImplyLeading: false,
@@ -100,9 +182,12 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
-              fit: BoxFit.cover,
+            PageView.builder(
+              itemCount: images.length,
+              onPageChanged: (index) => setState(() => _activeImageIndex = index),
+              itemBuilder: (context, index) {
+                return _buildProductImage(images[index]);
+              },
             ),
             Positioned(
               bottom: 12,
@@ -117,31 +202,32 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
                   children: [
                     const Icon(Icons.image_outlined, color: Colors.white, size: 10),
                     const SizedBox(width: 4),
-                    "1/10".text.white.size(8).bold.make(),
+                    "${_activeImageIndex + 1}/${images.length}".text.white.size(8).bold.make(),
                   ],
                 ),
               ),
             ),
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  4,
-                  (i) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: i == 0 ? Colors.white : Colors.white.withOpacity(0.5),
-                      shape: BoxShape.circle,
+            if (images.length > 1)
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    images.length,
+                    (i) => Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: i == _activeImageIndex ? Colors.white : Colors.white.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -172,26 +258,18 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
     );
   }
 
-  Widget _buildPriceSection() {
+  Widget _buildPriceSection(ProductModel product) {
     return Row(
       children: [
-        "₹ 8,500".text.xl3.bold.red600.make(),
+        "₹ ${NumberFormat('#,##,###').format(product.price)}".text.xl3.bold.red600.make(),
         "/-".text.xl2.bold.red600.make(),
       ],
     );
   }
 
-  Widget _buildSpecsTable() {
-    final specs = [
-      {"label": "Volume", "value": "50ml"},
-      {"label": "Skin Type", "value": "All Skin Types"},
-      {"label": "Concern", "value": "Anti-Aging"},
-      {"label": "Form", "value": "Serum"},
-      {"label": "Key Ingredient", "value": "Hyaluronic Acid"},
-    ];
-
+  Widget _buildSpecsTable(List<Map<String, String>> specsList) {
     return Column(
-      children: specs.map((spec) => Padding(
+      children: specsList.map((spec) => Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -204,17 +282,21 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
     );
   }
 
-  Widget _buildAmenities() {
-    final List<Map<String, dynamic>> allAmenities = [
-      {"icon": Icons.eco_outlined, "label": "Natural"},
-      {"icon": Icons.health_and_safety_outlined, "label": "Clinical"},
-      {"icon": Icons.verified_outlined, "label": "Original"},
-      {"icon": Icons.opacity, "label": "Hydrating"},
-      {"icon": Icons.face, "label": "Soothing"},
-      {"icon": Icons.wb_sunny_outlined, "label": "UV Protection"},
-      {"icon": Icons.science_outlined, "label": "Fragrance Free"},
-      {"icon": Icons.clean_hands_outlined, "label": "Safe Spray"},
-    ];
+  Widget _buildAmenities(dynamic amenitiesData) {
+    final List<Map<String, dynamic>> allAmenities = [];
+    if (amenitiesData is List) {
+      for (var item in amenitiesData) {
+         allAmenities.add({"icon": Icons.check_circle_outline, "label": item.toString()});
+      }
+    } else if (amenitiesData is String) {
+      for (var item in amenitiesData.split(',')) {
+         allAmenities.add({"icon": Icons.check_circle_outline, "label": item.trim()});
+      }
+    }
+
+    if (allAmenities.isEmpty) {
+      return "No specific amenities listed.".text.gray500.italic.size(13).make();
+    }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -318,11 +400,11 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
     );
   }
 
-  Widget _buildMapView() {
+  Widget _buildMapView(ProductModel product) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        "Merchant Location".text.bold.size(15).make(),
+        "Product Location".text.bold.size(15).make(),
         const SizedBox(height: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -352,37 +434,43 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        "Main Market, Kashipur, Uttarakhand 244713, India".text.gray600.size(12).make(),
+        "${product.locationName ?? product.cityName ?? 'Location N/A'}".text.gray600.size(12).make(),
       ],
     );
   }
 
-  Widget _buildSellerCard() {
+  Widget _buildSellerCard(ProductModel product) {
     return Column(
       children: [
-        const Center(
+        Center(
           child: CircleAvatar(
             radius: 35,
-            backgroundImage: NetworkImage("https://randomuser.me/api/portraits/women/44.jpg"),
+            backgroundImage: product.sellerAvatar != null 
+                ? (product.sellerAvatar!.startsWith('http') 
+                    ? NetworkImage(product.sellerAvatar!) 
+                    : MemoryImage(base64Decode(product.sellerAvatar!)) as ImageProvider)
+                : const NetworkImage("https://randomuser.me/api/portraits/women/44.jpg"),
           ),
         ),
         const SizedBox(height: 12),
-        "Priya Beauty Hub".text.bold.size(16).center.make(),
-        "Authorized Dealer".text.gray500.size(14).make(),
+        (product.sellerName ?? "Professional").text.bold.size(16).center.make(),
+        "Verified Seller".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            "Member Since from March 2024".text.gray600.size(12).make(),
-            const SizedBox(width: 4),
-            const Icon(Icons.verified, color: Colors.blue, size: 16),
+            "Member Since ${product.sellerCreatedAt ?? 'Recently'}".text.gray600.size(12).make(),
+            if (product.sellerIsVerified) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.verified, color: Colors.blue, size: 16),
+            ]
           ],
         ),
       ],
     );
   }
 
-  Widget _buildStickyBottomBar() {
+  Widget _buildStickyBottomBar(ProductModel product) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       decoration: BoxDecoration(
@@ -397,27 +485,6 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: InkWell(
-              onTap: () {},
-              child: Container(
-                height: 55,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE8F0),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.call, color: Color(0xFFD81B60), size: 24),
-                    const SizedBox(width: 10),
-                    "Call".text.color(const Color(0xFFD81B60)).xl.bold.make(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 15),
           Expanded(
             child: InkWell(
               onTap: () {},
@@ -441,5 +508,12 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
         ],
       ),
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalizeFirstLetter() {
+    if (isEmpty) return this;
+    return this[0].toUpperCase() + substring(1);
   }
 }

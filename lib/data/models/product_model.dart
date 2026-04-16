@@ -14,6 +14,21 @@ class ProductModel {
   final String createdAt;
   final String updatedAt;
   
+  // Dynamic Attributes
+  final Map<String, dynamic>? productAttributes;
+  
+  // Flat fields from API response for easier access
+  final String? sellerName;
+  final String? sellerAvatar;
+  final String? sellerPhone;
+  final String? sellerCreatedAt;
+  final bool sellerIsVerified;
+  final String? categoryName;
+  final String? cityName;
+  final String? stateName;
+  final String? locationName;
+  final String? postalCode;
+
   // Relationships (can be null if not included)
   final Map<String, dynamic>? user;
   final Map<String, dynamic>? category;
@@ -35,6 +50,17 @@ class ProductModel {
     required this.viewsCount,
     required this.createdAt,
     required this.updatedAt,
+    this.productAttributes,
+    this.sellerName,
+    this.sellerAvatar,
+    this.sellerPhone,
+    this.sellerCreatedAt,
+    this.sellerIsVerified = false,
+    this.categoryName,
+    this.cityName,
+    this.stateName,
+    this.locationName,
+    this.postalCode,
     this.user,
     this.category,
     this.location,
@@ -55,6 +81,14 @@ class ProductModel {
       return double.tryParse(value.toString()) ?? 0.0;
     }
 
+    // Handle product_attributes which might be a JSON string or an object
+    Map<String, dynamic>? attributes;
+    if (json['product_attributes'] != null) {
+      if (json['product_attributes'] is Map) {
+        attributes = Map<String, dynamic>.from(json['product_attributes']);
+      }
+    }
+
     return ProductModel(
       id: parseInt(json['id']),
       userId: parseInt(json['user_id']),
@@ -68,33 +102,27 @@ class ProductModel {
           : null,
       condition: (json['condition'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
-      // Handle both int (0/1) and bool
       isFeatured: json['is_featured'] == 1 || json['is_featured'] == true,
       viewsCount: parseInt(json['views']),
       createdAt: (json['created_at'] ?? '').toString(),
       updatedAt: (json['updated_at'] ?? '').toString(),
-      // Build user object from flat fields if available
-      user: json['seller_name'] != null ? {
-        'name': json['seller_name'],
-        'phone': json['seller_phone'],
-      } : null,
-      // Build category object from flat fields if available
-      category: json['category_name'] != null ? {
-        'id': json['category_id'],
-        'name': json['category_name'],
-      } : null,
-      // Build location object from flat fields if available
-      location: json['city'] != null ? {
-        'id': json['location_id'],
-        'name': json['city'],
-        'city_name': json['city_name'],
-        'state': json['state'],
-      } : null,
+      productAttributes: attributes,
+      sellerName: json['seller_name'],
+      sellerAvatar: json['seller_avatar'],
+      sellerPhone: json['seller_phone'],
+      sellerCreatedAt: json['seller_created_at'],
+      sellerIsVerified: json['seller_is_verified'] == 1 || json['seller_is_verified'] == true,
+      categoryName: json['category_name'],
+      cityName: json['city_name'],
+      stateName: json['state_name'],
+      locationName: json['location_name'],
+      postalCode: json['postal_code'],
+      user: json['user'],
+      category: json['category'],
+      location: json['location'],
       images: json['images'] != null 
           ? List<Map<String, dynamic>>.from(json['images'] as List) 
-          : (json['primary_image_id'] != null 
-              ? [{'id': json['primary_image_id']}] 
-              : null),
+          : null,
     );
   }
 
@@ -114,6 +142,17 @@ class ProductModel {
       'views': viewsCount,
       'created_at': createdAt,
       'updated_at': updatedAt,
+      'product_attributes': productAttributes,
+      'seller_name': sellerName,
+      'seller_avatar': sellerAvatar,
+      'seller_phone': sellerPhone,
+      'seller_created_at': sellerCreatedAt,
+      'seller_is_verified': sellerIsVerified,
+      'category_name': categoryName,
+      'city_name': cityName,
+      'state_name': stateName,
+      'location_name': locationName,
+      'postal_code': postalCode,
       'user': user,
       'category': category,
       'location': location,
@@ -127,19 +166,41 @@ class ProductModel {
   
   String? get firstImageUrl {
     if (images != null && images!.isNotEmpty) {
-      final imageId = images!.first['id'].toString();
-      if (imageId.startsWith('http')) {
-        return imageId;
-      }
-      return '/api/images/product/$imageId?t=${DateTime.now().millisecondsSinceEpoch}';
+      final imgData = images!.first;
+      final imageVal = imgData['image']?.toString() ?? imgData['id']?.toString();
+      
+      if (imageVal == null) return null;
+      if (imageVal.startsWith('http')) return imageVal;
+      return imageVal;
     }
     return null;
   }
 
+  List<String> get allImageUrls {
+    if (images == null || images!.isEmpty) return [];
+    return images!.map((img) {
+      final val = img['image']?.toString() ?? img['id']?.toString() ?? '';
+      return val;
+    }).where((s) => s.isNotEmpty).toList();
+  }
+
   String? resolveImageUrl(String baseUrl) {
-    final url = firstImageUrl;
-    if (url == null) return null;
-    if (url.startsWith('http')) return url;
-    return '$baseUrl$url';
+    if (images != null && images!.isNotEmpty) {
+      final imgData = images!.first;
+      final imageVal = imgData['image']?.toString() ?? imgData['id']?.toString();
+      
+      if (imageVal == null) return null;
+      if (imageVal.startsWith('http')) return imageVal;
+      if (imageVal.startsWith('data:image')) return imageVal;
+      
+      // Heuristic for base64
+      if (imageVal.length > 500) return imageVal;
+      
+      final cleanBaseUrl = baseUrl.endsWith('/') 
+          ? baseUrl.substring(0, baseUrl.length - 1) 
+          : baseUrl;
+      return "$cleanBaseUrl/images/product/$imageVal";
+    }
+    return null;
   }
 }

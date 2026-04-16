@@ -202,7 +202,7 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
       {"label": "Weight", "value": "150g"},
       {"label": "Made In", "value": "India"},
     ];
-
+ 
     return Column(
       children: specs.map((spec) => Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -313,27 +313,6 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
       ),
       child: Row(
         children: [
-          Expanded(
-            child: InkWell(
-              onTap: () {},
-              child: Container(
-                height: 55,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE8F0),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.call, color: Color(0xFFD81B60), size: 24),
-                    const SizedBox(width: 10),
-                    "Call Seller".text.color(const Color(0xFFD81B60)).xl.bold.make(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 15),
           Expanded(
             child: InkWell(
               onTap: () {},

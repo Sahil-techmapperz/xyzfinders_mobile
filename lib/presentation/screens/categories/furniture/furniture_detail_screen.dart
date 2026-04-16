@@ -1,8 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../../providers/product_provider.dart';
+import '../../../../data/models/product_model.dart';
 
 class FurnitureDetailScreen extends StatefulWidget {
   final int productId;
@@ -19,77 +26,144 @@ class FurnitureDetailScreen extends StatefulWidget {
 }
 
 class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
+  int _activeImageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductProvider>().fetchProductDetail(widget.productId);
+    });
+  }
+
+  Widget _buildProductImage(String? imageVal, {double? height, double? width, BoxFit fit = BoxFit.cover}) {
+    if (imageVal == null || imageVal.isEmpty) {
+      return Container(
+        height: height,
+        width: width,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.image, color: Colors.grey),
+      );
+    }
+
+    if (imageVal.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: imageVal,
+        height: height,
+        width: width,
+        fit: fit,
+        placeholder: (context, url) => Container(color: Colors.grey.shade100),
+        errorWidget: (context, url, error) => const Icon(Icons.error),
+      );
+    }
+
+    try {
+      return Image.memory(
+        base64Decode(imageVal),
+        height: height,
+        width: width,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+      );
+    } catch (e) {
+      return const Icon(Icons.error);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              _buildImageHeader(),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildPriceSection(),
-                      const SizedBox(height: 12),
-                      "Minimalist Velvet Sofa - 3 Seater".text.xl.bold.make(),
-                      const SizedBox(height: 16),
-                      Row(
+    return Consumer<ProductProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading && provider.selectedProduct == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final product = provider.selectedProduct;
+        if (product == null) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.title ?? "Furniture Detail")),
+            body: Center(child: (provider.error ?? "Furniture not found").text.make()),
+          );
+        }
+
+        final attrs = product.productAttributes ?? {};
+        final specs = attrs['specs'] as Map<String, dynamic>? ?? {};
+        
+        final List<Map<String, String>> specsList = [];
+        specs.forEach((key, value) {
+          specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+        });
+
+        if (specsList.isEmpty) {
+          specsList.add({"label": "Material", "value": specs['material'] ?? "Wood"});
+          specsList.add({"label": "Type", "value": specs['type'] ?? "Standard"});
+          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              CustomScrollView(
+                slivers: [
+                  _buildImageHeader(product),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          "Furniture Row, Decor Plaza, Kashipur, Uttarakhand..".text.gray500.size(12).ellipsis.make().expand(),
+                          _buildPriceSection(product),
+                          const SizedBox(height: 12),
+                          product.title.text.xl.bold.make(),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              "${product.locationName ?? product.cityName ?? 'N/A'}, ${product.stateName ?? ''}".text.gray500.size(12).ellipsis.make().expand(),
+                            ],
+                          ),
+                          const Divider(height: 32),
+                          (attrs['highlights']?.toString() ?? "Elegant Design | Durable Material | Contemporary Style").text.bold.size(13).make(),
+                          const SizedBox(height: 20),
+                          "Specification".text.bold.size(15).make(),
+                          const SizedBox(height: 16),
+                          _buildSpecsTable(specsList),
+                          const Divider(height: 40),
+                          "Description".text.bold.size(15).make(),
+                          const SizedBox(height: 8),
+                          product.description.text.gray600.size(13).lineHeight(1.5).make(),
+                          const SizedBox(height: 16),
+                          "Posted on : ${product.createdAt.split('T')[0]}".text.gray500.size(13).make(),
+                          const Divider(height: 48),
+                          "Features & Options".text.bold.size(15).make(),
+                          const SizedBox(height: 16),
+                          _buildAmenities(attrs['amenities'] ?? attrs['features']),
+                          const SizedBox(height: 32),
+                          _buildMapView(product),
+                          const SizedBox(height: 32),
+                          _buildSellerCard(product),
+                          const SizedBox(height: 100),
                         ],
                       ),
-                      const Divider(height: 32),
-                      "Premium Velvet | Solid Wood Frame | 2 Year Warranty".text.bold.size(13).make(),
-                      const SizedBox(height: 20),
-                      "Specification".text.bold.size(15).make(),
-                      const SizedBox(height: 16),
-                      _buildSpecsTable(),
-                      const SizedBox(height: 12),
-                      Center(
-                        child: TextButton(
-                          onPressed: () {},
-                          child: "See More Details".text.orange500.semiBold.make(),
-                        ),
-                      ),
-                      const Divider(height: 40),
-                      "Description".text.bold.size(15).make(),
-                      const SizedBox(height: 8),
-                      "Upgrade your living space with this minimalist velvet sofa. Crafted with a solid wood frame and high-density foam, it provides both style and comfort."
-                          .text.gray600.size(13).lineHeight(1.5).maxLines(3).ellipsis.make(),
-                      const SizedBox(height: 12),
-                      "Read More".text.orange500.bold.make(),
-                      const SizedBox(height: 16),
-                      "Posted on : 13-Jan-2026".text.gray500.size(13).make(),
-                      const Divider(height: 48),
-                      "Amenities".text.bold.size(15).make(),
-                      const SizedBox(height: 16),
-                      _buildAmenities(),
-                      const SizedBox(height: 32),
-                      _buildMapView(),
-                      const SizedBox(height: 32),
-                      _buildSellerCard(),
-                      const SizedBox(height: 100),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
+              _buildBackButton(),
             ],
           ),
-          _buildBackButton(),
-        ],
-      ),
-      bottomNavigationBar: _buildStickyBottomBar(),
+          bottomNavigationBar: _buildStickyBottomBar(product),
+        );
+      },
     );
   }
 
-  Widget _buildImageHeader() {
+  Widget _buildImageHeader(ProductModel product) {
+    final images = product.allImageUrls;
     return SliverAppBar(
       expandedHeight: 350,
       automaticallyImplyLeading: false,
@@ -98,10 +172,14 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80",
-              fit: BoxFit.cover,
-            ),
+            if (images.isEmpty)
+              Container(color: Colors.grey.shade200, child: const Icon(Icons.image, size: 50))
+            else
+              PageView.builder(
+                itemCount: images.length,
+                onPageChanged: (index) => setState(() => _activeImageIndex = index),
+                itemBuilder: (context, index) => _buildProductImage(images[index]),
+              ),
             Positioned(
               bottom: 12,
               left: 12,
@@ -115,31 +193,32 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
                   children: [
                     const Icon(Icons.image_outlined, color: Colors.white, size: 10),
                     const SizedBox(width: 4),
-                    "1/10".text.white.size(8).bold.make(),
+                    "${_activeImageIndex + 1}/${images.length > 0 ? images.length : 1}".text.white.size(8).bold.make(),
                   ],
                 ),
               ),
             ),
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  4,
-                  (i) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: i == 0 ? Colors.white : Colors.white.withOpacity(0.5),
-                      shape: BoxShape.circle,
+            if (images.length > 1)
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    images.length,
+                    (i) => Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: i == _activeImageIndex ? Colors.white : Colors.white.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -150,40 +229,38 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 10,
       left: 16,
-      child: InkWell(
+      child: GestureDetector(
         onTap: () => Navigator.pop(context),
         child: Container(
           padding: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+              )
+            ],
           ),
-          child: const Icon(Icons.arrow_back, color: Colors.black, size: 20),
+          child: const Icon(Icons.close, color: Colors.black, size: 20),
         ),
       ),
     );
   }
 
-  Widget _buildPriceSection() {
+  Widget _buildPriceSection(ProductModel product) {
     return Row(
       children: [
-        "₹ 45,000".text.xl3.bold.red600.make(),
+        "₹ ${NumberFormat('#,##,###').format(product.price)}".text.xl3.bold.red600.make(),
         "/-".text.xl2.bold.red600.make(),
       ],
     );
   }
 
-  Widget _buildSpecsTable() {
-    final specs = [
-      {"label": "Dimensions", "value": "200 x 90 x 85 cm"},
-      {"label": "Material", "value": "Velvet & Solid Wood"},
-      {"label": "Frame", "value": "Solid Oak"},
-      {"label": "Seating Capacity", "value": "3 Persons"},
-      {"label": "Color", "value": "Forest Green"},
-    ];
-
+  Widget _buildSpecsTable(List<Map<String, String>> specsList) {
     return Column(
-      children: specs.map((spec) => Padding(
+      children: specsList.map((spec) => Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -196,16 +273,23 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
     );
   }
 
-  Widget _buildAmenities() {
-    final List<Map<String, dynamic>> allAmenities = [
-      {"icon": Icons.eco_outlined, "label": "Eco-Friendly"},
-      {"icon": Icons.verified_outlined, "label": "2 Year Warranty"},
-      {"icon": Icons.local_shipping_outlined, "label": "Free Delivery"},
-      {"icon": Icons.chair_outlined, "label": "Ergonomic"},
-      {"icon": Icons.brush_outlined, "label": "Hand Crafted"},
-      {"icon": Icons.home_repair_service_outlined, "label": "Assembly"},
-      {"icon": Icons.event_available_outlined, "label": "Ready Stock"},
-    ];
+  Widget _buildAmenities(dynamic amenitiesData) {
+    final List<Map<String, dynamic>> allAmenities = [];
+    if (amenitiesData is List) {
+      for (var item in amenitiesData) {
+         allAmenities.add({"icon": Icons.check_circle_outline, "label": item.toString()});
+      }
+    } else if (amenitiesData is Map) {
+      amenitiesData.forEach((key, value) {
+        if (value == true || value == 1) {
+          allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
+        }
+      });
+    }
+
+    if (allAmenities.isEmpty) {
+      return "Handcrafted quality materials used.".text.gray500.size(13).make();
+    }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -272,7 +356,7 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                "All Amenities".text.xl.bold.make(),
+                "Furniture Options".text.xl.bold.make(),
                 const CloseButton(),
               ],
             ),
@@ -309,11 +393,11 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
     );
   }
 
-  Widget _buildMapView() {
+  Widget _buildMapView(ProductModel product) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        "Store Location".text.bold.size(15).make(),
+        "Pick-up Location".text.bold.size(15).make(),
         const SizedBox(height: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -343,37 +427,43 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        "Furniture Row, Decor Plaza, Kashipur, Uttarakhand 244713, India".text.gray600.size(12).make(),
+        "${product.locationName ?? product.cityName ?? 'Location N/A'}".text.gray600.size(12).make(),
       ],
     );
   }
 
-  Widget _buildSellerCard() {
+  Widget _buildSellerCard(ProductModel product) {
     return Column(
       children: [
-        const Center(
+        Center(
           child: CircleAvatar(
             radius: 35,
-            backgroundImage: NetworkImage("https://randomuser.me/api/portraits/men/12.jpg"),
+            backgroundImage: product.sellerAvatar != null 
+                ? (product.sellerAvatar!.startsWith('http') 
+                    ? NetworkImage(product.sellerAvatar!) 
+                    : MemoryImage(base64Decode(product.sellerAvatar!)) as ImageProvider)
+                : const NetworkImage("https://randomuser.me/api/portraits/men/32.jpg"),
           ),
         ),
         const SizedBox(height: 12),
-        "Elite Interiors".text.bold.size(16).center.make(),
-        "Premium Furniture Dealer".text.gray500.size(14).make(),
+        (product.sellerName ?? "Merchant").text.bold.size(16).center.make(),
+        "Verified Furniture Dealer".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            "Member Since from February 2024".text.gray600.size(12).make(),
-            const SizedBox(width: 4),
-            const Icon(Icons.verified, color: Colors.blue, size: 16),
+            "Member Since ${product.sellerCreatedAt ?? 'Recently'}".text.gray600.size(12).make(),
+            if (product.sellerIsVerified) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.verified, color: Colors.blue, size: 16),
+            ]
           ],
         ),
       ],
     );
   }
 
-  Widget _buildStickyBottomBar() {
+  Widget _buildStickyBottomBar(ProductModel product) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       decoration: BoxDecoration(
@@ -388,27 +478,6 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: InkWell(
-              onTap: () {},
-              child: Container(
-                height: 55,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE8F0),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.call, color: Color(0xFFD81B60), size: 24),
-                    const SizedBox(width: 10),
-                    "Call".text.color(const Color(0xFFD81B60)).xl.bold.make(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 15),
           Expanded(
             child: InkWell(
               onTap: () {},
@@ -432,5 +501,12 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
         ],
       ),
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalizeFirstLetter() {
+    if (isEmpty) return this;
+    return this[0].toUpperCase() + substring(1);
   }
 }

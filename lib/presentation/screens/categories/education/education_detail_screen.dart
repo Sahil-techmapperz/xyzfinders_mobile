@@ -1,6 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../../providers/product_provider.dart';
+import '../../../../data/models/product_model.dart';
 
 class EducationDetailScreen extends StatefulWidget {
   final int productId;
@@ -17,77 +26,144 @@ class EducationDetailScreen extends StatefulWidget {
 }
 
 class _EducationDetailScreenState extends State<EducationDetailScreen> {
+  int _activeImageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductProvider>().fetchProductDetail(widget.productId);
+    });
+  }
+
+  Widget _buildProductImage(String? imageVal, {double? height, double? width, BoxFit fit = BoxFit.cover}) {
+    if (imageVal == null || imageVal.isEmpty) {
+      return Container(
+        height: height,
+        width: width,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.school, color: Colors.grey),
+      );
+    }
+
+    if (imageVal.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: imageVal,
+        height: height,
+        width: width,
+        fit: fit,
+        placeholder: (context, url) => Container(color: Colors.grey.shade100),
+        errorWidget: (context, url, error) => const Icon(Icons.error),
+      );
+    }
+
+    try {
+      return Image.memory(
+        base64Decode(imageVal),
+        height: height,
+        width: width,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+      );
+    } catch (e) {
+      return const Icon(Icons.error);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              _buildImageHeader(),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildPriceSection(),
-                      const SizedBox(height: 12),
-                      (widget.title ?? "Mathematics Home Tuition (Class 10-12)").text.xl.bold.make(),
-                      const SizedBox(height: 16),
-                      _buildMetaInfoLine(),
-                      const SizedBox(height: 12),
-                      Row(
+    return Consumer<ProductProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading && provider.selectedProduct == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final product = provider.selectedProduct;
+        if (product == null) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.title ?? "Course Detail")),
+            body: Center(child: (provider.error ?? "Service not found").text.make()),
+          );
+        }
+
+        final attrs = product.productAttributes ?? {};
+        final specs = attrs['specs'] as Map<String, dynamic>? ?? {};
+        
+        final List<Map<String, String>> specsList = [];
+        specs.forEach((key, value) {
+          specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+        });
+
+        if (specsList.isEmpty) {
+          specsList.add({"label": "Course Type", "value": specs['type'] ?? "Professional"});
+          specsList.add({"label": "Duration", "value": specs['duration'] ?? "Varies"});
+          specsList.add({"label": "Mode", "value": specs['mode'] ?? "Online/Offline"});
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              CustomScrollView(
+                slivers: [
+                  _buildImageHeader(product),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.person_outline, size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          "By Sumit Sharma (M.Sc. Mathematics)".text.gray600.semiBold.size(13).make(),
+                          _buildPriceSection(product),
+                          const SizedBox(height: 12),
+                          product.title.text.xl.bold.make(),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              "${product.locationName ?? product.cityName ?? 'N/A'}, ${product.stateName ?? ''}".text.gray500.size(12).ellipsis.make().expand(),
+                            ],
+                          ),
+                          const Divider(height: 32),
+                          (attrs['highlights']?.toString() ?? "Expert Instructors | Certified Course | Career Support").text.bold.size(13).make(),
+                          const SizedBox(height: 20),
+                          "Specification".text.bold.size(15).make(),
+                          const SizedBox(height: 16),
+                          _buildSpecsTable(specsList),
+                          const Divider(height: 40),
+                          "Course Description".text.bold.size(15).make(),
+                          const SizedBox(height: 8),
+                          product.description.text.gray600.size(13).lineHeight(1.5).make(),
+                          const SizedBox(height: 16),
+                          "Posted on : ${product.createdAt.split('T')[0]}".text.gray500.size(13).make(),
+                          const Divider(height: 48),
+                          "Course Features".text.bold.size(15).make(),
+                          const SizedBox(height: 16),
+                          _buildAmenities(attrs['amenities'] ?? attrs['features']),
+                          const SizedBox(height: 32),
+                          _buildMapView(product),
+                          const SizedBox(height: 32),
+                          _buildSellerCard(product),
+                          const SizedBox(height: 100),
                         ],
                       ),
-                      const Divider(height: 32),
-                      "CBSE | ICSE | State Board | Competitive Exams".text.bold.size(13).make(),
-                      const SizedBox(height: 20),
-                      "Specification".text.bold.size(15).make(),
-                      const SizedBox(height: 16),
-                      _buildOverviewTable(),
-                      const SizedBox(height: 12),
-                      Center(
-                        child: TextButton(
-                          onPressed: () {},
-                          child: "See More Details".text.orange500.semiBold.make(),
-                        ),
-                      ),
-                      const Divider(height: 32),
-                      "Description".text.bold.size(15).make(),
-                      const SizedBox(height: 12),
-                      "Comprehensive mathematics coaching for students of class 10 to 12. Focus on conceptual clarity, problem-solving techniques, and exam preparation. Personalized attention and regular mock tests included."
-                          .text.gray600.size(13).lineHeight(1.5).maxLines(3).ellipsis.make(),
-                      const SizedBox(height: 8),
-                      "Read More".text.orange500.bold.make(),
-                      const SizedBox(height: 16),
-                      "Posted on : 10-Mar-2026".text.gray500.size(13).make(),
-                      const Divider(height: 48),
-                      "Key Features".text.bold.size(15).make(),
-                      const SizedBox(height: 16),
-                      _buildAmenities(),
-                      const SizedBox(height: 32),
-                      _buildSellerCard(),
-                      const SizedBox(height: 100),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
+              _buildBackButton(),
             ],
           ),
-          _buildBackButton(),
-        ],
-      ),
-      bottomNavigationBar: _buildStickyBottomBar(),
+          bottomNavigationBar: _buildStickyBottomBar(product),
+        );
+      },
     );
   }
 
-  Widget _buildImageHeader() {
+  Widget _buildImageHeader(ProductModel product) {
+    final images = product.allImageUrls;
     return SliverAppBar(
       expandedHeight: 350,
       automaticallyImplyLeading: false,
@@ -96,10 +172,14 @@ class _EducationDetailScreenState extends State<EducationDetailScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              "https://images.unsplash.com/photo-1596495573105-08246bc6ec68?auto=format&fit=crop&w=800&q=80",
-              fit: BoxFit.cover,
-            ),
+            if (images.isEmpty)
+              Container(color: Colors.grey.shade100, child: const Icon(Icons.school, size: 50, color: Colors.grey))
+            else
+              PageView.builder(
+                itemCount: images.length,
+                onPageChanged: (index) => setState(() => _activeImageIndex = index),
+                itemBuilder: (context, index) => _buildProductImage(images[index]),
+              ),
             Positioned(
               bottom: 12,
               left: 12,
@@ -113,31 +193,32 @@ class _EducationDetailScreenState extends State<EducationDetailScreen> {
                   children: [
                     const Icon(Icons.image_outlined, color: Colors.white, size: 10),
                     const SizedBox(width: 4),
-                    "1/10".text.white.size(8).bold.make(),
+                    "${_activeImageIndex + 1}/${images.length > 0 ? images.length : 1}".text.white.size(8).bold.make(),
                   ],
                 ),
               ),
             ),
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  4,
-                  (i) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: i == 0 ? Colors.white : Colors.white.withOpacity(0.5),
-                      shape: BoxShape.circle,
+            if (images.length > 1)
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    images.length,
+                    (i) => Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: i == _activeImageIndex ? Colors.white : Colors.white.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -148,60 +229,38 @@ class _EducationDetailScreenState extends State<EducationDetailScreen> {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 10,
       left: 16,
-      child: InkWell(
+      child: GestureDetector(
         onTap: () => Navigator.pop(context),
         child: Container(
           padding: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+              )
+            ],
           ),
-          child: const Icon(Icons.arrow_back, color: Colors.black, size: 20),
+          child: const Icon(Icons.close, color: Colors.black, size: 20),
         ),
       ),
     );
   }
 
-  Widget _buildPriceSection() {
+  Widget _buildPriceSection(ProductModel product) {
     return Row(
       children: [
-        "₹ 500".text.xl3.bold.color(AppTheme.secondaryColor).make(),
-        "/per hour".text.xl2.bold.color(AppTheme.secondaryColor).make(),
+        "₹ ${NumberFormat('#,##,###').format(product.price)}".text.xl3.bold.red600.make(),
+        "/-".text.xl2.bold.red600.make(),
       ],
     );
   }
 
-  Widget _buildMetaInfoLine() {
-    return Row(
-      children: [
-        _buildMetaItem(Icons.calendar_month_outlined, "Home Tuition"),
-        const SizedBox(width: 24),
-        _buildMetaItem(Icons.star_outline, "8+ Yrs Exp"),
-      ],
-    );
-  }
-
-  Widget _buildMetaItem(IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.grey),
-        const SizedBox(width: 6),
-        label.text.gray700.size(14).bold.make(),
-      ],
-    );
-  }
-
-  Widget _buildOverviewTable() {
-    final specs = [
-      {"label": "Mode", "value": "Offline"},
-      {"label": "Level", "value": "Class 10-12"},
-      {"label": "Subject", "value": "Mathematics"},
-      {"label": "Duration", "value": "1.5 Hours"},
-      {"label": "Batch Size", "value": "Individual/Group"},
-    ];
-
+  Widget _buildSpecsTable(List<Map<String, String>> specsList) {
     return Column(
-      children: specs.map((spec) => Padding(
+      children: specsList.map((spec) => Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -214,56 +273,197 @@ class _EducationDetailScreenState extends State<EducationDetailScreen> {
     );
   }
 
-  Widget _buildAmenities() {
-    final List<Map<String, dynamic>> features = [
-      {"icon": Icons.check_circle_outline, "label": "Individual Focus"},
-      {"icon": Icons.article_outlined, "label": "Study Material"},
-      {"icon": Icons.quiz_outlined, "label": "Mock Tests"},
-    ];
+  Widget _buildAmenities(dynamic amenitiesData) {
+    final List<Map<String, dynamic>> allAmenities = [];
+    if (amenitiesData is List) {
+      for (var item in amenitiesData) {
+         allAmenities.add({"icon": Icons.verified_user_outlined, "label": item.toString()});
+      }
+    } else if (amenitiesData is Map) {
+      amenitiesData.forEach((key, value) {
+        if (value == true || value == 1) {
+          allAmenities.add({"icon": Icons.verified_user_outlined, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
+        }
+      });
+    }
+
+    if (allAmenities.isEmpty) {
+      return "Accredited learning program.".text.gray500.size(13).make();
+    }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: features.map((item) => Container(
-          height: 60,
-          width: 60,
-          margin: const EdgeInsets.only(right: 12),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.3), width: 1.0),
-          ),
-          child: Icon(item['icon'] as IconData, size: 28, color: Colors.black87).centered(),
-        )).toList(),
+        children: [
+          ...allAmenities.take(3).map((item) => _buildAmenityCircle(item)).toList(),
+          if (allAmenities.length > 3)
+            _buildMoreCircle(allAmenities.length - 3, allAmenities),
+        ],
       ),
     );
   }
 
-  Widget _buildSellerCard() {
+  Widget _buildAmenityCircle(Map<String, dynamic> item) {
+    return Container(
+      height: 60,
+      width: 60,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1.0),
+      ),
+      child: Icon(item['icon'] as IconData, size: 28, color: Colors.blueAccent).centered(),
+    );
+  }
+
+  Widget _buildMoreCircle(int count, List<Map<String, dynamic>> allAmenities) {
+    return InkWell(
+      onTap: () => _showAllAmenitiesModal(allAmenities),
+      child: Container(
+        height: 60,
+        width: 60,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1.0),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            "+$count".text.bold.gray800.size(12).make(),
+            "More".text.bold.gray800.size(10).make(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAllAmenitiesModal(List<Map<String, dynamic>> allAmenities) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                "Program Features".text.xl.bold.make(),
+                const CloseButton(),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Wrap(
+                  spacing: 20,
+                  runSpacing: 20,
+                  children: allAmenities.map((item) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.blue.withOpacity(0.05),
+                          border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                        ),
+                        child: Icon(item['icon'] as IconData, color: Colors.blue, size: 24),
+                      ),
+                      const SizedBox(height: 8),
+                      (item['label'] as String).text.gray700.size(10).make(),
+                    ],
+                  ).box.width(70).make()).toList(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapView(ProductModel product) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Center(
-          child: CircleAvatar(
-            radius: 35,
-            backgroundImage: NetworkImage("https://randomuser.me/api/portraits/men/45.jpg"),
+        "Institute Location".text.bold.size(15).make(),
+        const SizedBox(height: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(29.2104, 78.9619),
+                zoom: 15,
+              ),
+              markers: {
+                Marker(
+                  markerId: const MarkerId("institute_location"),
+                  position: const LatLng(29.2104, 78.9619),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                ),
+              },
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        "Sumit Sharma".text.bold.size(16).center.make(),
-        "Certified Tutor".text.gray500.size(14).make(),
+        "${product.locationName ?? product.cityName ?? 'Location N/A'}".text.gray600.size(12).make(),
+      ],
+    );
+  }
+
+  Widget _buildSellerCard(ProductModel product) {
+    return Column(
+      children: [
+        Center(
+          child: CircleAvatar(
+            radius: 35,
+            backgroundImage: product.sellerAvatar != null 
+                ? (product.sellerAvatar!.startsWith('http') 
+                    ? NetworkImage(product.sellerAvatar!) 
+                    : MemoryImage(base64Decode(product.sellerAvatar!)) as ImageProvider)
+                : const NetworkImage("https://randomuser.me/api/portraits/men/44.jpg"),
+          ),
+        ),
+        const SizedBox(height: 12),
+        (product.sellerName ?? "Instructor").text.bold.size(16).center.make(),
+        "Verified Educator".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            "Active Since 2021".text.gray600.size(12).make(),
-            const SizedBox(width: 4),
-            const Icon(Icons.verified, color: Colors.blue, size: 16),
+            "Member Since ${product.sellerCreatedAt ?? 'Recently'}".text.gray600.size(12).make(),
+            if (product.sellerIsVerified) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.verified, color: Colors.blue, size: 16),
+            ]
           ],
         ),
       ],
     );
   }
 
-  Widget _buildStickyBottomBar() {
+  Widget _buildStickyBottomBar(ProductModel product) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       decoration: BoxDecoration(
@@ -278,27 +478,6 @@ class _EducationDetailScreenState extends State<EducationDetailScreen> {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: InkWell(
-              onTap: () {},
-              child: Container(
-                height: 55,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE8F0),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.call, color: Color(0xFFD81B60), size: 24),
-                    const SizedBox(width: 10),
-                    "Call Tutor".text.color(const Color(0xFFD81B60)).xl.bold.make(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 15),
           Expanded(
             child: InkWell(
               onTap: () {},
@@ -322,5 +501,12 @@ class _EducationDetailScreenState extends State<EducationDetailScreen> {
         ],
       ),
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalizeFirstLetter() {
+    if (isEmpty) return this;
+    return this[0].toUpperCase() + substring(1);
   }
 }

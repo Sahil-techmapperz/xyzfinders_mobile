@@ -11,21 +11,21 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../providers/product_provider.dart';
 import '../../../../data/models/product_model.dart';
 
-class MobilesDetailScreen extends StatefulWidget {
+class PetsAccessoriesDetailScreen extends StatefulWidget {
   final int productId;
   final String? title;
 
-  const MobilesDetailScreen({
+  const PetsAccessoriesDetailScreen({
     super.key,
     required this.productId,
     this.title,
   });
 
   @override
-  State<MobilesDetailScreen> createState() => _MobilesDetailScreenState();
+  State<PetsAccessoriesDetailScreen> createState() => _PetsAccessoriesDetailScreenState();
 }
 
-class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
+class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScreen> {
   int _activeImageIndex = 0;
 
   @override
@@ -42,7 +42,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         height: height,
         width: width,
         color: Colors.grey.shade200,
-        child: const Icon(Icons.phone_iphone, color: Colors.grey),
+        child: const Icon(Icons.pets, color: Colors.grey),
       );
     }
 
@@ -83,8 +83,8 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         final product = provider.selectedProduct;
         if (product == null) {
           return Scaffold(
-            appBar: AppBar(title: Text(widget.title ?? "Mobile Detail")),
-            body: Center(child: (provider.error ?? "Device not found").text.make()),
+            appBar: AppBar(title: Text(widget.title ?? "Pet Detail")),
+            body: Center(child: (provider.error ?? "Item not found").text.make()),
           );
         }
 
@@ -97,11 +97,9 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         });
 
         if (specsList.isEmpty) {
-          specsList.add({"label": "Brand", "value": specs['brand'] ?? "N/A"});
-          specsList.add({"label": "Model", "value": specs['model'] ?? "N/A"});
-          specsList.add({"label": "Storage", "value": specs['storage'] ?? "N/A"});
-          specsList.add({"label": "RAM", "value": specs['ram'] ?? "N/A"});
-          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+          specsList.add({"label": "Type", "value": specs['pet_type'] ?? specs['type'] ?? "Pet"});
+          specsList.add({"label": "Breed", "value": specs['breed'] ?? "N/A"});
+          specsList.add({"label": "Age", "value": specs['age'] ?? "N/A"});
         }
 
         return Scaffold(
@@ -129,7 +127,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
                             ],
                           ),
                           const Divider(height: 32),
-                          (attrs['highlights']?.toString() ?? "Original Product | Fast Charging | Multi-Camera System").text.bold.size(13).make(),
+                          (attrs['highlights']?.toString() ?? "Healthy | Vaccinated | Kid Friendly").text.bold.size(13).make(),
                           const SizedBox(height: 20),
                           "Specification".text.bold.size(15).make(),
                           const SizedBox(height: 16),
@@ -141,9 +139,9 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
                           const SizedBox(height: 16),
                           "Posted on : ${product.createdAt.split('T')[0]}".text.gray500.size(13).make(),
                           const Divider(height: 48),
-                          "Features".text.bold.size(15).make(),
+                          "Health & Habits".text.bold.size(15).make(),
                           const SizedBox(height: 16),
-                          _buildAmenities(attrs['amenities'] ?? attrs['features']),
+                          _buildAmenities(attrs['amenities'] ?? attrs['habits']),
                           const SizedBox(height: 32),
                           _buildMapView(product),
                           const SizedBox(height: 32),
@@ -175,7 +173,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
           fit: StackFit.expand,
           children: [
             if (images.isEmpty)
-              Container(color: Colors.grey.shade100, child: const Icon(Icons.phone_android, size: 50, color: Colors.grey))
+              Container(color: Colors.grey.shade100, child: const Icon(Icons.pets, size: 50, color: Colors.grey))
             else
               PageView.builder(
                 itemCount: images.length,
@@ -279,7 +277,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
     final List<Map<String, dynamic>> allAmenities = [];
     if (amenitiesData is List) {
       for (var item in amenitiesData) {
-         allAmenities.add({"icon": Icons.verified_user_outlined, "label": item.toString()});
+         allAmenities.add({"icon": Icons.check_circle_outline, "label": item.toString()});
       }
     } else if (amenitiesData is Map) {
       amenitiesData.forEach((key, value) {
@@ -290,7 +288,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
     }
 
     if (allAmenities.isEmpty) {
-      return "Original accessories included.".text.gray500.size(13).make();
+      return "Veterinary checked and healthy.".text.gray500.size(13).make();
     }
 
     return SingleChildScrollView(
@@ -358,7 +356,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                "Device Features".text.xl.bold.make(),
+                "Health & Habits".text.xl.bold.make(),
                 const CloseButton(),
               ],
             ),
@@ -399,7 +397,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        "Pick-up Point".text.bold.size(15).make(),
+        "Pick-up Location".text.bold.size(15).make(),
         const SizedBox(height: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -417,9 +415,9 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
               ),
               markers: {
                 Marker(
-                  markerId: const MarkerId("mobile_location"),
+                  markerId: const MarkerId("pet_location"),
                   position: const LatLng(29.2104, 78.9619),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
                 ),
               },
               myLocationButtonEnabled: false,
@@ -444,12 +442,12 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
                 ? (product.sellerAvatar!.startsWith('http') 
                     ? NetworkImage(product.sellerAvatar!) 
                     : MemoryImage(base64Decode(product.sellerAvatar!)) as ImageProvider)
-                : const NetworkImage("https://randomuser.me/api/portraits/men/32.jpg"),
+                : const NetworkImage("https://randomuser.me/api/portraits/women/44.jpg"),
           ),
         ),
         const SizedBox(height: 12),
-        (product.sellerName ?? "Dealer").text.bold.size(16).center.make(),
-        "Authorized Mobiles Dealer".text.gray500.size(14).make(),
+        (product.sellerName ?? "Owner").text.bold.size(16).center.make(),
+        "Verified Pet Lover".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -94,12 +94,12 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
       try {
         await _productService.deleteProduct(productId);
         if (mounted) {
-          ToastUtils.showSuccess(context, 'Product deleted successfully');
+          ToastUtils.showSuccess('Product deleted successfully');
           _fetchMyProducts(); // Refresh list
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.showError(context, 'Failed to delete: $e');
+          ToastUtils.showError('Failed to delete: $e');
         }
       }
     }
@@ -109,12 +109,12 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
     try {
       await _productService.markAsSold(productId);
       if (mounted) {
-        ToastUtils.showSuccess(context, 'Product marked as sold');
+        ToastUtils.showSuccess('Product marked as sold');
         _fetchMyProducts(); // Refresh list
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showError(context, 'Failed to mark as sold: $e');
+        ToastUtils.showError('Failed to mark as sold: $e');
       }
     }
   }
@@ -410,7 +410,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                     _markAsSold(product.id);
                   } else if (value == 'activate' || value == 'deactivate') {
                     // TODO: Implement activate/deactivate functionality
-                    ToastUtils.showSuccess(context, value == 'activate' ? 'Product activated' : 'Product deactivated');
+                    ToastUtils.showSuccess(value == 'activate' ? 'Product activated' : 'Product deactivated');
                   } else if (value == 'delete') {
                     _deleteProduct(product.id);
                   }

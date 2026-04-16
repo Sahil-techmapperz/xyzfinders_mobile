@@ -63,10 +63,10 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
     if (_product == null) return;
     try {
       await _productService.markAsSold(_product!.id);
-      ToastUtils.showSuccess(context, 'Product marked as sold');
+      ToastUtils.showSuccess('Product marked as sold');
       _fetchProduct();
     } catch (e) {
-      ToastUtils.showError(context, 'Failed to update status: $e');
+      ToastUtils.showError('Failed to update status: $e');
     }
   }
 
@@ -94,12 +94,12 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
       try {
         await _productService.deleteProduct(_product!.id);
         if (mounted) {
-          ToastUtils.showSuccess(context, 'Product deleted successfully');
+          ToastUtils.showSuccess('Product deleted successfully');
           Navigator.pop(context); // Go back to My Ads
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.showError(context, 'Failed to delete: $e');
+          ToastUtils.showError('Failed to delete: $e');
         }
       }
     }

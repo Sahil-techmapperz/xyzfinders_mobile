@@ -11,21 +11,21 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../providers/product_provider.dart';
 import '../../../../data/models/product_model.dart';
 
-class MobilesDetailScreen extends StatefulWidget {
+class JobsDetailScreen extends StatefulWidget {
   final int productId;
   final String? title;
 
-  const MobilesDetailScreen({
+  const JobsDetailScreen({
     super.key,
     required this.productId,
     this.title,
   });
 
   @override
-  State<MobilesDetailScreen> createState() => _MobilesDetailScreenState();
+  State<JobsDetailScreen> createState() => _JobsDetailScreenState();
 }
 
-class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
+class _JobsDetailScreenState extends State<JobsDetailScreen> {
   int _activeImageIndex = 0;
 
   @override
@@ -42,7 +42,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         height: height,
         width: width,
         color: Colors.grey.shade200,
-        child: const Icon(Icons.phone_iphone, color: Colors.grey),
+        child: const Icon(Icons.work, color: Colors.grey),
       );
     }
 
@@ -83,8 +83,8 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         final product = provider.selectedProduct;
         if (product == null) {
           return Scaffold(
-            appBar: AppBar(title: Text(widget.title ?? "Mobile Detail")),
-            body: Center(child: (provider.error ?? "Device not found").text.make()),
+            appBar: AppBar(title: Text(widget.title ?? "Job Detail")),
+            body: Center(child: (provider.error ?? "Job listing not found").text.make()),
           );
         }
 
@@ -97,11 +97,9 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         });
 
         if (specsList.isEmpty) {
-          specsList.add({"label": "Brand", "value": specs['brand'] ?? "N/A"});
-          specsList.add({"label": "Model", "value": specs['model'] ?? "N/A"});
-          specsList.add({"label": "Storage", "value": specs['storage'] ?? "N/A"});
-          specsList.add({"label": "RAM", "value": specs['ram'] ?? "N/A"});
-          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+          specsList.add({"label": "Job Type", "value": specs['type'] ?? "Full-time"});
+          specsList.add({"label": "Experience", "value": specs['experience'] ?? "N/A"});
+          specsList.add({"label": "Salary Range", "value": specs['salary_range'] ?? "Contact for info"});
         }
 
         return Scaffold(
@@ -129,21 +127,21 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
                             ],
                           ),
                           const Divider(height: 32),
-                          (attrs['highlights']?.toString() ?? "Original Product | Fast Charging | Multi-Camera System").text.bold.size(13).make(),
+                          (attrs['highlights']?.toString() ?? "Growth Opportunity | Competitive Pay | Great Work Environment").text.bold.size(13).make(),
                           const SizedBox(height: 20),
-                          "Specification".text.bold.size(15).make(),
+                          "Job Requirements".text.bold.size(15).make(),
                           const SizedBox(height: 16),
                           _buildSpecsTable(specsList),
                           const Divider(height: 40),
-                          "Description".text.bold.size(15).make(),
+                          "Job Description".text.bold.size(15).make(),
                           const SizedBox(height: 8),
                           product.description.text.gray600.size(13).lineHeight(1.5).make(),
                           const SizedBox(height: 16),
                           "Posted on : ${product.createdAt.split('T')[0]}".text.gray500.size(13).make(),
                           const Divider(height: 48),
-                          "Features".text.bold.size(15).make(),
+                          "Benefits & Perks".text.bold.size(15).make(),
                           const SizedBox(height: 16),
-                          _buildAmenities(attrs['amenities'] ?? attrs['features']),
+                          _buildAmenities(attrs['amenities'] ?? attrs['perks']),
                           const SizedBox(height: 32),
                           _buildMapView(product),
                           const SizedBox(height: 32),
@@ -167,7 +165,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
   Widget _buildImageHeader(ProductModel product) {
     final images = product.allImageUrls;
     return SliverAppBar(
-      expandedHeight: 350,
+      expandedHeight: 250,
       automaticallyImplyLeading: false,
       backgroundColor: Colors.white,
       flexibleSpace: FlexibleSpaceBar(
@@ -175,49 +173,29 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
           fit: StackFit.expand,
           children: [
             if (images.isEmpty)
-              Container(color: Colors.grey.shade100, child: const Icon(Icons.phone_android, size: 50, color: Colors.grey))
+              Container(color: Colors.blue.withOpacity(0.1), child: const Icon(Icons.business_center, size: 50, color: Colors.blue))
             else
               PageView.builder(
                 itemCount: images.length,
                 onPageChanged: (index) => setState(() => _activeImageIndex = index),
                 itemBuilder: (context, index) => _buildProductImage(images[index]),
               ),
-            Positioned(
-              bottom: 12,
-              left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.image_outlined, color: Colors.white, size: 10),
-                    const SizedBox(width: 4),
-                    "${_activeImageIndex + 1}/${images.length > 0 ? images.length : 1}".text.white.size(8).bold.make(),
-                  ],
-                ),
-              ),
-            ),
-            if (images.length > 1)
+            if (images.isNotEmpty)
               Positioned(
-                bottom: 20,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    images.length,
-                    (i) => Container(
-                      width: 8,
-                      height: 8,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: BoxDecoration(
-                        color: i == _activeImageIndex ? Colors.white : Colors.white.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                bottom: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.image_outlined, color: Colors.white, size: 10),
+                      const SizedBox(width: 4),
+                      "${_activeImageIndex + 1}/${images.length}".text.white.size(8).bold.make(),
+                    ],
                   ),
                 ),
               ),
@@ -252,10 +230,13 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
   }
 
   Widget _buildPriceSection(ProductModel product) {
+    if (product.price == 0) {
+      return "Salary: Not Disclosed".text.xl.bold.blue600.make();
+    }
     return Row(
       children: [
-        "₹ ${NumberFormat('#,##,###').format(product.price)}".text.xl3.bold.red600.make(),
-        "/-".text.xl2.bold.red600.make(),
+        "₹ ${NumberFormat('#,##,###').format(product.price)}".text.xl2.bold.blue600.make(),
+        " / month".text.gray500.size(14).make(),
       ],
     );
   }
@@ -279,18 +260,18 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
     final List<Map<String, dynamic>> allAmenities = [];
     if (amenitiesData is List) {
       for (var item in amenitiesData) {
-         allAmenities.add({"icon": Icons.verified_user_outlined, "label": item.toString()});
+         allAmenities.add({"icon": Icons.verified, "label": item.toString()});
       }
     } else if (amenitiesData is Map) {
       amenitiesData.forEach((key, value) {
         if (value == true || value == 1) {
-          allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
+          allAmenities.add({"icon": Icons.verified, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
         }
       });
     }
 
     if (allAmenities.isEmpty) {
-      return "Original accessories included.".text.gray500.size(13).make();
+      return "Standard employee benefits included.".text.gray500.size(13).make();
     }
 
     return SingleChildScrollView(
@@ -312,9 +293,9 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1.0),
+        border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1.0),
       ),
-      child: Icon(item['icon'] as IconData, size: 28, color: Colors.black87).centered(),
+      child: Icon(item['icon'] as IconData, size: 28, color: Colors.blueAccent).centered(),
     );
   }
 
@@ -326,7 +307,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         width: 60,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1.0),
+          border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1.0),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -358,7 +339,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                "Device Features".text.xl.bold.make(),
+                "Benefits & Perks".text.xl.bold.make(),
                 const CloseButton(),
               ],
             ),
@@ -376,10 +357,10 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
                         width: 50,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.orange.withOpacity(0.05),
-                          border: Border.all(color: Colors.orange.withOpacity(0.2)),
+                          color: Colors.blue.withOpacity(0.05),
+                          border: Border.all(color: Colors.blue.withOpacity(0.2)),
                         ),
-                        child: Icon(item['icon'] as IconData, color: Colors.orange, size: 24),
+                        child: Icon(item['icon'] as IconData, color: Colors.blue, size: 24),
                       ),
                       const SizedBox(height: 8),
                       (item['label'] as String).text.gray700.size(10).make(),
@@ -399,7 +380,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        "Pick-up Point".text.bold.size(15).make(),
+        "Company Location".text.bold.size(15).make(),
         const SizedBox(height: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -417,9 +398,9 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
               ),
               markers: {
                 Marker(
-                  markerId: const MarkerId("mobile_location"),
+                  markerId: const MarkerId("company_location"),
                   position: const LatLng(29.2104, 78.9619),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
                 ),
               },
               myLocationButtonEnabled: false,
@@ -444,12 +425,12 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
                 ? (product.sellerAvatar!.startsWith('http') 
                     ? NetworkImage(product.sellerAvatar!) 
                     : MemoryImage(base64Decode(product.sellerAvatar!)) as ImageProvider)
-                : const NetworkImage("https://randomuser.me/api/portraits/men/32.jpg"),
+                : const NetworkImage("https://randomuser.me/api/portraits/men/15.jpg"),
           ),
         ),
         const SizedBox(height: 12),
-        (product.sellerName ?? "Dealer").text.bold.size(16).center.make(),
-        "Authorized Mobiles Dealer".text.gray500.size(14).make(),
+        (product.sellerName ?? "Recruiter").text.bold.size(16).center.make(),
+        "Verified Employer".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -492,9 +473,30 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.chat_bubble, color: Color(0xFF1E88E5), size: 24),
+                    const Icon(Icons.send_outlined, color: Color(0xFF1E88E5), size: 24),
                     const SizedBox(width: 10),
-                    "Chat".text.color(const Color(0xFF1E88E5)).xl.bold.make(),
+                    "Apply Now".text.color(const Color(0xFF1E88E5)).xl.bold.make(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: InkWell(
+              onTap: () {},
+              child: Container(
+                height: 55,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F8E9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.chat_bubble_outline, color: Color(0xFF43A047), size: 24),
+                    const SizedBox(width: 10),
+                    "Query".text.color(const Color(0xFF43A047)).xl.bold.make(),
                   ],
                 ),
               ),

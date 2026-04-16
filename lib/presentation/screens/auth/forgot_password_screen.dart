@@ -31,7 +31,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     
     if (mounted) {
       setState(() => _isLoading = false);
-      ToastUtils.showSuccess(context, 'We will send you a reset password link!');
+      ToastUtils.showSuccess('We will send you a reset password link!');
       Navigator.pop(context);
     }
   }

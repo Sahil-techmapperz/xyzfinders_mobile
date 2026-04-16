@@ -40,7 +40,7 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showError(context, 'Error picking images: $e');
+        ToastUtils.showError('Error picking images: $e');
       }
     }
   }
@@ -56,7 +56,7 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showError(context, 'Error taking photo: $e');
+        ToastUtils.showError('Error taking photo: $e');
       }
     }
   }
@@ -69,7 +69,7 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
 
   Future<void> _uploadImages() async {
     if (_selectedImages.isEmpty) {
-      ToastUtils.showError(context, 'Please select at least one image');
+      ToastUtils.showError('Please select at least one image');
       return;
     }
 
@@ -82,12 +82,12 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
       );
 
       if (mounted) {
-        ToastUtils.showSuccess(context, 'Images uploaded successfully!');
+        ToastUtils.showSuccess('Images uploaded successfully!');
         Navigator.pop(context, true); // Return true to indicate success
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showError(context, 'Upload failed: $e');
+        ToastUtils.showError('Upload failed: $e');
       }
     } finally {
       if (mounted) {
@@ -123,7 +123,7 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                     });
                   } catch (e) {
                     if (mounted) {
-                      ToastUtils.showError(context, 'Error loading file: $e');
+                      ToastUtils.showError('Error loading file: $e');
                     }
                   }
                 }

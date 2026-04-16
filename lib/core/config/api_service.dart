@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/constants/api_constants.dart';
@@ -79,6 +80,7 @@ class ApiService {
         options: options,
       );
     } on DioException catch (e) {
+      if (e.error is ApiException) throw e.error as ApiException;
       throw _handleError(e);
     }
   }
@@ -97,10 +99,11 @@ class ApiService {
         options: options,
       );
     } on DioException catch (e) {
+      if (e.error is ApiException) throw e.error as ApiException;
       throw _handleError(e);
     }
   }
-  
+
   Future<Response> put(
     String path, {
     dynamic data,
@@ -115,10 +118,11 @@ class ApiService {
         options: options,
       );
     } on DioException catch (e) {
+      if (e.error is ApiException) throw e.error as ApiException;
       throw _handleError(e);
     }
   }
-  
+
   Future<Response> delete(
     String path, {
     dynamic data,
@@ -133,12 +137,17 @@ class ApiService {
         options: options,
       );
     } on DioException catch (e) {
+      if (e.error is ApiException) throw e.error as ApiException;
       throw _handleError(e);
     }
   }
   
   // Error handling
   ApiException _handleError(DioException error) {
+    if (error.type == DioExceptionType.connectionError) {
+      return NetworkException(message: 'Cannot reach server. Please check your internet.');
+    }
+    
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -166,22 +175,17 @@ class ApiService {
           case 503:
             return ServerException(message: message);
           default:
-            return ApiException(
-              message: message,
-              statusCode: statusCode,
-              data: error.response?.data,
-            );
+            return ApiException(message: message);
         }
         
       case DioExceptionType.cancel:
-        return ApiException(message: 'Request cancelled');
+        return ApiException(message: 'Request was cancelled');
         
-      case DioExceptionType.unknown:
       default:
-        if (error.error.toString().contains('SocketException')) {
-          return NetworkException();
-        }
-        return ApiException(message: 'An unexpected error occurred');
+        // Log the actual error for debugging
+        debugPrint('[DIO ERROR]: ${error.error}');
+        debugPrint('[DIO TYPE]: ${error.type}');
+        return ApiException(message: 'Network connection issue');
     }
   }
   

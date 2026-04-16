@@ -83,17 +83,17 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCategoryId == null) {
-      ToastUtils.showError(context, 'Please select a category');
+      ToastUtils.showError('Please select a category');
       return;
     }
 
     if (_selectedLocationId == null) {
-      ToastUtils.showError(context, 'Please select a location');
+      ToastUtils.showError('Please select a location');
       return;
     }
 
     if (_selectedCondition == null) {
-      ToastUtils.showError(context, 'Please select a condition');
+      ToastUtils.showError('Please select a condition');
       return;
     }
 
@@ -113,7 +113,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       );
 
       if (mounted) {
-        ToastUtils.showSuccess(context, 'Product created successfully!');
+        ToastUtils.showSuccess('Product created successfully!');
         
         // Ask if user wants to add images
         final addImages = await showDialog<bool>(
@@ -153,7 +153,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showError(context, 'Error: $e');
+        ToastUtils.showError('Error: $e');
       }
     } finally {
       if (mounted) {
