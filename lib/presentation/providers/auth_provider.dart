@@ -10,11 +10,17 @@ class AuthProvider with ChangeNotifier {
   UserModel? _user;
   bool _isLoading = false;
   String? _error;
+  String _currentMode = 'buyer';
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String get currentMode {
+    if (_user != null) return _user!.currentMode;
+    return _currentMode;
+  }
   bool get isAuthenticated => _user != null;
+  bool get isSellerMode => currentMode == 'seller';
 
   // Register
   Future<bool> register({
@@ -97,12 +103,17 @@ class AuthProvider with ChangeNotifier {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
+        serverClientId: '817332061056-31hf6099bslbt4r0j8rnrm3l5m43fejn.apps.googleusercontent.com',
       );
 
+      print("DEBUG: GoogleSignIn starting...");
+      await googleSignIn.signOut(); // Force clear previous session so popup always shows
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      print("DEBUG: GoogleSignIn returned: ${googleUser?.email}");
       
       if (googleUser == null) {
-        // User canceled the sign-in flow
+        // User canceled the sign-in flow OR Google rejected the SHA-1 fingerprint silently
+        _error = 'Google Sign-In canceled or SHA-1 configuration missing/mismatch in Google Console.';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -116,6 +127,7 @@ class AuthProvider with ChangeNotifier {
       }
 
       final result = await _authService.googleLogin(accessToken);
+      print("DEBUG: Backend returned successfully: $result");
       
       _user = result['user'] as UserModel;
       _isLoading = false;
@@ -129,6 +141,7 @@ class AuthProvider with ChangeNotifier {
       return false;
     } catch (e) {
       _error = 'Failed to sign in with Google: $e';
+      print("DEBUG: Google Login Exception: $_error");
       _isLoading = false;
       notifyListeners();
       return false;
@@ -142,6 +155,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       _user = await _authService.getCurrentUser();
+      _currentMode = _user?.currentMode ?? 'buyer';
       _isLoading = false;
       notifyListeners();
     } on ApiException catch (e) {
@@ -160,6 +174,7 @@ class AuthProvider with ChangeNotifier {
     await _authService.logout();
     _user = null;
     _error = null;
+    _currentMode = 'buyer';
     notifyListeners();
   }
 
@@ -168,6 +183,39 @@ class AuthProvider with ChangeNotifier {
     final isLoggedIn = await _authService.isLoggedIn();
     if (isLoggedIn) {
       await getCurrentUser();
+    } else {
+      _currentMode = 'buyer';
+    }
+  }
+
+  // Toggle mode
+  Future<bool> toggleMode() async {
+    if (_user == null) return false;
+    
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final newMode = isSellerMode ? 'buyer' : 'seller';
+      _user = await _authService.switchMode(newMode);
+      _currentMode = _user!.currentMode;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      debugPrint('[AUTH PROVIDER ERROR]: ${e.message}');
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e, stack) {
+      debugPrint('[AUTH PROVIDER UNKNOWN ERROR]: $e');
+      debugPrint('$stack');
+      _error = 'Failed to switch mode';
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 

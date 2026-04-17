@@ -109,6 +109,25 @@ class AuthService {
     return UserModel.fromJson(data);
   }
 
+  // Switch mode (buyer/seller)
+  Future<UserModel> switchMode(String mode) async {
+    final response = await _apiService.post(
+      ApiConstants.switchMode,
+      data: {'mode': mode},
+    );
+    final data = response.data['data'];
+    final user = UserModel.fromJson(data);
+    
+    // Update local user data
+    await _apiService.saveUserData(
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    );
+    
+    return user;
+  }
+
   // Logout
   Future<void> logout() async {
     await _apiService.clearUserData();

@@ -37,9 +37,14 @@ import '../../../core/config/api_service.dart';
 import '../../../core/constants/api_constants.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/category_model.dart';
-import '../../../data/services/category_service.dart';
 import '../../../data/models/product_model.dart';
+import '../../../data/services/category_service.dart';
 import '../../../data/services/product_service.dart';
+import '../../providers/auth_provider.dart';
+import '../seller/seller_dashboard_screen.dart';
+import '../seller/my_products_screen.dart';
+import '../seller/create_product_screen.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,30 +57,56 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   // List of screens corresponding to bottom nav bar indices
-  List<Widget> get _screens => [
+  List<Widget> get _buyerScreens => [
     const HomeTab(),
     const WishlistScreen(),
-    const SizedBox.shrink(),
+    const SizedBox.shrink(), // FAB placeholder
     const ChatListScreen(),
+    const ProfileScreen(),
+  ];
+
+  List<Widget> get _sellerScreens => [
+    const SellerDashboardScreen(),
+    const MyProductsScreen(),
+    const SizedBox.shrink(), // FAB placeholder
+    const ChatListScreen(), // Use same chats for both roles
     const ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isSellerMode = authProvider.isSellerMode;
+    final screens = isSellerMode ? _sellerScreens : _buyerScreens;
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: IndexedStack(index: _selectedIndex, children: _screens),
+      body: IndexedStack(
+        key: ValueKey('${isSellerMode ? 'seller' : 'buyer'}_stack'),
+        index: _selectedIndex, 
+        children: screens,
+      ),
       extendBody: true,
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,
+        isSellerMode: isSellerMode,
         onItemSelected: (index) {
-          // Prevent switching to the FAB index natively
           if (index != 2) {
             setState(() => _selectedIndex = index);
           }
         },
       ),
-      floatingActionButton: CustomFab(onPressed: () {}),
+      floatingActionButton: CustomFab(
+        onPressed: () {
+          if (isSellerMode) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateProductScreen()));
+          } else {
+            // Default buyer FAB action or open categories?
+            setState(() => _selectedIndex = 0); // Placeholder
+          }
+        },
+        isSellerMode: isSellerMode,
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }

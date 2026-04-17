@@ -272,8 +272,9 @@ class _LoginViewState extends State<LoginView> {
                 color: Colors.red.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     "Don't have an account? ",

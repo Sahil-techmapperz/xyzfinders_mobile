@@ -23,40 +23,23 @@ class ProfileScreen extends StatelessWidget {
             toolbarHeight: 0, // Mockup has no app bar, just system status bar
           ),
           body: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 120.0),
               child: Column(
                 children: [
                   const SizedBox(height: 20),
                   // User Info Card
                   _buildUserInfoCard(authProvider),
+                  const SizedBox(height: 16),
+                  
+                  // Switch Mode Button (Premium Design)
+                  _buildModeSwitchTile(context, authProvider),
                   
                   const SizedBox(height: 16),
                   
-                  // Action Cards Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildActionCard(
-                          icon: Icons.assignment_outlined,
-                          iconColor: AppTheme.secondaryColor,
-                          title: 'Become a Seller',
-                          onTap: () {},
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildActionCard(
-                          icon: Icons.manage_search_outlined, // Similar to mockup magnifying glass over doc
-                          iconColor: AppTheme.secondaryColor,
-                          title: 'My Searches',
-                          onTap: () {},
-                        ),
-                      ),
-                    ],
-                  ),
+                  // Action Cards replaced by premium banner above
                   
-                  const SizedBox(height: 24),
                   const Divider(color: Colors.grey, height: 1),
                   
                   // Settings List
@@ -135,8 +118,15 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8), // Slight rounding as per mockup
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -146,7 +136,7 @@ class ProfileScreen extends StatelessWidget {
             children: [
               const CircleAvatar(
                 radius: 35,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d'), // Dummy image
+                backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d'),
               ),
               Positioned(
                 bottom: 0,
@@ -154,7 +144,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: const BoxDecoration(
-                    color: Colors.blue,
+                    color: AppTheme.primaryColor,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.edit, color: Colors.white, size: 12),
@@ -169,40 +159,123 @@ class ProfileScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?.name ?? 'Aniket Sharma', // Fallback to mockup name
+                  user?.name ?? 'User',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Get Verified',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.verified, color: Colors.blue, size: 14),
-                    ],
+                const SizedBox(height: 4),
+                Text(
+                  authProvider.isSellerMode ? 'Professional Seller' : 'Verified Buyer',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: authProvider.isSellerMode ? AppTheme.primaryColor : Colors.blue,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Joined on January, 2026',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                 ),
               ],
             ),
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildModeSwitchTile(BuildContext context, AuthProvider authProvider) {
+    final isSeller = authProvider.isSellerMode;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isSeller 
+            ? [AppTheme.secondaryColor.withOpacity(0.9), AppTheme.secondaryColor]
+            : [const Color(0xFF1E293B), Colors.black87],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: (isSeller ? AppTheme.secondaryColor : Colors.black).withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () async {
+            final success = await authProvider.toggleMode();
+            if (!success && context.mounted) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                 SnackBar(content: Text(authProvider.error ?? 'Failed to switch mode')),
+               );
+            }
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isSeller ? Icons.shopping_bag_outlined : Icons.storefront_outlined,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isSeller ? 'Switch to Buying' : 'Switch to Seller Mode',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        isSeller ? 'Browse and buy products' : 'Manage your ads and store',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (authProvider.isLoading)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                else
+                  const Icon(Icons.swap_horiz_rounded, color: Colors.white),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

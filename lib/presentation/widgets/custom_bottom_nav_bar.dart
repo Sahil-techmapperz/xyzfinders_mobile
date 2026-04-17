@@ -4,11 +4,13 @@ import '../../core/theme/app_theme.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int selectedIndex;
+  final bool isSellerMode;
   final Function(int) onItemSelected;
 
   const CustomBottomNavBar({
     super.key,
     required this.selectedIndex,
+    this.isSellerMode = false,
     required this.onItemSelected,
   });
 
@@ -26,8 +28,8 @@ class CustomBottomNavBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(0, Icons.home_filled, 'Home'),
-            _buildNavItem(1, Icons.favorite_border, 'Wishlist'),
+            _buildNavItem(0, isSellerMode ? Icons.dashboard_rounded : Icons.home_filled, isSellerMode ? 'Dashboard' : 'Home'),
+            _buildNavItem(1, isSellerMode ? Icons.campaign_rounded : Icons.favorite_border, isSellerMode ? 'My Ads' : 'Wishlist'),
             const SizedBox(width: 48), // Space for FAB
             _buildNavItem(3, Icons.forum_outlined, 'Chats'),
             _buildNavItem(4, Icons.menu, 'Menu'),
@@ -62,7 +64,8 @@ class CustomBottomNavBar extends StatelessWidget {
 
 class CustomFab extends StatelessWidget {
   final VoidCallback onPressed;
-  const CustomFab({super.key, required this.onPressed});
+  final bool isSellerMode;
+  const CustomFab({super.key, required this.onPressed, this.isSellerMode = false});
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +87,11 @@ class CustomFab extends StatelessWidget {
         onPressed: onPressed,
         shape: const CircleBorder(),
         fillColor: Colors.white,
-        child: const Icon(Icons.add, size: 32, color: AppTheme.secondaryColor),
+        child: Icon(
+          isSellerMode ? Icons.add_photo_alternate_rounded : Icons.add,
+          size: 32,
+          color: AppTheme.secondaryColor
+        ),
       ),
     );
   }
