@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../widgets/auth/auth_modal.dart';
+import 'edit_profile_screen.dart';
+import 'account_settings_screen.dart';
+import '../wishlist/wishlist_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -114,6 +117,32 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildUserInfoCard(AuthProvider authProvider) {
     final user = authProvider.user;
+
+    // Helper to format date
+    String formatJoinDate(String? dateStr) {
+      if (dateStr == null || dateStr.isEmpty) return 'January, 2026';
+      try {
+        final date = DateTime.parse(dateStr);
+        final months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return '${months[date.month - 1]}, ${date.year}';
+      } catch (e) {
+        return 'January, 2026';
+      }
+    }
+
+    // Safely get user initials
+    String getInitials() {
+      if (user == null || user.name.isEmpty) return 'U';
+      return user.name[0].toUpperCase();
+    }
+    
+    // Process Avatar URL logic
+    ImageProvider? getAvatar() {
+      if (user?.avatar == null || user!.avatar!.isEmpty) return null;
+      if (user.avatar!.startsWith('http')) return NetworkImage(user.avatar!);
+      return NetworkImage(user.avatar!); 
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -134,9 +163,16 @@ class ProfileScreen extends StatelessWidget {
           // Avatar
           Stack(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 35,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=a042581f4e29026704d'),
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                backgroundImage: getAvatar(),
+                child: getAvatar() == null 
+                    ? Text(
+                        getInitials(),
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                      )
+                    : null,
               ),
               Positioned(
                 bottom: 0,
@@ -177,7 +213,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Joined on January, 2026',
+                  'Joined on ${formatJoinDate(user?.createdAt)}',
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                 ),
               ],
@@ -313,14 +349,41 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildSettingsList(BuildContext context) {
     return Column(
       children: [
-        _buildListTile(icon: Icons.person_outline, title: 'Profile'),
-        _buildListTile(icon: Icons.settings_outlined, title: 'Account Setting'),
+        _buildListTile(
+          icon: Icons.person_outline, 
+          title: 'Profile',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+            );
+          },
+        ),
+        _buildListTile(
+          icon: Icons.settings_outlined, 
+          title: 'Account Setting',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AccountSettingsScreen()),
+            );
+          },
+        ),
         _buildListTile(icon: Icons.notifications_none_outlined, title: 'Notification Setting'),
         _buildListTile(icon: Icons.security_outlined, title: 'Security Setting'),
         const Divider(color: Colors.grey, height: 1),
         _buildListTile(icon: Icons.work_outline, title: 'My Job Applications'),
         _buildListTile(icon: Icons.location_city_outlined, title: 'City', trailingText: 'All Cities >'),
-        _buildListTile(icon: Icons.favorite_border, title: 'Wishlist'),
+        _buildListTile(
+          icon: Icons.favorite_border, 
+          title: 'Wishlist',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const WishlistScreen()),
+            );
+          },
+        ),
         const Divider(color: Colors.grey, height: 1),
         _buildListTile(icon: Icons.translate, title: 'Languages', trailingText: 'English >'),
         _buildListTile(icon: Icons.support_agent_outlined, title: 'Support'),
@@ -387,6 +450,7 @@ class ProfileScreen extends StatelessWidget {
     required IconData icon,
     required String title,
     String? trailingText,
+    VoidCallback? onTap,
   }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 0),
@@ -404,7 +468,7 @@ class ProfileScreen extends StatelessWidget {
              const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
         ],
       ),
-      onTap: () {},
+      onTap: onTap ?? () {},
     );
   }
 }

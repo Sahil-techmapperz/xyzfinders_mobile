@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:shimmer/shimmer.dart';
+import '../favorite_toggle_button.dart';
+import '../../providers/favorite_provider.dart';
 import '../../../data/models/product_model.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
@@ -50,13 +52,10 @@ class ProductCard extends StatelessWidget {
             Positioned(
               top: 8,
               right: 8,
-              child: Container(
+              child: FavoriteToggleButton(
+                product: product,
+                iconSize: 18,
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.favorite_border, color: Colors.white, size: 18),
               ),
             ),
           ],

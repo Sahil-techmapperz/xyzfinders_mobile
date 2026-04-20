@@ -40,11 +40,14 @@ import '../../../data/models/category_model.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/services/category_service.dart';
 import '../../../data/services/product_service.dart';
-import '../../providers/auth_provider.dart';
 import '../seller/seller_dashboard_screen.dart';
 import '../seller/my_products_screen.dart';
 import '../seller/create_product_screen.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/favorite_provider.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/favorite_toggle_button.dart';
+import '../wishlist/wishlist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -66,8 +69,8 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   List<Widget> get _sellerScreens => [
-    const SellerDashboardScreen(),
-    const MyProductsScreen(),
+    SellerDashboardScreen(),
+    MyProductsScreen(),
     const SizedBox.shrink(), // FAB placeholder
     const ChatListScreen(), // Use same chats for both roles
     const ProfileScreen(),
@@ -149,6 +152,10 @@ class _HomeTabState extends State<HomeTab> {
     _loadSavedLocation();
     _fetchLocations();
     _fetchCategories();
+    // Load wishlist on startup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FavoriteProvider>().loadFavorites();
+    });
   }
 
   Future<void> _fetchCategories() async {
@@ -512,7 +519,15 @@ class _HomeTabState extends State<HomeTab> {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.favorite_border, size: 24, color: Colors.grey),
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const WishlistScreen()),
+              );
+            },
+            child: const Icon(Icons.favorite_border, size: 24, color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -846,14 +861,29 @@ class _HomeTabState extends State<HomeTab> {
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(16),
                           ),
-                          child: CachedNetworkImage(
-                            imageUrl: item.resolveImageUrl(baseUrl) ?? '',
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => Container(
-                              color: Colors.grey[100],
-                              child: const Icon(Icons.image_outlined, color: Colors.grey).centered(),
-                            ),
+                          child: Stack(
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: item.resolveImageUrl(baseUrl) ?? '',
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorWidget: (context, url, error) => Container(
+                                  color: Colors.grey[100],
+                                  child: const Icon(Icons.image_outlined, color: Colors.grey).centered(),
+                                ),
+                              ),
+                              // Heart Icon
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: FavoriteToggleButton(
+                                  product: item,
+                                  iconSize: 16,
+                                  padding: const EdgeInsets.all(6),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

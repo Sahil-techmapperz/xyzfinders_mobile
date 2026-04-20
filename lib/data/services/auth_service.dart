@@ -109,6 +109,24 @@ class AuthService {
     return UserModel.fromJson(data);
   }
 
+  // Update user profile
+  Future<UserModel> updateProfile({
+    String? name,
+    String? phone,
+    String? avatar,
+  }) async {
+    final response = await _apiService.put(
+      ApiConstants.userProfile,
+      data: {
+        if (name != null) 'name': name,
+        if (phone != null) 'phone': phone,
+        if (avatar != null) 'avatar': avatar,
+      },
+    );
+    final data = response.data['data'];
+    return UserModel.fromJson(data);
+  }
+
   // Switch mode (buyer/seller)
   Future<UserModel> switchMode(String mode) async {
     final response = await _apiService.post(
@@ -182,6 +200,26 @@ class AuthService {
         'password_confirmation': passwordConfirmation,
       },
     );
+  }
+
+  // Change password
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _apiService.post(
+      ApiConstants.changePassword,
+      data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      },
+    );
+  }
+
+  // Delete account
+  Future<void> deleteAccount() async {
+    await _apiService.delete(ApiConstants.deleteAccount);
+    await _apiService.clearUserData();
   }
 
   // Refresh token

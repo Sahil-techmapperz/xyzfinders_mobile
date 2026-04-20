@@ -1,15 +1,16 @@
 import '../../core/config/api_service.dart';
 import '../../core/constants/api_constants.dart';
+import '../../data/models/product_model.dart';
 
 class FavoriteService {
   final ApiService _apiService = ApiService();
 
   // Get user's favorite products
-  Future<List<int>> getFavorites() async {
+  Future<List<ProductModel>> getFavorites() async {
     try {
       final response = await _apiService.get(ApiConstants.favorites);
       final data = response.data['data'] as List;
-      return data.map((item) => item['product_id'] as int).toList();
+      return data.map((item) => ProductModel.fromJson(item)).toList();
     } catch (e) {
       return [];
     }

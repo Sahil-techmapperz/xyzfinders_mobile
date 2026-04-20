@@ -1,3 +1,4 @@
+import '../../chats/chat_screen.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +11,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../providers/product_provider.dart';
 import '../../../../data/models/product_model.dart';
+import '../../../widgets/favorite_toggle_button.dart';
 
 class AutomobileDetailScreen extends StatefulWidget {
   final int productId;
@@ -163,6 +165,7 @@ class _AutomobileDetailScreenState extends State<AutomobileDetailScreen> {
                 ],
               ),
               _buildBackButton(),
+              _buildFavoriteButton(product),
             ],
           ),
           bottomNavigationBar: _buildStickyBottomBar(product),
@@ -231,6 +234,14 @@ class _AutomobileDetailScreenState extends State<AutomobileDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFavoriteButton(ProductModel product) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 10,
+      right: 16,
+      child: FavoriteToggleButton(product: product),
     );
   }
 
@@ -503,8 +514,28 @@ class _AutomobileDetailScreenState extends State<AutomobileDetailScreen> {
         children: [
           Expanded(
             child: InkWell(
-              onTap: () {},
-              child: Container(
+              onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(
+                                chatData: {
+                                  'rawId': null,
+                                  'otherUserId': product.userId?.toString() ?? '',
+                                  'name': product.sellerName ?? 'Seller',
+                                  'productId': product.id,
+                                  'productTitle': product.title,
+                                  'productPrice': product.price,
+                                  'productImage': product.allImageUrls.isNotEmpty ? product.allImageUrls.first : null,
+                                  'avatarUrl': product.sellerAvatar,
+                                  'isAgencyChat': false,
+                                  'agencyIdResolved': null,
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
                 height: 55,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE3F2FD),

@@ -1,3 +1,4 @@
+import '../../chats/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -7,6 +8,7 @@ import '../../../../data/services/product_service.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
+import '../../../widgets/favorite_toggle_button.dart';
 
 class JobsListScreen extends StatefulWidget {
   final int? categoryId;
@@ -211,21 +213,30 @@ class _JobsListScreenState extends State<JobsListScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               "₹ ${item.price}".text.xl.bold.color(Colors.brown).make(),
-                              if (item.isFeatured)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6),
+                              Row(
+                                children: [
+                                  if (item.isFeatured)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.verified, color: Colors.green, size: 12),
+                                          const SizedBox(width: 4),
+                                          "VERIFIED".text.green700.bold.size(8).make(),
+                                        ],
+                                      ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  FavoriteToggleButton(
+                                    product: item,
+                                    iconSize: 20,
                                   ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.verified, color: Colors.green, size: 12),
-                                      const SizedBox(width: 4),
-                                      "VERIFIED".text.green700.bold.size(8).make(),
-                                    ],
-                                  ),
-                                ),
+                                ],
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
@@ -259,8 +270,28 @@ class _JobsListScreenState extends State<JobsListScreen> {
                 ),
                 const SizedBox(height: 20),
                 InkWell(
-                  onTap: () {},
-                  child: Container(
+                  onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(
+                                chatData: {
+                                  'rawId': null,
+                                  'otherUserId': item.userId?.toString() ?? '',
+                                  'name': item.sellerName ?? 'Seller',
+                                  'productId': item.id,
+                                  'productTitle': item.title,
+                                  'productPrice': item.price,
+                                  'productImage': item.allImageUrls.isNotEmpty ? item.allImageUrls.first : null,
+                                  'avatarUrl': item.sellerAvatar,
+                                  'isAgencyChat': false,
+                                  'agencyIdResolved': null,
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
                     width: double.infinity,
                     height: 48,
                     decoration: BoxDecoration(

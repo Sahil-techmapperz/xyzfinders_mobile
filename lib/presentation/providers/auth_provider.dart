@@ -169,6 +169,95 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Update profile
+  Future<bool> updateProfile({
+    String? name,
+    String? phone,
+    String? avatar,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final updatedUser = await _authService.updateProfile(
+        name: name,
+        phone: phone,
+        avatar: avatar,
+      );
+      _user = updatedUser;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to update profile';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Change Password
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _authService.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to change password';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Delete Account
+  Future<bool> deleteAccount() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _authService.deleteAccount();
+      _user = null;
+      _currentMode = 'buyer';
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to delete account';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Logout
   Future<void> logout() async {
     await _authService.logout();

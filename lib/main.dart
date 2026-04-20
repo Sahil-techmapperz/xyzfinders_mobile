@@ -4,9 +4,10 @@ import 'core/theme/app_theme.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/product_provider.dart';
 import 'presentation/providers/favorite_provider.dart';
+import 'presentation/providers/chat_provider.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
-
+import 'core/config/api_service.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: MaterialApp(
         title: 'XYZ Finders',
@@ -55,6 +57,14 @@ class _SplashScreenState extends State<SplashScreen> {
     // Check if user is logged in
     final authProvider = context.read<AuthProvider>();
     await authProvider.checkAuthStatus();
+    
+    if (authProvider.isAuthenticated) {
+      final token = await ApiService().getAuthToken();
+      if (token != null) {
+        context.read<ChatProvider>().initializeSocket(token);
+        context.read<ChatProvider>().loadConversations();
+      }
+    }
     
     // Give splash screen some minimum time
     await Future.delayed(const Duration(seconds: 1));

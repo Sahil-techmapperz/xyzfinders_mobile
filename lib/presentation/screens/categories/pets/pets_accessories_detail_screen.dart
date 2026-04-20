@@ -1,3 +1,4 @@
+import '../../chats/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -316,7 +317,7 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
           Expanded(
             child: InkWell(
               onTap: () {},
-              child: Container(
+                        child: Container(
                 height: 55,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE3F2FD),

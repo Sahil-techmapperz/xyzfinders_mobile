@@ -1,3 +1,4 @@
+import '../../chats/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,6 +10,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'automobile_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
+import '../../../widgets/favorite_toggle_button.dart';
 
 class AutomobileListScreen extends StatefulWidget {
   final int? categoryId;
@@ -240,14 +242,7 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
               Positioned(
                 top: 10,
                 right: 10,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.favorite_border, color: Colors.grey, size: 20),
-                ),
+                child: FavoriteToggleButton(product: car),
               ),
               // Image Counter
               Positioned(
@@ -348,7 +343,27 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
                   children: [
                     Expanded(
                       child: InkWell(
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(
+                                chatData: {
+                                  'rawId': null,
+                                  'otherUserId': car.userId?.toString() ?? '',
+                                  'name': car.sellerName ?? 'Seller',
+                                  'productId': car.id,
+                                  'productTitle': car.title,
+                                  'productPrice': car.price,
+                                  'productImage': car.allImageUrls.isNotEmpty ? car.allImageUrls.first : null,
+                                  'avatarUrl': car.sellerAvatar,
+                                  'isAgencyChat': false,
+                                  'agencyIdResolved': null,
+                                },
+                              ),
+                            ),
+                          );
+                        },
                         child: Container(
                           height: 48,
                           decoration: BoxDecoration(
