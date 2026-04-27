@@ -75,7 +75,7 @@ class FeaturedCarousel extends StatelessWidget {
                     alignment: Alignment.bottomLeft,
                     child: VStack([
                       product.title.text.white.bold.xl.make(),
-                      "\$${product.price.toStringAsFixed(2)}".text.color(context.theme.primaryColorLight).bold.lg.make(),
+                      "₹ ${product.price.toStringAsFixed(0)}".text.color(context.theme.primaryColorLight).bold.lg.make(),
                       if (product.location != null)
                         product.location!['name'].toString().text.white.sm.make(),
                     ]).p16(),

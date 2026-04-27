@@ -10,6 +10,7 @@ import '../wishlist/wishlist_screen.dart';
 import 'job_applications_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../chats/chat_list_screen.dart';
+import '../../widgets/custom_bottom_nav_bar.dart';
 
 class BuyerDashboardScreen extends StatefulWidget {
   const BuyerDashboardScreen({super.key});
@@ -31,6 +32,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
   }
 
   Future<void> _loadDashboardData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -38,11 +40,13 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
 
     try {
       final stats = await _buyerService.getDashboardStats();
+      if (!mounted) return;
       setState(() {
         _stats = stats;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -52,7 +56,8 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthProvider>(context).user;
+    final auth = Provider.of<AuthProvider>(context);
+    final user = auth.user;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -101,6 +106,19 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: CustomBottomNavBar(
+        selectedIndex: 4, // Profile/Menu index
+        isSellerMode: auth.isSellerMode,
+        onItemSelected: (index) {
+          if (index == 4) return;
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+      ),
+      floatingActionButton: CustomFab(
+        isSellerMode: auth.isSellerMode,
+        onPressed: () {},
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -161,7 +179,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildSimpleInfo("Wishlist Value", "\$${_stats!.wishlistValue.toStringAsFixed(0)}"),
+              _buildSimpleInfo("Wishlist Value", "₹ ${_stats!.wishlistValue.toStringAsFixed(0)}"),
               _buildSimpleInfo("Price Drops", "${_stats!.priceDrops} Items"),
             ],
           ),
@@ -412,7 +430,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              "\$${product.price}".text.bold.color(AppTheme.primaryColor).sm.make(),
+                              "₹ ${product.price}".text.bold.color(AppTheme.primaryColor).sm.make(),
                               const Icon(Icons.favorite_border, size: 14, color: Colors.grey),
                             ],
                           ),

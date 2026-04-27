@@ -557,7 +557,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                     Row(
                       children: [
                         Text(
-                          '\$${product.price.toStringAsFixed(0)}',
+                          '₹ ${product.price.toStringAsFixed(0)}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,

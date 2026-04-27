@@ -100,7 +100,7 @@ class ProductCard extends StatelessWidget {
           6.heightBox,
           
           HStack([
-            "\$${product.price.toStringAsFixed(0)}".text.bold.xl.color(AppTheme.secondaryColor).make(), // Orange Price
+            "₹ ${product.price.toStringAsFixed(0)}".text.bold.xl.color(AppTheme.secondaryColor).make(), // Orange Price
           ]),
 
           6.heightBox,

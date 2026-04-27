@@ -386,7 +386,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               ],
             ),
           ),
-          "\$${product.price}".text.bold.color(AppTheme.primaryColor).make(),
+          "₹ ${product.price}".text.bold.color(AppTheme.primaryColor).make(),
         ],
       ),
     );

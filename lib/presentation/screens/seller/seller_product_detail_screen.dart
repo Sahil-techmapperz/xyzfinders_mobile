@@ -251,7 +251,7 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        '\$${_product!.price.toStringAsFixed(0)}',
+                        '₹ ${_product!.price.toStringAsFixed(0)}',
                         style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
                       ),
                     ],
