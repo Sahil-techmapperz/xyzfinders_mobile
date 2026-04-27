@@ -84,6 +84,7 @@ class ChatMessage {
   final String? agencyName;
   final String? agencyLogo;
   final bool isAgencyChat;
+  final int? reportId;
 
   ChatMessage({
     required this.id,
@@ -100,6 +101,7 @@ class ChatMessage {
     this.agencyName,
     this.agencyLogo,
     required this.isAgencyChat,
+    this.reportId,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -118,6 +120,7 @@ class ChatMessage {
       agencyName: json['agency_name'],
       agencyLogo: json['agency_logo'],
       isAgencyChat: json['is_agency_chat'] == 1 || json['is_agency_chat'] == true,
+      reportId: json['report_id'],
     );
   }
 }

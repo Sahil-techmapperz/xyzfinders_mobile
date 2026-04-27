@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:shimmer/shimmer.dart';
@@ -19,34 +21,64 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = product.firstImageUrl;
     final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
-    final imageUrl = product.firstImageUrl != null 
-        ? '$baseUrl${product.firstImageUrl}'
-        : null;
+
+    Widget imageWidget;
+    if (imageUrl != null) {
+      if (imageUrl.startsWith('data:image')) {
+        // Handle Base64 Data URI
+        try {
+          final base64String = imageUrl.split(',').last;
+          imageWidget = Image.memory(
+            base64Decode(base64String),
+            height: 110,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildPlaceholder(),
+          );
+        } catch (e) {
+          imageWidget = _buildPlaceholder();
+        }
+      } else if (imageUrl.startsWith('http')) {
+        // Handle Full URL
+        imageWidget = CachedNetworkImage(
+          imageUrl: imageUrl,
+          height: 110,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(color: Colors.white, height: 110),
+          ),
+          errorWidget: (context, url, error) => _buildPlaceholder(),
+        );
+      } else {
+        // Handle Relative Path
+        imageWidget = CachedNetworkImage(
+          imageUrl: '$baseUrl$imageUrl',
+          height: 110,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(color: Colors.white, height: 110),
+          ),
+          errorWidget: (context, url, error) => _buildPlaceholder(),
+        );
+      }
+    } else {
+      imageWidget = _buildPlaceholder();
+    }
 
     return VxBox(
       child: VStack([
         // Image Section
         Stack(
           children: [
-            if (imageUrl != null)
-              Image.network(
-                imageUrl,
-                height: 110,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Shimmer.fromColors(
-                    baseColor: Colors.grey[300]!,
-                    highlightColor: Colors.grey[100]!,
-                    child: Container(color: Colors.white, height: 110),
-                  );
-                },
-                errorBuilder: (_, __, ___) => _buildPlaceholder(),
-              )
-            else
-              _buildPlaceholder(),
+            imageWidget,
 
             // Heart Icon (Top Right)
             Positioned(

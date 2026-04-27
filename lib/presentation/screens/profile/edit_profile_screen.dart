@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/localization/app_localization.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -39,9 +43,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalization.of(context).translate('edit_profile'),
+          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -58,9 +62,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
 
           ImageProvider? getAvatar() {
-            if (user?.avatar == null || user!.avatar!.isEmpty) return null;
-            if (user.avatar!.startsWith('http')) return NetworkImage(user.avatar!);
-            return NetworkImage(user.avatar!);
+            // 1. Prioritize image from binary retrieval endpoint
+            if (user != null) {
+              final dynamicUrl = '${ApiConstants.baseUrl}${ApiConstants.userImage(user.id)}?t=${authProvider.lastUpdateTimestamp}';
+              return CachedNetworkImageProvider(dynamicUrl);
+            }
+            
+            // 2. Fallback to ImageKit/External URL if available
+            if (user?.avatar != null && user!.avatar!.isNotEmpty) {
+              return CachedNetworkImageProvider(user.avatar!);
+            }
+            
+            return null;
+          }
+
+          Future<void> pickAndUploadImage() async {
+            try {
+              final picker = ImagePicker();
+              final XFile? image = await picker.pickImage(
+                source: ImageSource.gallery,
+                maxWidth: 1000,
+              );
+              
+              if (image != null && context.mounted) {
+                final success = await authProvider.uploadAvatar(File(image.path));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(success ? 'Profile image updated!' : (authProvider.error ?? 'Failed to update image')),
+                      backgroundColor: success ? Colors.green : Colors.red,
+                    ),
+                  );
+                }
+              }
+            } catch (e) {
+              debugPrint('Image picker error: $e');
+              if (e.toString().contains('already_active')) {
+                return;
+              }
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to open image picker')),
+                );
+              }
+            }
           }
 
           return SafeArea(
@@ -73,30 +118,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Center(
                     child: Stack(
                       children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                          backgroundImage: getAvatar(),
-                          child: getAvatar() == null
-                              ? Text(
-                                  getInitials(),
-                                  style: const TextStyle(
-                                    fontSize: 40,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.primaryColor,
-                                  ),
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: authProvider.isLoading
+                              ? const Center(
+                                  child: CircularProgressIndicator(color: AppTheme.primaryColor),
                                 )
-                              : null,
+                              : ClipOval(
+                                  child: CachedNetworkImage(
+                                    imageUrl: (user?.avatar != null && user!.avatar!.startsWith('http'))
+                                        ? user!.avatar!
+                                        : '${ApiConstants.baseUrl}${ApiConstants.userImage(user!.id)}?t=${authProvider.lastUpdateTimestamp}',
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => const Center(
+                                      child: CircularProgressIndicator(color: AppTheme.primaryColor),
+                                    ),
+                                    errorWidget: (context, url, error) => Center(
+                                      child: Text(
+                                        getInitials(),
+                                        style: const TextStyle(
+                                          fontSize: 40,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                         ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: GestureDetector(
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Avatar editing coming soon')),
-                              );
-                            },
+                            onTap: authProvider.isLoading ? null : pickAndUploadImage,
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
@@ -119,7 +178,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  _buildInputLabel('Full Name'),
+                  _buildInputLabel(AppLocalization.of(context).translate('full_name')),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _nameController,
@@ -127,7 +186,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     validator: (value) => value == null || value.isEmpty ? 'Please enter your name' : null,
                   ),
                   const SizedBox(height: 24),
-                  _buildInputLabel('Email Address'),
+                  _buildInputLabel(AppLocalization.of(context).translate('email')),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
@@ -139,7 +198,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _buildInputLabel('Phone Number'),
+                  _buildInputLabel(AppLocalization.of(context).translate('phone')),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _phoneController,
@@ -189,9 +248,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               width: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text(
-                              'Save Changes',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          : Text(
+                              AppLocalization.of(context).translate('save_changes'),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                     ),
                   ),

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/services/product_service.dart';
-import '../../providers/auth_provider.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/api_constants.dart';
@@ -24,20 +22,53 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
   bool _isLoading = true;
   String? _error;
   String _selectedFilter = 'All'; // All, Active, Sold, Pending
+  String _selectedCategory = 'All Categories';
+  String _searchQuery = '';
+  DateTimeRange? _selectedDateRange;
+
+  List<String> get _categories {
+    final cats = _products.map((p) => p.categoryName ?? 'Other').toSet().toList();
+    cats.sort();
+    return ['All Categories', ...cats];
+  }
 
   // Filtered products based on selected filter
   List<ProductModel> get _filteredProducts {
-    if (_selectedFilter == 'All') return _products;
-    if (_selectedFilter == 'Active') return _products.where((p) => !p.isSold).toList();
-    if (_selectedFilter == 'Sold') return _products.where((p) => p.isSold).toList();
-    return _products; // Pending - not implemented yet
+    var filtered = _products;
+    
+    if (_selectedFilter == 'Active') filtered = filtered.where((p) => p.isActive).toList();
+    if (_selectedFilter == 'Inactive') filtered = filtered.where((p) => !p.isActive && !p.isSold).toList();
+    if (_selectedFilter == 'Sold') filtered = filtered.where((p) => p.isSold).toList();
+    
+    if (_selectedCategory != 'All Categories') {
+      filtered = filtered.where((p) => (p.categoryName ?? 'Other') == _selectedCategory).toList();
+    }
+    
+    if (_searchQuery.trim().isNotEmpty) {
+      filtered = filtered.where((p) => p.title.toLowerCase().contains(_searchQuery.trim().toLowerCase())).toList();
+    }
+    
+    if (_selectedDateRange != null) {
+      filtered = filtered.where((p) {
+        final dateStr = p.createdAt;
+        if (dateStr.isEmpty) return false;
+        final date = DateTime.tryParse(dateStr);
+        if (date == null) return false;
+        final itemDate = DateTime(date.year, date.month, date.day);
+        final start = DateTime(_selectedDateRange!.start.year, _selectedDateRange!.start.month, _selectedDateRange!.start.day);
+        final end = DateTime(_selectedDateRange!.end.year, _selectedDateRange!.end.month, _selectedDateRange!.end.day);
+        return itemDate.isAfter(start.subtract(const Duration(days: 1))) && itemDate.isBefore(end.add(const Duration(days: 1)));
+      }).toList();
+    }
+    
+    return filtered;
   }
 
   // Stats
   int get _totalAds => _products.length;
-  int get _activeAds => _products.where((p) => !p.isSold).length;
+  int get _activeAds => _products.where((p) => p.isActive).length;
+  int get _inactiveAds => _products.where((p) => !p.isActive && !p.isSold).length;
   int get _soldAds => _products.where((p) => p.isSold).length;
-  int get _totalViews => 0; // Views not implemented yet
 
 
   @override
@@ -119,27 +150,61 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
     }
   }
 
+  Future<void> _relistProduct(int productId) async {
+    try {
+      await _productService.relistProduct(productId);
+      if (mounted) {
+        ToastUtils.showSuccess('Product relisted successfully!');
+        _fetchMyProducts();
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastUtils.showError('Failed to relist product: $e');
+      }
+    }
+  }
+
+  Future<void> _activateProduct(int productId) async {
+    try {
+      await _productService.relistProduct(productId);
+      if (mounted) {
+        ToastUtils.showSuccess('Product activated!');
+        _fetchMyProducts();
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastUtils.showError('Failed to activate product: $e');
+      }
+    }
+  }
+
+  Future<void> _deactivateProduct(int productId) async {
+    try {
+      await _productService.deactivateProduct(productId);
+      if (mounted) {
+        ToastUtils.showSuccess('Product deactivated.');
+        _fetchMyProducts();
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastUtils.showError('Failed to deactivate product: $e');
+      }
+    }
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final isSeller = authProvider.user?.role == 'seller';
-
-    if (!isSeller) {
-      return Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
-        appBar: AppBar(
-             title: "My Products".text.color(AppTheme.textColor).xl2.bold.make(),
-             backgroundColor: AppTheme.backgroundColor,
-             elevation: 0,
-             centerTitle: true,
-             iconTheme: const IconThemeData(color: AppTheme.textColor),
-        ),
-        body: const Center(
-          child: Text('Only sellers can manage products'),
-        ),
-      );
-    }
-
+    // Role check removed — all users can manage their own ads
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -184,14 +249,119 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                           const SizedBox(width: 12),
                           Expanded(child: _buildStatCard('Active', _activeAds, Icons.check_circle, Colors.green)),
                           const SizedBox(width: 12),
-                          Expanded(child: _buildStatCard('Sold', _soldAds, Icons.sell, Colors.grey)),
+                          Expanded(child: _buildStatCard('Inactive', _inactiveAds, Icons.pause_circle, Colors.orange)),
                           const SizedBox(width: 12),
-                          Expanded(child: _buildStatCard('Views', _totalViews, Icons.visibility, AppTheme.secondaryColor)),
+                          Expanded(child: _buildStatCard('Sold', _soldAds, Icons.sell, Colors.grey)),
                         ],
                       ),
                     ),
                     
-                    // Filter Tabs
+                    // Advanced Filters Section
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Column(
+                        children: [
+                          // Search Bar
+                          TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Search products...',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                              fillColor: Colors.white,
+                              filled: true,
+                            ),
+                            onChanged: (val) {
+                              setState(() {
+                                _searchQuery = val;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          // Dropdowns and Date Picker Row
+                          Row(
+                            children: [
+                              // Category Dropdown
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey[300]!),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: _selectedCategory,
+                                      isExpanded: true,
+                                      icon: const Icon(Icons.arrow_drop_down),
+                                      onChanged: (String? newValue) {
+                                        if (newValue != null) {
+                                          setState(() => _selectedCategory = newValue);
+                                        }
+                                      },
+                                      items: _categories.map<DropdownMenuItem<String>>((String value) {
+                                        return DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Date Range Picker Button
+                              OutlinedButton.icon(
+                                onPressed: () async {
+                                  final picked = await showDateRangePicker(
+                                    context: context,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime.now(),
+                                    initialDateRange: _selectedDateRange,
+                                    builder: (context, child) {
+                                      return Theme(
+                                        data: Theme.of(context).copyWith(
+                                          colorScheme: const ColorScheme.light(
+                                            primary: AppTheme.primaryColor,
+                                          ),
+                                        ),
+                                        child: child!,
+                                      );
+                                    },
+                                  );
+                                  if (picked != null) {
+                                    setState(() => _selectedDateRange = picked);
+                                  }
+                                },
+                                icon: const Icon(Icons.calendar_today, size: 18),
+                                label: Text(_selectedDateRange == null ? 'Date' : 'Filtered'),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  side: BorderSide(color: _selectedDateRange == null ? Colors.grey[300]! : AppTheme.primaryColor),
+                                ),
+                              ),
+                              if (_selectedDateRange != null) ...[
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  icon: const Icon(Icons.clear, size: 20),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () {
+                                    setState(() => _selectedDateRange = null);
+                                  },
+                                ),
+                              ]
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Filter Tabs (Status)
                     Container(
                       height: 50,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -200,6 +370,8 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                           _buildFilterTab('All'),
                           const SizedBox(width: 8),
                           _buildFilterTab('Active'),
+                          const SizedBox(width: 8),
+                          _buildFilterTab('Inactive'),
                           const SizedBox(width: 8),
                           _buildFilterTab('Sold'),
                         ],
@@ -335,7 +507,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                   color: Colors.grey[100],
                   child: product.firstImageUrl != null
                       ? Image.network(
-                          '${ApiConstants.baseUrl.replaceAll('/api', '')}${product.firstImageUrl}',
+                          product.firstImageUrl!.startsWith('http')
+                              ? product.firstImageUrl!
+                              : '${ApiConstants.baseUrl.replaceAll('/api', '')}${product.firstImageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => const Icon(Icons.shopping_bag, size: 32, color: Colors.grey),
                         )
@@ -353,47 +527,113 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                       product.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black),
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
-                      '\$${product.price.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: AppTheme.secondaryColor,
-                      ),
+                      product.categoryName ?? 'Other',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: product.isSold ? Colors.grey.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: product.isSold ? Colors.grey.withOpacity(0.3) : Colors.green.withOpacity(0.3),
-                          width: 0.5
-                        ),
+                    // Location
+                    if ((product.cityName ?? product.locationName) != null) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on, size: 11, color: Colors.grey[500]),
+                          const SizedBox(width: 2),
+                          Expanded(
+                            child: Text(
+                              [product.cityName, product.stateName].where((s) => s != null && s.isNotEmpty).join(', '),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        product.isSold ? 'SOLD' : 'ACTIVE',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: product.isSold ? Colors.grey : Colors.green,
+                    ],
+                    const SizedBox(height: 4),
+                    // Price row
+                    Row(
+                      children: [
+                        Text(
+                          '\$${product.price.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AppTheme.secondaryColor,
+                          ),
                         ),
-                      ),
+                        if (product.condition.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withAlpha(25),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              product.condition,
+                              style: const TextStyle(fontSize: 10, color: Colors.blue),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    // Status + Date row
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: product.isSold
+                                ? Colors.grey.withAlpha(25)
+                                : !product.isActive
+                                    ? Colors.orange.withAlpha(25)
+                                    : Colors.green.withAlpha(25),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: product.isSold
+                                  ? Colors.grey.withAlpha(77)
+                                  : !product.isActive
+                                      ? Colors.orange.withAlpha(77)
+                                      : Colors.green.withAlpha(77),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Text(
+                            product.isSold ? 'SOLD' : (!product.isActive ? 'INACTIVE' : 'ACTIVE'),
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: product.isSold
+                                  ? Colors.grey
+                                  : !product.isActive
+                                      ? Colors.orange
+                                      : Colors.green,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        if (product.createdAt.isNotEmpty)
+                          Text(
+                            _formatDate(product.createdAt),
+                            style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+                          ),
+                      ],
                     ),
                   ],
                 ),
               ),
+
               
               // Actions
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert, color: Colors.black), // Black 3-dot icon
                 color: Colors.white,
                 surfaceTintColor: Colors.white,
-                onSelected: (value) {
+                 onSelected: (value) {
                   if (value == 'view') {
                      Navigator.push(
                       context,
@@ -408,9 +648,12 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                     ).then((_) => _fetchMyProducts());
                   } else if (value == 'sold') {
                     _markAsSold(product.id);
-                  } else if (value == 'activate' || value == 'deactivate') {
-                    // TODO: Implement activate/deactivate functionality
-                    ToastUtils.showSuccess(value == 'activate' ? 'Product activated' : 'Product deactivated');
+                  } else if (value == 'relist') {
+                    _relistProduct(product.id);
+                  } else if (value == 'activate') {
+                    _activateProduct(product.id);
+                  } else if (value == 'deactivate') {
+                    _deactivateProduct(product.id);
                   } else if (value == 'delete') {
                     _deleteProduct(product.id);
                   }
@@ -430,19 +673,30 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                       value: 'sold', 
                       child: Text('Mark as Sold', style: TextStyle(color: Colors.black))
                     ),
+                  if (product.isSold)
+                    const PopupMenuItem(
+                      value: 'relist',
+                      child: Row(
+                        children: [
+                          Icon(Icons.replay, color: Colors.green, size: 18),
+                          SizedBox(width: 8),
+                          Text('Relist', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
                   if (product.isActive)
                     const PopupMenuItem(
                       value: 'deactivate', 
                       child: Text('Deactivate', style: TextStyle(color: Colors.black))
                     )
-                  else
+                  else if (!product.isSold)
                     const PopupMenuItem(
                       value: 'activate', 
                       child: Text('Activate', style: TextStyle(color: Colors.black))
                     ),
                   const PopupMenuItem(
                     value: 'delete',
-                    child: Text('Delete', style: TextStyle(color: Colors.red)), // Keep delete red
+                    child: Text('Delete', style: TextStyle(color: Colors.red)),
                   ),
                 ],
               ),
@@ -453,3 +707,4 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
     );
   }
 }
+

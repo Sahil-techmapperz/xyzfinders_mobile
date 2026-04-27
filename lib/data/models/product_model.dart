@@ -1,8 +1,8 @@
 class ProductModel {
   final int id;
   final int userId;
-  final int categoryId;
-  final int locationId;
+  final int? categoryId;
+  final int? locationId;
   final String title;
   final String description;
   final double price;
@@ -34,12 +34,13 @@ class ProductModel {
   final Map<String, dynamic>? category;
   final Map<String, dynamic>? location;
   final List<Map<String, dynamic>>? images;
+  final String? thumbnail;
 
   ProductModel({
     required this.id,
     required this.userId,
-    required this.categoryId,
-    required this.locationId,
+    this.categoryId,
+    this.locationId,
     required this.title,
     required this.description,
     required this.price,
@@ -65,20 +66,27 @@ class ProductModel {
     this.category,
     this.location,
     this.images,
+    this.thumbnail,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
-    int parseInt(dynamic value) {
-      if (value == null) return 0;
+    int? parseInt(dynamic value) {
+      if (value == null) return null;
       if (value is int) return value;
-      return int.tryParse(value.toString()) ?? 0;
+      final parsed = int.tryParse(value.toString());
+      if (parsed == 0) return null; // Treat 0 as null for dropdown safety
+      return parsed;
     }
 
-    double parseDouble(dynamic value) {
+    double safeParseDouble(dynamic value) {
       if (value == null) return 0.0;
       if (value is double) return value;
       if (value is int) return value.toDouble();
-      return double.tryParse(value.toString()) ?? 0.0;
+      try {
+        return double.parse(value.toString());
+      } catch (_) {
+        return 0.0;
+      }
     }
 
     // Handle product_attributes which might be a JSON string or an object
@@ -90,20 +98,20 @@ class ProductModel {
     }
 
     return ProductModel(
-      id: parseInt(json['id']),
-      userId: parseInt(json['user_id']),
+      id: parseInt(json['id']) ?? 0,
+      userId: parseInt(json['user_id']) ?? 0,
       categoryId: parseInt(json['category_id']),
       locationId: parseInt(json['location_id']),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
-      price: parseDouble(json['price']),
+      price: safeParseDouble(json['price']),
       originalPrice: json['original_price'] != null 
-          ? parseDouble(json['original_price']) 
+          ? safeParseDouble(json['original_price']) 
           : null,
       condition: (json['condition'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
       isFeatured: json['is_featured'] == 1 || json['is_featured'] == true,
-      viewsCount: parseInt(json['views']),
+      viewsCount: parseInt(json['views']) ?? 0,
       createdAt: (json['created_at'] ?? '').toString(),
       updatedAt: (json['updated_at'] ?? '').toString(),
       productAttributes: attributes,
@@ -123,6 +131,7 @@ class ProductModel {
       images: json['images'] != null 
           ? List<Map<String, dynamic>>.from(json['images'] as List) 
           : null,
+      thumbnail: json['thumbnail'] as String?,
     );
   }
 
@@ -157,6 +166,7 @@ class ProductModel {
       'category': category,
       'location': location,
       'images': images,
+      'thumbnail': thumbnail,
     };
   }
 
@@ -169,11 +179,11 @@ class ProductModel {
       final imgData = images!.first;
       final imageVal = imgData['image']?.toString() ?? imgData['id']?.toString();
       
-      if (imageVal == null) return null;
+      if (imageVal == null) return thumbnail;
       if (imageVal.startsWith('http')) return imageVal;
       return imageVal;
     }
-    return null;
+    return thumbnail;
   }
 
   List<String> get allImageUrls {
@@ -185,22 +195,24 @@ class ProductModel {
   }
 
   String? resolveImageUrl(String baseUrl) {
+    String? imageVal;
     if (images != null && images!.isNotEmpty) {
       final imgData = images!.first;
-      final imageVal = imgData['image']?.toString() ?? imgData['id']?.toString();
-      
-      if (imageVal == null) return null;
-      if (imageVal.startsWith('http')) return imageVal;
-      if (imageVal.startsWith('data:image')) return imageVal;
-      
-      // Heuristic for base64
-      if (imageVal.length > 500) return imageVal;
-      
-      final cleanBaseUrl = baseUrl.endsWith('/') 
-          ? baseUrl.substring(0, baseUrl.length - 1) 
-          : baseUrl;
-      return "$cleanBaseUrl/images/product/$imageVal";
+      imageVal = imgData['image']?.toString() ?? imgData['id']?.toString();
     }
-    return null;
+    
+    imageVal ??= thumbnail;
+    
+    if (imageVal == null) return null;
+    if (imageVal.startsWith('http')) return imageVal;
+    if (imageVal.startsWith('data:image')) return imageVal;
+    
+    // Heuristic for base64
+    if (imageVal.length > 500) return imageVal;
+    
+    final cleanBaseUrl = baseUrl.endsWith('/') 
+        ? baseUrl.substring(0, baseUrl.length - 1) 
+        : baseUrl;
+    return "$cleanBaseUrl/images/product/$imageVal";
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../data/models/product_model.dart';
 import '../../data/services/product_service.dart';
@@ -208,6 +209,28 @@ class ProductProvider with ChangeNotifier {
       _error = 'An unexpected error occurred: $e';
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  // Create Ad
+  Future<bool> createAd(Map<String, dynamic> data, List<File> images) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final success = await _productService.createProductNew(data, images);
+      _isLoading = false;
+      if (!success) {
+        _error = 'Failed to create ad. Please try again.';
+      }
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 

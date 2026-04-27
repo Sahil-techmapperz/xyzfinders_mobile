@@ -16,10 +16,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch newly if we want, or just rely on global state + pull-to-refresh
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<ChatProvider>().loadConversations();
+      if (context.read<AuthProvider>().isAuthenticated) {
+        context.read<ChatProvider>().loadConversations();
+      }
     });
   }
 

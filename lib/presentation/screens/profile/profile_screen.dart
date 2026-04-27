@@ -1,11 +1,25 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../widgets/auth/auth_modal.dart';
 import 'edit_profile_screen.dart';
 import 'account_settings_screen.dart';
+import 'security_settings_screen.dart';
 import '../wishlist/wishlist_screen.dart';
+import '../notifications/notification_settings_screen.dart';
+import '../support/support_screen.dart';
+import 'job_applications_screen.dart';
+import 'language_selection_screen.dart';
+import 'buyer_dashboard_screen.dart';
+import '../seller/seller_reports_screen.dart';
+import '../seller/my_job_posts_screen.dart';
+import '../../providers/language_provider.dart';
+import '../../../core/localization/app_localization.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -25,30 +39,34 @@ class ProfileScreen extends StatelessWidget {
             elevation: 0,
             toolbarHeight: 0, // Mockup has no app bar, just system status bar
           ),
-          body: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 120.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  // User Info Card
-                  _buildUserInfoCard(authProvider),
-                  const SizedBox(height: 16),
-                  
-                  // Switch Mode Button (Premium Design)
-                  _buildModeSwitchTile(context, authProvider),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Action Cards replaced by premium banner above
-                  
-                  const Divider(color: Colors.grey, height: 1),
-                  
-                  // Settings List
-                  _buildSettingsList(context),
-                  
-                ],
+          body: RefreshIndicator(
+            onRefresh: () => authProvider.refreshUser(),
+            color: AppTheme.primaryColor,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 120.0),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    // User Info Card
+                    _buildUserInfoCard(context, authProvider),
+                    const SizedBox(height: 16),
+                    
+                    // Switch Mode Button (Premium Design)
+                    _buildModeSwitchTile(context, authProvider),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Action Cards replaced by premium banner above
+                    
+                    const Divider(color: Colors.grey, height: 1),
+                    
+                    // Settings List
+                    _buildSettingsList(context, authProvider),
+                    
+                  ],
+                ),
               ),
             ),
           ),
@@ -115,7 +133,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUserInfoCard(AuthProvider authProvider) {
+  Widget _buildUserInfoCard(BuildContext context, AuthProvider authProvider) {
     final user = authProvider.user;
 
     // Helper to format date
@@ -138,9 +156,43 @@ class ProfileScreen extends StatelessWidget {
     
     // Process Avatar URL logic
     ImageProvider? getAvatar() {
-      if (user?.avatar == null || user!.avatar!.isEmpty) return null;
-      if (user.avatar!.startsWith('http')) return NetworkImage(user.avatar!);
-      return NetworkImage(user.avatar!); 
+      // 1. Prioritize image from binary retrieval endpoint
+      if (user != null) {
+        final dynamicUrl = '${ApiConstants.baseUrl}${ApiConstants.userImage(user.id)}?t=${authProvider.lastUpdateTimestamp}';
+        return CachedNetworkImageProvider(dynamicUrl);
+      }
+      
+      // 2. Fallback to ImageKit/External URL if available
+      if (user?.avatar != null && user!.avatar!.isNotEmpty) {
+        return CachedNetworkImageProvider(user.avatar!);
+      }
+      
+      return null;
+    }
+
+    Future<void> pickAndUploadImage() async {
+      try {
+        final picker = ImagePicker();
+        final XFile? image = await picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1000,
+        );
+        
+        if (image != null && context.mounted) {
+          await authProvider.uploadAvatar(File(image.path));
+        }
+      } catch (e) {
+        debugPrint('Image picker error: $e');
+        if (e.toString().contains('already_active')) {
+          // Ignore if already active
+          return;
+        }
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to open image picker')),
+          );
+        }
+      }
     }
 
     return Container(
@@ -163,27 +215,70 @@ class ProfileScreen extends StatelessWidget {
           // Avatar
           Stack(
             children: [
-              CircleAvatar(
-                radius: 35,
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                backgroundImage: getAvatar(),
-                child: getAvatar() == null 
-                    ? Text(
-                        getInitials(),
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-                      )
-                    : null,
+              GestureDetector(
+                onTap: authProvider.isLoading ? null : pickAndUploadImage,
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: authProvider.isLoading
+                      ? const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        )
+                      : ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: (user?.avatar != null && user!.avatar!.startsWith('http'))
+                                ? user!.avatar!
+                                : '${ApiConstants.baseUrl}${ApiConstants.userImage(user!.id)}?t=${authProvider.lastUpdateTimestamp}',
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Center(
+                              child: Text(
+                                getInitials(),
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
               ),
               Positioned(
                 bottom: 0,
                 right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    shape: BoxShape.circle,
+                child: GestureDetector(
+                  onTap: authProvider.isLoading ? null : pickAndUploadImage,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: const Icon(Icons.edit, color: Colors.white, size: 12),
                   ),
-                  child: const Icon(Icons.edit, color: Colors.white, size: 12),
                 ),
               ),
             ],
@@ -218,13 +313,14 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
   Widget _buildModeSwitchTile(BuildContext context, AuthProvider authProvider) {
+    final l10n = AppLocalization.of(context);
     final isSeller = authProvider.isSellerMode;
     
     return Container(
@@ -232,16 +328,16 @@ class ProfileScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isSeller 
-            ? [AppTheme.secondaryColor.withOpacity(0.9), AppTheme.secondaryColor]
-            : [const Color(0xFF1E293B), Colors.black87],
+              ? [const Color(0xFF0F172A), const Color(0xFF1E293B)] 
+              : [const Color(0xFF1E293B), const Color(0xFF334155)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: (isSeller ? AppTheme.secondaryColor : Colors.black).withOpacity(0.3),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -257,19 +353,19 @@ class ProfileScreen extends StatelessWidget {
                );
             }
           },
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    isSeller ? Icons.shopping_bag_outlined : Icons.storefront_outlined,
+                    isSeller ? Icons.shopping_bag : Icons.storefront,
                     color: Colors.white,
                     size: 24,
                   ),
@@ -280,18 +376,19 @@ class ProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isSeller ? 'Switch to Buying' : 'Switch to Seller Mode',
+                        isSeller ? l10n.translate('switch_to_buyer') : l10n.translate('switch_to_seller'),
                         style: const TextStyle(
                           color: Colors.white,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
                         ),
                       ),
+                      const SizedBox(height: 4),
                       Text(
-                        isSeller ? 'Browse and buy products' : 'Manage your ads and store',
+                        isSeller ? l10n.translate('manage_orders') : l10n.translate('manage_ads'),
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 13,
                         ),
                       ),
                     ],
@@ -307,7 +404,11 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   )
                 else
-                  const Icon(Icons.swap_horiz_rounded, color: Colors.white),
+                  Icon(
+                    Icons.swap_horiz_rounded,
+                    color: Colors.white.withOpacity(0.5),
+                    size: 24,
+                  ),
               ],
             ),
           ),
@@ -346,12 +447,24 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsList(BuildContext context) {
+  Widget _buildSettingsList(BuildContext context, AuthProvider authProvider) {
+    final l10n = AppLocalization.of(context);
     return Column(
       children: [
+        if (!authProvider.isSellerMode)
+          _buildListTile(
+            icon: Icons.dashboard_outlined, 
+            title: 'Dashboard',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BuyerDashboardScreen()),
+              );
+            },
+          ),
         _buildListTile(
           icon: Icons.person_outline, 
-          title: 'Profile',
+          title: l10n.translate('profile'),
           onTap: () {
             Navigator.push(
               context,
@@ -361,7 +474,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         _buildListTile(
           icon: Icons.settings_outlined, 
-          title: 'Account Setting',
+          title: l10n.translate('account_settings'),
           onTap: () {
             Navigator.push(
               context,
@@ -369,24 +482,95 @@ class ProfileScreen extends StatelessWidget {
             );
           },
         ),
-        _buildListTile(icon: Icons.notifications_none_outlined, title: 'Notification Setting'),
-        _buildListTile(icon: Icons.security_outlined, title: 'Security Setting'),
-        const Divider(color: Colors.grey, height: 1),
-        _buildListTile(icon: Icons.work_outline, title: 'My Job Applications'),
-        _buildListTile(icon: Icons.location_city_outlined, title: 'City', trailingText: 'All Cities >'),
         _buildListTile(
-          icon: Icons.favorite_border, 
-          title: 'Wishlist',
+          icon: Icons.notifications_none_outlined, 
+          title: l10n.translate('notification_settings'),
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const WishlistScreen()),
+              MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()),
             );
           },
         ),
+        _buildListTile(
+          icon: Icons.security_outlined, 
+          title: l10n.translate('security_settings'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SecuritySettingsScreen()),
+            );
+          },
+        ),
+        if (authProvider.isSellerMode)
+          _buildListTile(
+            icon: Icons.report_problem_outlined, 
+            title: 'Reported Products',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SellerReportsScreen()),
+              );
+            },
+          ),
+        if (authProvider.isSellerMode)
+          _buildListTile(
+            icon: Icons.work_history_outlined, 
+            title: 'My Job Posts',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MyJobPostsScreen()),
+              );
+            },
+          ),
         const Divider(color: Colors.grey, height: 1),
-        _buildListTile(icon: Icons.translate, title: 'Languages', trailingText: 'English >'),
-        _buildListTile(icon: Icons.support_agent_outlined, title: 'Support'),
+        if (!authProvider.isSellerMode)
+          _buildListTile(
+            icon: Icons.work_outline, 
+            title: l10n.translate('job_applications'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const JobApplicationsScreen()),
+              );
+            },
+          ),
+        if (!authProvider.isSellerMode)
+          _buildListTile(
+            icon: Icons.favorite_border, 
+            title: l10n.translate('wishlist'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const WishlistScreen()),
+              );
+            },
+          ),
+        const Divider(color: Colors.grey, height: 1),
+        Consumer<LanguageProvider>(
+          builder: (context, langProvider, _) => _buildListTile(
+            icon: Icons.translate, 
+            title: l10n.translate('languages'), 
+            trailingText: '${langProvider.currentLanguage} >',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LanguageSelectionScreen()),
+              );
+            },
+          ),
+        ),
+        _buildListTile(
+          icon: Icons.support_agent_outlined, 
+          title: l10n.translate('support'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SupportScreen()),
+            );
+          },
+        ),
         const Divider(color: Colors.grey, height: 1),
         
         // Logout Tile
@@ -400,9 +584,9 @@ class ProfileScreen extends StatelessWidget {
             ),
             child: const Icon(Icons.logout_rounded, color: Colors.red, size: 20),
           ),
-          title: const Text(
-            'Logout',
-            style: TextStyle(
+          title: Text(
+            l10n.translate('logout'),
+            style: const TextStyle(
               color: Colors.red,
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -414,7 +598,7 @@ class ProfileScreen extends StatelessWidget {
               context: context,
               builder: (ctx) => AlertDialog(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(l10n.translate('logout'), style: const TextStyle(fontWeight: FontWeight.bold)),
                 content: const Text('Are you sure you want to logout?'),
                 actions: [
                   TextButton(
@@ -428,7 +612,7 @@ class ProfileScreen extends StatelessWidget {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('Logout'),
+                    child: Text(l10n.translate('logout')),
                   ),
                 ],
               ),

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/models/user_model.dart';
@@ -11,10 +12,12 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String _currentMode = 'buyer';
+  int _lastUpdateTimestamp = DateTime.now().millisecondsSinceEpoch;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  int get lastUpdateTimestamp => _lastUpdateTimestamp;
   String get currentMode {
     if (_user != null) return _user!.currentMode;
     return _currentMode;
@@ -159,6 +162,9 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     } on ApiException catch (e) {
+      if (e is UnauthorizedException) {
+        await logout();
+      }
       _error = e.message;
       _isLoading = false;
       notifyListeners();
@@ -174,6 +180,8 @@ class AuthProvider with ChangeNotifier {
     String? name,
     String? phone,
     String? avatar,
+    String? location,
+    String? address,
   }) async {
     _isLoading = true;
     _error = null;
@@ -184,6 +192,8 @@ class AuthProvider with ChangeNotifier {
         name: name,
         phone: phone,
         avatar: avatar,
+        location: location,
+        address: address,
       );
       _user = updatedUser;
       _isLoading = false;
@@ -196,6 +206,31 @@ class AuthProvider with ChangeNotifier {
       return false;
     } catch (e) {
       _error = 'Failed to update profile';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Upload Avatar
+  Future<bool> uploadAvatar(File file) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _authService.uploadProfileImage(file);
+      _lastUpdateTimestamp = DateTime.now().millisecondsSinceEpoch;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to upload profile image';
       _isLoading = false;
       notifyListeners();
       return false;

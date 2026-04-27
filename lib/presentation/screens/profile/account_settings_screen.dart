@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import 'change_password_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'address_management_screen.dart';
 
 class AccountSettingsScreen extends StatelessWidget {
   const AccountSettingsScreen({super.key});
@@ -36,6 +37,22 @@ class AccountSettingsScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
+              );
+            },
+          ),
+          const Divider(height: 1),
+
+          const SizedBox(height: 24),
+          _buildSectionHeader('Personal'),
+          _buildSettingTile(
+            context,
+            icon: Icons.location_on_outlined,
+            title: 'Address Management',
+            subtitle: 'Manage your saved addresses',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddressManagementScreen()),
               );
             },
           ),

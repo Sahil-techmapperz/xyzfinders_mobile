@@ -14,9 +14,9 @@ class CategoryService {
           
       final response = await _apiService.get(endpoint);
 
-      if (response.statusCode == 200 && response.data != null) {
+      if (response.statusCode == 200 && response.data != null && response.data is Map) {
         final Map<String, dynamic> responseData = response.data;
-        if (responseData['success'] == true && responseData['data'] != null) {
+        if (responseData['success'] == true && responseData['data'] != null && responseData['data'] is List) {
           final List<dynamic> list = responseData['data'];
           return list.map((json) => CategoryModel.fromJson(json)).toList();
         }

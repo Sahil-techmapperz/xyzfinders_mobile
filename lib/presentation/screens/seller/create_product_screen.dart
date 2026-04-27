@@ -53,6 +53,10 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       if (mounted) {
         setState(() {
           _categories = categories;
+          // Ensure selected category exists in loaded categories
+          if (_selectedCategoryId != null && !_categories.any((c) => c.id == _selectedCategoryId)) {
+            _selectedCategoryId = null;
+          }
         });
       }
     } catch (e) {
@@ -67,6 +71,11 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
         {'id': 4, 'name': 'Houston'},
         {'id': 5, 'name': 'Phoenix'},
       ];
+
+      // Ensure selected location exists in loaded locations
+      if (_selectedLocationId != null && !_locations.any((l) => l['id'] == _selectedLocationId)) {
+        _selectedLocationId = null;
+      }
     });
   }
 

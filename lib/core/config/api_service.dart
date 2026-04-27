@@ -1,10 +1,16 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/errors/api_exception.dart';
+import '../../main.dart';
+import '../../presentation/screens/home/home_screen.dart';
+
+import '../../presentation/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -37,7 +43,51 @@ class ApiService {
           }
           return handler.next(options);
         },
-        onError: (DioException error, handler) {
+        onError: (DioException error, handler) async {
+          final statusCode = error.response?.statusCode;
+          
+          if (statusCode == 401) {
+            // Handle session expiration
+            debugPrint('[SESSION EXPIRED] 401 Unauthorized detected');
+            
+            // Only attempt logout and redirect if we actually had a token
+            final currentToken = await getAuthToken();
+            if (currentToken != null) {
+              await clearAuthToken(); // Immediately clear to prevent loops
+              
+              // Access AuthProvider through navigatorKey's context to reset state reactively
+              if (MyApp.navigatorKey.currentContext != null) {
+                try {
+                  // Use listen: false because we are in an interceptor
+                  final authProvider = Provider.of<AuthProvider>(MyApp.navigatorKey.currentContext!, listen: false);
+                  
+                  if (authProvider.isAuthenticated) {
+                    await authProvider.logout();
+                    
+                    // Redirect to home
+                    MyApp.navigatorKey.currentState!.pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      (route) => false,
+                    );
+                  }
+                } catch (e) {
+                  debugPrint('[AUTH ERROR] Failed to logout via provider: $e');
+                  // Fallback to direct clearing if provider fails
+                  await clearUserData();
+                  if (MyApp.navigatorKey.currentState != null) {
+                    MyApp.navigatorKey.currentState!.pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      (route) => false,
+                    );
+                  }
+                }
+              } else {
+                // Fallback if context is not available
+                await clearUserData();
+              }
+            }
+          }
+
           final exception = _handleError(error);
           return handler.reject(
             DioException(
@@ -123,6 +173,25 @@ class ApiService {
     }
   }
 
+  Future<Response> patch(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    try {
+      return await _dio.patch(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
+    } on DioException catch (e) {
+      if (e.error is ApiException) throw e.error as ApiException;
+      throw _handleError(e);
+    }
+  }
+
   Future<Response> delete(
     String path, {
     dynamic data,
@@ -144,6 +213,11 @@ class ApiService {
   
   // Error handling
   ApiException _handleError(DioException error) {
+    final path = error.requestOptions.path;
+    final statusCode = error.response?.statusCode;
+    
+    debugPrint('[API ERROR] Path: $path, Status: $statusCode, Type: ${error.type}');
+
     if (error.type == DioExceptionType.connectionError) {
       return NetworkException(message: 'Cannot reach server. Please check your internet.');
     }
@@ -155,19 +229,32 @@ class ApiService {
         return NetworkException(message: 'Connection timeout. Please try again.');
         
       case DioExceptionType.badResponse:
-        final statusCode = error.response?.statusCode;
-        final message = error.response?.data?['error'] ?? 
-                        error.response?.data?['message'] ?? 
-                        'An error occurred';
+        final data = error.response?.data;
+        String message = 'An error occurred';
+        
+        if (data is Map) {
+          message = data['error'] ?? data['message'] ?? message;
+        } else if (data is String && data.isNotEmpty) {
+          // Handle cases where server returns a plain string or HTML
+          if (data.contains('<!DOCTYPE html>') || data.contains('<html>')) {
+            message = 'Server returned an HTML error (likely 404 or 500).';
+          } else {
+            message = data;
+          }
+        }
+        
+        debugPrint('[API BAD RESPONSE] Data: $data');
         
         switch (statusCode) {
           case 400:
             return ValidationException(
               message: message,
-              data: error.response?.data,
+              data: data is Map ? data : null,
             );
           case 401:
             return UnauthorizedException(message: message);
+          case 403:
+            return ApiException(message: message); // Forbidden
           case 404:
             return NotFoundException(message: message);
           case 500:
@@ -183,9 +270,15 @@ class ApiService {
         
       default:
         // Log the actual error for debugging
-        debugPrint('[DIO ERROR]: ${error.error}');
-        debugPrint('[DIO TYPE]: ${error.type}');
-        return ApiException(message: 'Network connection issue');
+        final dynamic originalError = error.error;
+        debugPrint('[DIO UNKNOWN ERROR]: $originalError');
+        
+        String errorMessage = 'Network connection issue';
+        if (originalError != null) {
+          errorMessage += ': $originalError';
+        }
+        
+        return ApiException(message: errorMessage);
     }
   }
   

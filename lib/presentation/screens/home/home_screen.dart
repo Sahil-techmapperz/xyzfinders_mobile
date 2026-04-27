@@ -43,26 +43,35 @@ import '../../../data/services/product_service.dart';
 import '../seller/seller_dashboard_screen.dart';
 import '../seller/my_products_screen.dart';
 import '../seller/create_product_screen.dart';
+import '../ads/post_ad_category_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorite_provider.dart';
+import '../../providers/notification_provider.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/favorite_toggle_button.dart';
 import '../wishlist/wishlist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int initialIndex;
+  const HomeScreen({super.key, this.initialIndex = 0});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   // List of screens corresponding to bottom nav bar indices
   List<Widget> get _buyerScreens => [
     const HomeTab(),
-    const WishlistScreen(),
+    const WishlistScreen(showAppBar: false),
     const SizedBox.shrink(), // FAB placeholder
     const ChatListScreen(),
     const ProfileScreen(),
@@ -102,10 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: CustomFab(
         onPressed: () {
           if (isSellerMode) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateProductScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const PostAdCategoryScreen()));
           } else {
-            // Default buyer FAB action or open categories?
-            setState(() => _selectedIndex = 0); // Placeholder
+            setState(() => _selectedIndex = 0);
           }
         },
         isSellerMode: isSellerMode,
@@ -152,9 +160,12 @@ class _HomeTabState extends State<HomeTab> {
     _loadSavedLocation();
     _fetchLocations();
     _fetchCategories();
-    // Load wishlist on startup
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<FavoriteProvider>().loadFavorites();
+      final authProvider = context.read<AuthProvider>();
+      if (authProvider.isAuthenticated) {
+        context.read<FavoriteProvider>().loadFavorites();
+        context.read<NotificationProvider>().fetchNotifications();
+      }
     });
   }
 
@@ -238,6 +249,7 @@ class _HomeTabState extends State<HomeTab> {
 
   Future<void> _loadSavedLocation() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _selectedLocation = prefs.getString('selected_location_name') ?? "Bidhannagar, Kolkata";
       _selectedLocationId = prefs.getInt('selected_location_id');
@@ -249,6 +261,7 @@ class _HomeTabState extends State<HomeTab> {
     try {
       final response = await ApiService().get(ApiConstants.locations);
       if (response.statusCode == 200) {
+        if (!mounted) return;
         setState(() {
           _locations = response.data['data'];
           _isLoadingLocations = false;
@@ -256,7 +269,7 @@ class _HomeTabState extends State<HomeTab> {
       }
     } catch (e) {
       debugPrint('Error fetching locations: $e');
-      setState(() => _isLoadingLocations = false);
+      if (mounted) setState(() => _isLoadingLocations = false);
     }
   }
 
@@ -264,6 +277,7 @@ class _HomeTabState extends State<HomeTab> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('selected_location_id', id);
     await prefs.setString('selected_location_name', name);
+    if (!mounted) return;
     setState(() {
       _selectedLocation = name;
       _selectedLocationId = id;
@@ -333,72 +347,83 @@ class _HomeTabState extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        // 1. Header with Logo and Location
-        SliverToBoxAdapter(child: _buildHeader(context)),
-
-        // 2. Search Section
-        SliverToBoxAdapter(child: _buildSearchSection(context)),
-
-        // 3. Category Grid
-        SliverToBoxAdapter(child: _buildCategoryGrid()),
-
-        // 4. Promo Banners
-        SliverToBoxAdapter(child: _buildPromoBanners()),
-
-        // 5. Popular Sections (Horizontal Lists)
-        SliverList(
-          delegate: SliverChildListDelegate([
-            _buildHorizontalSection(
-              title: "Popular in Home for Rent",
-              products: _latestRealEstate,
-              isLoading: _isRealEstateLoading,
-              onViewMore: () {
-                final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('real estate'));
-                if (cat != null) {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => RealEstateListScreen(categoryId: cat.id)));
-                }
-              },
-            ),
-            _buildHorizontalSection(
-              title: "Popular in Car's",
-              products: _latestCars,
-              isLoading: _isCarsLoading,
-              onViewMore: () {
-                final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('automobile'));
-                if (cat != null) {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => AutomobileListScreen(categoryId: cat.id)));
-                }
-              },
-            ),
-            _buildHorizontalSection(
-              title: "Popular in Electronics",
-              products: _latestElectronics,
-              isLoading: _isElectronicsLoading,
-              onViewMore: () {
-                final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('electronic'));
-                if (cat != null) {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => ElectronicsListScreen(categoryId: cat.id)));
-                }
-              },
-            ),
-            _buildHorizontalSection(
-              title: "Popular in Mobile & Tablets",
-              products: _latestMobiles,
-              isLoading: _isMobilesLoading,
-              onViewMore: () {
-                final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('mobile'));
-                if (cat != null) {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => MobilesListScreen(categoryId: cat.id)));
-                }
-              },
-            ),
-          ]),
-        ),
-
-        const SliverToBoxAdapter(child: SizedBox(height: 100)),
-      ],
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Future.wait([
+          _fetchLocations(),
+          _fetchCategories(),
+          context.read<FavoriteProvider>().loadFavorites(),
+        ]);
+      },
+      color: AppTheme.primaryColor,
+      edgeOffset: MediaQuery.of(context).padding.top + 20,
+      child: CustomScrollView(
+        slivers: [
+          // 1. Header with Logo and Location
+          SliverToBoxAdapter(child: _buildHeader(context)),
+  
+          // 2. Search Section
+          SliverToBoxAdapter(child: _buildSearchSection(context)),
+  
+          // 3. Category Grid
+          SliverToBoxAdapter(child: _buildCategoryGrid()),
+  
+          // 4. Promo Banners
+          SliverToBoxAdapter(child: _buildPromoBanners()),
+  
+          // 5. Popular Sections (Horizontal Lists)
+          SliverList(
+            delegate: SliverChildListDelegate([
+              _buildHorizontalSection(
+                title: "Popular in Home for Rent",
+                products: _latestRealEstate,
+                isLoading: _isRealEstateLoading,
+                onViewMore: () {
+                  final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('real estate'));
+                  if (cat != null) {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => RealEstateListScreen(categoryId: cat.id)));
+                  }
+                },
+              ),
+              _buildHorizontalSection(
+                title: "Popular in Car's",
+                products: _latestCars,
+                isLoading: _isCarsLoading,
+                onViewMore: () {
+                  final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('automobile'));
+                  if (cat != null) {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => AutomobileListScreen(categoryId: cat.id)));
+                  }
+                },
+              ),
+              _buildHorizontalSection(
+                title: "Popular in Electronics",
+                products: _latestElectronics,
+                isLoading: _isElectronicsLoading,
+                onViewMore: () {
+                  final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('electronic'));
+                  if (cat != null) {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => ElectronicsListScreen(categoryId: cat.id)));
+                  }
+                },
+              ),
+              _buildHorizontalSection(
+                title: "Popular in Mobile & Tablets",
+                products: _latestMobiles,
+                isLoading: _isMobilesLoading,
+                onViewMore: () {
+                  final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('mobile'));
+                  if (cat != null) {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => MobilesListScreen(categoryId: cat.id)));
+                  }
+                },
+              ),
+            ]),
+          ),
+  
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
+      ),
     );
   }
 
@@ -509,12 +534,46 @@ class _HomeTabState extends State<HomeTab> {
               );
             },
             borderRadius: BorderRadius.circular(12),
-            child: const Padding(
-              padding: EdgeInsets.all(4.0),
-              child: Icon(
-                Icons.notifications_none,
-                size: 24,
-                color: Colors.grey,
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: Consumer<NotificationProvider>(
+                builder: (context, provider, child) {
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(
+                        Icons.notifications_none,
+                        size: 24,
+                        color: Colors.grey,
+                      ),
+                      if (provider.unreadCount > 0)
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 14,
+                              minHeight: 14,
+                            ),
+                            child: Text(
+                              provider.unreadCount > 99 ? '99+' : '${provider.unreadCount}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),

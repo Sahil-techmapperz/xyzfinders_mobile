@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import '../models/user_model.dart';
 import '../../core/config/api_service.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/utils/device_util.dart';
 
 class AuthService {
   final ApiService _apiService = ApiService();
@@ -22,11 +26,17 @@ class AuthService {
         'phone': phone,
         'password': password,
         'password_confirmation': passwordConfirmation,
-        'user_type': role,  // Backend expects 'user_type' not 'role'
+        'user_type': role,
+        ...await DeviceUtil.getDeviceInfo(),
       },
     );
 
-    final data = response.data['data'];
+    final responseData = response.data;
+    if (responseData is! Map || responseData['data'] is! Map) {
+      throw ApiException(message: 'Unexpected response format from server');
+    }
+
+    final data = responseData['data'];
     final user = UserModel.fromJson(data['user']);
     final token = data['token'] as String;
 
@@ -54,10 +64,16 @@ class AuthService {
       data: {
         'email': email,
         'password': password,
+        ...await DeviceUtil.getDeviceInfo(),
       },
     );
 
-    final data = response.data['data'];
+    final responseData = response.data;
+    if (responseData is! Map || responseData['data'] is! Map) {
+      throw ApiException(message: 'Unexpected response format from server');
+    }
+
+    final data = responseData['data'];
     final user = UserModel.fromJson(data['user']);
     final token = data['token'] as String;
 
@@ -84,7 +100,12 @@ class AuthService {
       },
     );
 
-    final data = response.data['data'];
+    final responseData = response.data;
+    if (responseData is! Map || responseData['data'] is! Map) {
+      throw ApiException(message: 'Unexpected response format from server');
+    }
+
+    final data = responseData['data'];
     final user = UserModel.fromJson(data['user']);
     final token = data['token'] as String;
 
@@ -114,6 +135,8 @@ class AuthService {
     String? name,
     String? phone,
     String? avatar,
+    String? location,
+    String? address,
   }) async {
     final response = await _apiService.put(
       ApiConstants.userProfile,
@@ -121,10 +144,27 @@ class AuthService {
         if (name != null) 'name': name,
         if (phone != null) 'phone': phone,
         if (avatar != null) 'avatar': avatar,
+        if (location != null) 'location': location,
+        if (address != null) 'address': address,
       },
     );
     final data = response.data['data'];
     return UserModel.fromJson(data);
+  }
+
+  // Upload profile image
+  Future<void> uploadProfileImage(File file) async {
+    final formData = FormData.fromMap({
+      'image': await MultipartFile.fromFile(
+        file.path,
+        filename: file.path.split('/').last,
+      ),
+    });
+
+    await _apiService.post(
+      ApiConstants.uploadProfileImage,
+      data: formData,
+    );
   }
 
   // Switch mode (buyer/seller)

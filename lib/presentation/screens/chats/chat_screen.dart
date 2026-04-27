@@ -55,7 +55,6 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 70,
       );
       if (image != null) {
         setState(() {

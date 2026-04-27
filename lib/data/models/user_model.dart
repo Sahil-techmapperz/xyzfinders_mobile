@@ -10,6 +10,8 @@ class UserModel {
   final String? _currentMode;
   final String createdAt;
   final String updatedAt;
+  final String? buyerLocation;
+  final String? businessAddress;
 
   UserModel({
     required this.id,
@@ -23,6 +25,8 @@ class UserModel {
     String? currentMode,
     required this.createdAt,
     required this.updatedAt,
+    this.buyerLocation,
+    this.businessAddress,
   }) : _currentMode = currentMode;
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -39,6 +43,8 @@ class UserModel {
       currentMode: json['current_mode'] as String? ?? 'buyer',
       createdAt: json['created_at'] != null ? json['created_at'] as String : '',
       updatedAt: json['updated_at'] != null ? json['updated_at'] as String : '',
+      buyerLocation: json['buyer_location'] as String?,
+      businessAddress: json['business_address'] as String?,
     );
   }
 
@@ -55,6 +61,8 @@ class UserModel {
       'current_mode': currentMode,
       'created_at': createdAt,
       'updated_at': updatedAt,
+      'buyer_location': buyerLocation,
+      'business_address': businessAddress,
     };
   }
 
@@ -76,6 +84,8 @@ class UserModel {
     String? currentMode,
     String? createdAt,
     String? updatedAt,
+    String? buyerLocation,
+    String? businessAddress,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -89,6 +99,8 @@ class UserModel {
       currentMode: currentMode ?? this.currentMode,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      buyerLocation: buyerLocation ?? this.buyerLocation,
+      businessAddress: businessAddress ?? this.businessAddress,
     );
   }
 }
