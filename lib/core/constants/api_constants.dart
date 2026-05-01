@@ -96,4 +96,17 @@ class ApiConstants {
   static const String adminProducts = '/admin/products';
   static const String adminUsers = '/admin/users';
   static const String adminReports = '/admin/reports';
+
+  // Agency Portal
+  static const String agencyLogin = '/agency/login';
+  static const String agencyRegister = '/agency/register';
+  static const String agencyDashboard = '/agency/dashboard';
+  static const String agencyProfile = '/agency/profile';
+  static const String agencyAds = '/agency/products';
+  static const String agencyLeads = '/agency/leads';
+  static const String agencyMessages = '/agency/messages';
+  static const String agencyAgents = '/agency/agents';
+  static const String agencySupport = '/agency/support';
+  static String agencyLeadStatus(int id) => '/agency/leads/$id/status';
+  static String agencyDeleteAgent(int id) => '/agency/agents?id=$id';
 }

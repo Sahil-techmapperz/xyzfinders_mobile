@@ -10,6 +10,7 @@ import 'presentation/providers/notification_provider.dart';
 import 'presentation/providers/address_provider.dart';
 import 'presentation/providers/job_application_provider.dart';
 import 'presentation/providers/language_provider.dart';
+import 'presentation/providers/agency_provider.dart';
 import 'core/localization/app_localization.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'presentation/screens/auth/login_screen.dart';
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AddressProvider()),
         ChangeNotifierProvider(create: (_) => JobApplicationProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => AgencyProvider()),
       ],
       child: Consumer<LanguageProvider>(
         builder: (context, langProvider, _) {
@@ -63,6 +65,10 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/home': (context) => const HomeScreen(),
+            },
             home: const SplashScreen(),
           );
         },

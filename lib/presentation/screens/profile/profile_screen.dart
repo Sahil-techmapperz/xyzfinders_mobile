@@ -17,6 +17,7 @@ import 'job_applications_screen.dart';
 import 'language_selection_screen.dart';
 import 'buyer_dashboard_screen.dart';
 import '../seller/seller_reports_screen.dart';
+import 'buyer_reported_products_screen.dart';
 import '../seller/my_job_posts_screen.dart';
 import '../../providers/language_provider.dart';
 import '../../../core/localization/app_localization.dart';
@@ -544,6 +545,19 @@ class ProfileScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const WishlistScreen()),
+              );
+            },
+          ),
+        if (!authProvider.isSellerMode)
+          _buildListTile(
+            icon: Icons.flag_outlined, 
+            title: 'My Reported Products',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BuyerReportedProductsScreen(),
+                ),
               );
             },
           ),

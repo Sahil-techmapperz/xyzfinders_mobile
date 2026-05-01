@@ -5,6 +5,20 @@ import '../models/chat_model.dart';
 class ReportService {
   final ApiService _apiService = ApiService();
 
+  Future<List<ReportModel>> getBuyerReports() async {
+    try {
+      final response = await _apiService.get('/buyer/reports');
+      final responseData = response.data;
+      if (responseData['success'] == true) {
+        final List<dynamic> data = responseData['data'];
+        return data.map((json) => ReportModel.fromJson(json)).toList();
+      }
+      throw Exception(responseData['message'] ?? 'Failed to fetch reports');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<ReportModel>> getSellerReports() async {
     try {
       final response = await _apiService.get('/seller/reports');

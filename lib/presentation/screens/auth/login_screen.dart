@@ -3,6 +3,8 @@ import '../../widgets/auth/login_view.dart';
 import '../../widgets/auth/register_view.dart';
 import 'register_screen.dart';
 import '../home/home_screen.dart';
+import 'package:velocity_x/velocity_x.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -27,17 +29,22 @@ class LoginScreen extends StatelessWidget {
                 )
               ]
             ),
-            child: LoginView(
-              onToggleView: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => RegisterScreen()),
-                );
-              },
-              onSuccess: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => HomeScreen()),
-                );
-              },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LoginView(
+                  onToggleView: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => RegisterScreen()),
+                    );
+                  },
+                  onSuccess: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => HomeScreen()),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),

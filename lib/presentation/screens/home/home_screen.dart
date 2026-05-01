@@ -47,9 +47,13 @@ import '../ads/post_ad_category_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorite_provider.dart';
 import '../../providers/notification_provider.dart';
-import 'package:provider/provider.dart';
+import '../../providers/agency_provider.dart';
+import '../agency/agency_login_screen.dart';
+import '../agency/agency_registration_screen.dart';
+import '../agency/agency_dashboard_screen.dart';
 import '../../widgets/favorite_toggle_button.dart';
 import '../wishlist/wishlist_screen.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -454,31 +458,52 @@ class _HomeTabState extends State<HomeTab> {
           ),
           const SizedBox(width: 10),
           Flexible(
-            child: InkWell(
-              onTap: _showLocationPicker,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.location_on_outlined,
-                    size: 16,
-                    color: Colors.grey,
+            child: Consumer<AgencyProvider>(
+              builder: (context, agencyProvider, _) => InkWell(
+                onTap: () => _navigateToAgency(context, agencyProvider),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.2)),
                   ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: _selectedLocation.text.semiBold.gray600
-                        .size(12)
-                        .ellipsis
-                        .make(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.business_center_rounded,
+                        size: 16,
+                        color: AppTheme.secondaryColor,
+                      ),
+                      const SizedBox(width: 6),
+                      (agencyProvider.isAuthenticated ? "Agency Portal" : "Setup Your Store")
+                          .text.bold.color(AppTheme.secondaryColor)
+                          .size(11)
+                          .make(),
+                    ],
                   ),
-                  const Icon(Icons.arrow_drop_down, color: Colors.grey, size: 16),
-                ],
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _navigateToAgency(BuildContext context, AgencyProvider agencyProvider) {
+    if (agencyProvider.isAuthenticated) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AgencyDashboardScreen()),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AgencyRegistrationScreen()),
+      );
+    }
   }
 
   Widget _buildSearchSection(BuildContext context) {
