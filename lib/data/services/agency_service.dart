@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/agency_models.dart';
 import '../../core/config/api_service.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/constants/app_constants.dart';
 
 class AgencyService {
   final ApiService _apiService = ApiService();
@@ -32,6 +34,9 @@ class AgencyService {
         email: user.email,
         role: user.role,
       );
+      // Mark this session as an agency session
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(AppConstants.isAgencyKey, true);
 
       return {
         'user': user,
@@ -115,6 +120,49 @@ class AgencyService {
     );
     if (response.data['success'] != true) {
       throw Exception(response.data['message'] ?? 'Failed to update profile');
+    }
+  }
+
+  // Change password
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await _apiService.post(
+      ApiConstants.agencyChangePassword,
+      data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      },
+    );
+    if (response.data['success'] != true) {
+      throw Exception(response.data['message'] ?? 'Failed to change password');
+    }
+  }
+
+  // Forgot password
+  Future<void> forgotPassword(String email) async {
+    final response = await _apiService.post(
+      ApiConstants.agencyForgotPassword,
+      data: {'email': email},
+    );
+    if (response.data['success'] != true) {
+      throw Exception(response.data['message'] ?? 'Failed to send reset code');
+    }
+  }
+
+  // Reset password
+  Future<void> resetPassword(String email, String otp, String newPassword) async {
+    final response = await _apiService.post(
+      ApiConstants.agencyResetPassword,
+      data: {
+        'email': email,
+        'otp': otp,
+        'newPassword': newPassword,
+      },
+    );
+    if (response.data['success'] != true) {
+      throw Exception(response.data['message'] ?? 'Failed to reset password');
     }
   }
 

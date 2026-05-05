@@ -16,6 +16,7 @@ class ProductService {
     double? minPrice,
     double? maxPrice,
     String? search,
+    String? sortBy,
   }) async {
     final Map<String, dynamic> queryParams = {
       'page': page,
@@ -26,6 +27,7 @@ class ProductService {
       if (minPrice != null) 'min_price': minPrice,
       if (maxPrice != null) 'max_price': maxPrice,
       if (search != null) 'search': search,
+      if (sortBy != null) 'sort_by': sortBy,
     };
 
     final response = await _apiService.get('/products', queryParameters: queryParams);

@@ -92,32 +92,34 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    // Check if user is logged in
     final authProvider = context.read<AuthProvider>();
-    await authProvider.checkAuthStatus();
-    
-    if (authProvider.isAuthenticated) {
+    final agencyProvider = context.read<AgencyProvider>();
+
+    // Run both checks in parallel
+    await Future.wait([
+      authProvider.checkAuthStatus(),
+      agencyProvider.checkAuthStatus(),
+    ]);
+
+    // If agency is authenticated, clear any regular user session to avoid conflicts
+    if (agencyProvider.isAuthenticated && authProvider.isAuthenticated) {
+      await authProvider.logout();
+    }
+
+    if (agencyProvider.isAuthenticated || authProvider.isAuthenticated) {
       final token = await ApiService().getAuthToken();
       if (token != null) {
         context.read<ChatProvider>().initializeSocket(token);
         context.read<ChatProvider>().loadConversations();
       }
     }
-    
-    // Give splash screen some minimum time
+
     await Future.delayed(const Duration(seconds: 1));
 
     if (mounted) {
-      if (authProvider.isAuthenticated) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      } else {
-        // Even if not logged in, go to Home Screen as requested
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
     }
   }
 

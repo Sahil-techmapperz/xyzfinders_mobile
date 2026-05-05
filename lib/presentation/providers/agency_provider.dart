@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/agency_models.dart';
 import '../../data/services/agency_service.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/errors/api_exception.dart';
 
 class AgencyProvider with ChangeNotifier {
@@ -31,6 +33,38 @@ class AgencyProvider with ChangeNotifier {
   bool get isAwaitingApproval => _isAwaitingApproval;
   bool get isAuthenticated => _agencyUser != null;
 
+  // Restore agency session on app startup
+  Future<void> checkAuthStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isAgency = prefs.getBool(AppConstants.isAgencyKey) ?? false;
+      if (!isAgency) return;
+
+      // Try fetching profile — if token is valid, mark as authenticated
+      final profile = await _agencyService.getProfile();
+      _profile = profile;
+      // Reconstruct a minimal AgencyUser from profile so isAuthenticated == true
+      _agencyUser = AgencyUser(
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        agencyName: profile.agencyName,
+        role: 'owner',
+        isVerified: profile.isVerified,
+        phone: profile.phone,
+        location: profile.location,
+        isAgency: true,
+      );
+      notifyListeners();
+    } catch (_) {
+      // Token expired or invalid — clear agency flag
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(AppConstants.isAgencyKey);
+      _agencyUser = null;
+      notifyListeners();
+    }
+  }
+
   // Login
   Future<bool> login({
     required String email,
@@ -55,6 +89,44 @@ class AgencyProvider with ChangeNotifier {
       } else {
         _error = e.toString().replaceAll('Exception: ', '');
       }
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Forgot Password
+  Future<bool> forgotPassword(String email) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _agencyService.forgotPassword(email);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Reset Password
+  Future<bool> resetPassword(String email, String otp, String newPassword) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _agencyService.resetPassword(email, otp, newPassword);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _error = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
     }
@@ -303,13 +375,17 @@ class AgencyProvider with ChangeNotifier {
   }
 
   // Logout
-  void logout() {
+  void logout() async {
     _agencyUser = null;
     _stats = null;
     _leads = [];
     _agents = [];
     _ads = [];
     _tickets = [];
+    _profile = null;
+    // Clear agency session flag
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(AppConstants.isAgencyKey);
     notifyListeners();
   }
 

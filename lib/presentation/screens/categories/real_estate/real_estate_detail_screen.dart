@@ -499,15 +499,15 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
                               builder: (context) => ChatScreen(
                                 chatData: {
                                   'rawId': null,
-                                  'otherUserId': product.userId?.toString() ?? '',
+                                  'otherUserId': product.agencyId != null ? 'agency-${product.agencyId}' : (product.userId?.toString() ?? ''),
                                   'name': product.sellerName ?? 'Seller',
                                   'productId': product.id,
                                   'productTitle': product.title,
                                   'productPrice': product.price,
                                   'productImage': product.allImageUrls.isNotEmpty ? product.allImageUrls.first : null,
                                   'avatarUrl': product.sellerAvatar,
-                                  'isAgencyChat': false,
-                                  'agencyIdResolved': null,
+                                  'isAgencyChat': product.agencyId != null,
+                                  'agencyIdResolved': product.agencyId?.toString(),
                                 },
                               ),
                             ),

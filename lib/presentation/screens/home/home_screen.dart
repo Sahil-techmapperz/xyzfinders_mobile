@@ -43,6 +43,7 @@ import '../../../data/services/product_service.dart';
 import '../seller/seller_dashboard_screen.dart';
 import '../seller/my_products_screen.dart';
 import '../seller/create_product_screen.dart';
+import '../seller/store_list_screen.dart';
 import '../ads/post_ad_category_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorite_provider.dart';
@@ -54,6 +55,7 @@ import '../agency/agency_dashboard_screen.dart';
 import '../../widgets/favorite_toggle_button.dart';
 import '../wishlist/wishlist_screen.dart';
 import 'package:provider/provider.dart';
+import '../categories/all_categories_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -369,10 +371,13 @@ class _HomeTabState extends State<HomeTab> {
           // 2. Search Section
           SliverToBoxAdapter(child: _buildSearchSection(context)),
   
-          // 3. Category Grid
+          // 3. Category Header
+          SliverToBoxAdapter(child: _buildCategoryHeader(context)),
+
+          // 4. Category Grid
           SliverToBoxAdapter(child: _buildCategoryGrid()),
   
-          // 4. Promo Banners
+          // 5. Promo Banners
           SliverToBoxAdapter(child: _buildPromoBanners()),
   
           // 5. Popular Sections (Horizontal Lists)
@@ -446,46 +451,55 @@ class _HomeTabState extends State<HomeTab> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-          Flexible(
-            child: Image.asset(
-              'assets/images/logo.png',
-              height: 40,
-              fit: BoxFit.contain,
+            Flexible(
+              child: Image.asset(
+                'assets/images/logo.png',
+                height: 40,
+                fit: BoxFit.contain,
+              ),
             ),
-          ),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          Flexible(
-            child: Consumer<AgencyProvider>(
-              builder: (context, agencyProvider, _) => InkWell(
-                onTap: () => _navigateToAgency(context, agencyProvider),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.business_center_rounded,
-                        size: 16,
-                        color: AppTheme.secondaryColor,
-                      ),
-                      const SizedBox(width: 6),
-                      (agencyProvider.isAuthenticated ? "Agency Portal" : "Setup Your Store")
-                          .text.bold.color(AppTheme.secondaryColor)
-                          .size(11)
-                          .make(),
-                    ],
+          // Show agency button ONLY if: agency is logged in, OR nobody is logged in
+          Consumer2<AgencyProvider, AuthProvider>(
+            builder: (context, agencyProvider, authProvider, _) {
+              // A regular buyer or seller is logged in — hide the store button entirely
+              if (authProvider.isAuthenticated && !agencyProvider.isAuthenticated) {
+                return const SizedBox.shrink();
+              }
+              // Agency authenticated → show "Agency Dashboard"
+              // Not authenticated → show "Setup Your Store"
+              return Flexible(
+                child: InkWell(
+                  onTap: () => _navigateToAgency(context, agencyProvider),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.business_center_rounded,
+                          size: 16,
+                          color: AppTheme.secondaryColor,
+                        ),
+                        const SizedBox(width: 6),
+                        (agencyProvider.isAuthenticated ? "Agency Dashboard" : "Setup Your Store")
+                            .text.bold.color(AppTheme.secondaryColor)
+                            .size(11)
+                            .make(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -653,6 +667,29 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
+  Widget _buildCategoryHeader(BuildContext context) {
+    if (_isLoadingCategories || _categories.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          "Categories".text.bold.xl2.make(),
+          TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProductListScreen(categoryName: "All Categories")),
+              );
+            },
+            child: "View All".text.color(AppTheme.primaryColor).make(),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCategoryGrid() {
     if (_isLoadingCategories) {
       return const Center(child: Padding(
@@ -668,19 +705,58 @@ class _HomeTabState extends State<HomeTab> {
     // Process backend URL to remove /api if iconUrl already has it
     final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
 
+    final displayCategories = _categories.take(8).toList();
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 15,
         mainAxisSpacing: 15,
         childAspectRatio: 0.85,
       ),
-      itemCount: _categories.length,
+      itemCount: displayCategories.length + 1,
       itemBuilder: (context, index) {
-        final cat = _categories[index];
+        if (index == 0) {
+          return InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const StoreListScreen()),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.store_rounded,
+                    size: 32,
+                    color: AppTheme.secondaryColor,
+                  ),
+                  const SizedBox(height: 8),
+                  "Stores".text.bold.size(11).make(),
+                ],
+              ),
+            ),
+          ).animate().scale(duration: 300.ms);
+        }
+
+        final cat = displayCategories[index - 1];
         return InkWell(
           onTap: () {
             Widget? targetScreen;

@@ -38,6 +38,7 @@ class _AgencyMyAdsScreenState extends State<AgencyMyAdsScreen> {
       appBar: AppBar(
         title: "My Listings".text.bold.make(),
         backgroundColor: const Color(0xFF111827),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AgencyPostAdCategoryScreen())),

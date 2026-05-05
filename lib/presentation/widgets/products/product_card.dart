@@ -105,9 +105,29 @@ class ProductCard extends StatelessWidget {
 
           6.heightBox,
 
+          Builder(
+            builder: (context) {
+              final catName = product.categoryName ?? (product.category != null ? product.category!['name'] : null);
+              return Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: [
+                  if (catName != null && catName.toString().isNotEmpty) 
+                    catName.toString().text.xs.color(Colors.white).make().pSymmetric(h: 6, v: 2).box.color(AppTheme.primaryColor).roundedSM.make(),
+                  if (product.condition.isNotEmpty)
+                    product.condition.toUpperCase().text.xs.color(Colors.grey.shade800).bold.make().pSymmetric(h: 6, v: 2).box.color(Colors.grey.shade200).roundedSM.make(),
+                ],
+              );
+            }
+          ),
+
+          6.heightBox,
+
           HStack([
+             const Icon(Icons.location_on, size: 14, color: Colors.grey),
+             4.widthBox,
              // Location
-             (product.location != null ? product.location!['name'] : 'N/A').toString().text.sm.color(const Color(0xFF666666)).ellipsis.make().expand(),
+             (product.cityName ?? product.locationName ?? (product.location != null ? product.location!['name'] : null) ?? 'N/A').toString().text.xs.color(const Color(0xFF666666)).ellipsis.make().expand(),
           ]),
         ]).p8(),
       ]),

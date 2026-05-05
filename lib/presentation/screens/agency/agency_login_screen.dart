@@ -6,6 +6,8 @@ import '../../providers/agency_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import 'agency_dashboard_screen.dart';
 import 'agency_registration_screen.dart';
+import 'agency_forgot_password_screen.dart';
+import '../home/home_screen.dart';
 
 class AgencyLoginScreen extends StatefulWidget {
   const AgencyLoginScreen({super.key});
@@ -173,7 +175,12 @@ class _AgencyLoginScreenState extends State<AgencyLoginScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: () {}, // Forgot password
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const AgencyForgotPasswordScreen()),
+                                  );
+                                },
                                 child: "Forgot Password?".text.sm.color(AppTheme.secondaryColor).make(),
                               ),
                             ),
@@ -231,7 +238,11 @@ class _AgencyLoginScreenState extends State<AgencyLoginScreen> {
                       children: [
                         const Icon(Icons.arrow_back, size: 16, color: Colors.grey),
                         const SizedBox(width: 8),
-                        "Back to Main App".text.gray500.make().onTap(() => Navigator.pop(context)),
+                        "Back to Main App".text.gray500.make().onTap(() => Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const HomeScreen()),
+                          (route) => false,
+                        )),
                       ],
                     ),
                   ],

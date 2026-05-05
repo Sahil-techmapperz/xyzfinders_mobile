@@ -101,6 +101,7 @@ class ProductProvider with ChangeNotifier {
     double? minPrice,
     double? maxPrice,
     String? search,
+    String? sortBy,
     bool refresh = false,
   }) async {
     if (refresh) {
@@ -122,6 +123,7 @@ class ProductProvider with ChangeNotifier {
         minPrice: minPrice,
         maxPrice: maxPrice,
         search: search,
+        sortBy: sortBy,
       );
 
       _products = result['products'] as List<ProductModel>;
@@ -151,6 +153,7 @@ class ProductProvider with ChangeNotifier {
     double? minPrice,
     double? maxPrice,
     String? search,
+    String? sortBy,
   }) async {
     if (!_hasMore || _isLoadingMore) return;
 
@@ -166,6 +169,7 @@ class ProductProvider with ChangeNotifier {
         minPrice: minPrice,
         maxPrice: maxPrice,
         search: search,
+        sortBy: sortBy,
       );
 
       final newProducts = result['products'] as List<ProductModel>;

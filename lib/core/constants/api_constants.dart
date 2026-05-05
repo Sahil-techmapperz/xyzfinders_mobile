@@ -1,8 +1,7 @@
 class ApiConstants {
   // Base URL - Update this when deploying
-  static const String baseUrl = 'http://10.0.2.2:3000/api'; // Android emulator
-  // static const String baseUrl = 'http://192.168.1.2:3000/api'; // Physical device fallback
-  static const String socketUrl = 'http://10.0.2.2:3001'; // WebSocket server
+  static const String baseUrl = 'https://xyzfinders.in/api';
+  static const String socketUrl = 'https://xyzfinders.in/3001'; // WebSocket server
   // For iOS simulator use: http://localhost:3000/api
   // For physical device use your computer's IP: http://192.168.x.x:3000/api
   
@@ -97,6 +96,14 @@ class ApiConstants {
   static const String adminUsers = '/admin/users';
   static const String adminReports = '/admin/reports';
 
+  // Public Sellers/Stores
+  static const String publicSellers = '/public/sellers';
+  static String publicSellerById(int id) => '/public/sellers/$id';
+
+  // Public Agencies/Stores
+  static const String publicAgencies = '/public/agencies';
+  static String publicAgencyById(int id) => '/public/agencies/$id';
+
   // Agency Portal
   static const String agencyLogin = '/agency/login';
   static const String agencyRegister = '/agency/register';
@@ -107,6 +114,9 @@ class ApiConstants {
   static const String agencyMessages = '/agency/messages';
   static const String agencyAgents = '/agency/agents';
   static const String agencySupport = '/agency/support';
+  static const String agencyChangePassword = '/agency/change-password';
+  static const String agencyForgotPassword = '/agency/forgot-password';
+  static const String agencyResetPassword = '/agency/reset-password';
   static String agencyLeadStatus(int id) => '/agency/leads/$id/status';
   static String agencyDeleteAgent(int id) => '/agency/agents?id=$id';
 }

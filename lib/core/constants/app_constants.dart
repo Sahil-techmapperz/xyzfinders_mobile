@@ -9,6 +9,7 @@ class AppConstants {
   static const String userEmailKey = 'user_email';
   static const String userRoleKey = 'user_role';
   static const String isLoggedInKey = 'is_logged_in';
+  static const String isAgencyKey = 'is_agency';  // set to 'true' on agency login
   
   // Pagination
   static const int defaultPageSize = 20;

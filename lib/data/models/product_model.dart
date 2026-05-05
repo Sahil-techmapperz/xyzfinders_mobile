@@ -1,6 +1,8 @@
 class ProductModel {
   final int id;
   final int userId;
+  final int? agencyId;
+  final int? agentId;
   final int? categoryId;
   final int? locationId;
   final String title;
@@ -39,6 +41,8 @@ class ProductModel {
   ProductModel({
     required this.id,
     required this.userId,
+    this.agencyId,
+    this.agentId,
     this.categoryId,
     this.locationId,
     required this.title,
@@ -100,6 +104,8 @@ class ProductModel {
     return ProductModel(
       id: parseInt(json['id']) ?? 0,
       userId: parseInt(json['user_id']) ?? 0,
+      agencyId: parseInt(json['agency_id']),
+      agentId: parseInt(json['agent_id']),
       categoryId: parseInt(json['category_id']),
       locationId: parseInt(json['location_id']),
       title: (json['title'] ?? '').toString(),
@@ -121,7 +127,7 @@ class ProductModel {
       sellerCreatedAt: json['seller_created_at'],
       sellerIsVerified: json['seller_is_verified'] == 1 || json['seller_is_verified'] == true,
       categoryName: json['category_name'],
-      cityName: json['city_name'],
+      cityName: json['city'] ?? json['city_name'],
       stateName: json['state_name'],
       locationName: json['location_name'],
       postalCode: json['postal_code'],
@@ -139,6 +145,8 @@ class ProductModel {
     return {
       'id': id,
       'user_id': userId,
+      'agency_id': agencyId,
+      'agent_id': agentId,
       'category_id': categoryId,
       'location_id': locationId,
       'title': title,

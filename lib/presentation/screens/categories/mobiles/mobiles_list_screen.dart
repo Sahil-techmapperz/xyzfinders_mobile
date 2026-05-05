@@ -282,15 +282,15 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
                               builder: (context) => ChatScreen(
                                 chatData: {
                                   'rawId': null,
-                                  'otherUserId': item.userId?.toString() ?? '',
+                                  'otherUserId': item.agencyId != null ? 'agency-${item.agencyId}' : (item.userId?.toString() ?? ''),
                                   'name': item.sellerName ?? 'Seller',
                                   'productId': item.id,
                                   'productTitle': item.title,
                                   'productPrice': item.price,
                                   'productImage': item.allImageUrls.isNotEmpty ? item.allImageUrls.first : null,
                                   'avatarUrl': item.sellerAvatar,
-                                  'isAgencyChat': false,
-                                  'agencyIdResolved': null,
+                                  'isAgencyChat': item.agencyId != null,
+                                  'agencyIdResolved': item.agencyId?.toString(),
                                 },
                               ),
                             ),
