@@ -253,7 +253,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
                   children: [
                     const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
                     const SizedBox(width: 6),
-                    (item.location?['name'] ?? 'Remote').toString().text.gray600.size(13).make(),
+                    (item.cityName ?? item.locationName ?? 'Remote').toString().text.gray600.size(13).make(),
                     const Spacer(),
                     const Icon(Icons.access_time_rounded, size: 16, color: Colors.grey),
                     const SizedBox(width: 6),

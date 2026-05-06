@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/agency_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/agency_models.dart';
@@ -39,7 +40,7 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: _buildDrawer(context, user),
+      drawer: _buildDrawer(context, provider),
       body: RefreshIndicator(
         onRefresh: () => provider.fetchDashboard(),
         color: AppTheme.secondaryColor,
@@ -392,7 +393,11 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen> {
     }
   }
 
-  Widget _buildDrawer(BuildContext context, AgencyUser? user) {
+  Widget _buildDrawer(BuildContext context, AgencyProvider provider) {
+    final user = provider.agencyUser;
+    final profile = provider.profile;
+    final logoUrl = profile?.logoUrl;
+
     return Drawer(
       backgroundColor: const Color(0xFF111827),
       child: Column(
@@ -401,7 +406,12 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen> {
             decoration: const BoxDecoration(color: Color(0xFF1F2937)),
             currentAccountPicture: CircleAvatar(
               backgroundColor: AppTheme.secondaryColor,
-              child: (user?.agencyName ?? 'A').substring(0, 1).toUpperCase().text.white.bold.xl.make(),
+              backgroundImage: (logoUrl != null && logoUrl.isNotEmpty)
+                  ? CachedNetworkImageProvider(logoUrl)
+                  : null,
+              child: (logoUrl == null || logoUrl.isEmpty)
+                  ? (user?.agencyName ?? 'A').substring(0, 1).toUpperCase().text.white.bold.xl.make()
+                  : null,
             ),
             accountName: (user?.agencyName ?? 'Agency Account').text.bold.make(),
             accountEmail: (user?.email ?? '').text.xs.make(),

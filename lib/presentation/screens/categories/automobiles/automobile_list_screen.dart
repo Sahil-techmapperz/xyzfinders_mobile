@@ -332,7 +332,7 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
                     const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: (car.location?['name'] ?? 'Unknown Location').toString().text.gray500.size(12).maxLines(2).ellipsis.make(),
+                      child: (car.cityName ?? car.locationName ?? 'N/A').toString().text.gray500.size(12).maxLines(2).ellipsis.make(),
                     ),
                   ],
                 ),

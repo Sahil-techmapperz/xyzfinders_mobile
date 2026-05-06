@@ -97,6 +97,7 @@ class ProductProvider with ChangeNotifier {
   Future<void> fetchProducts({
     int? categoryId,
     int? locationId,
+    String? locationSearch,
     String? condition,
     double? minPrice,
     double? maxPrice,
@@ -119,6 +120,7 @@ class ProductProvider with ChangeNotifier {
         page: _currentPage,
         categoryId: categoryId,
         locationId: locationId,
+        locationSearch: locationSearch,
         condition: condition,
         minPrice: minPrice,
         maxPrice: maxPrice,
@@ -149,6 +151,7 @@ class ProductProvider with ChangeNotifier {
   Future<void> loadMore({
     int? categoryId,
     int? locationId,
+    String? locationSearch,
     String? condition,
     double? minPrice,
     double? maxPrice,
@@ -165,6 +168,7 @@ class ProductProvider with ChangeNotifier {
         page: _currentPage + 1,
         categoryId: categoryId,
         locationId: locationId,
+        locationSearch: locationSearch,
         condition: condition,
         minPrice: minPrice,
         maxPrice: maxPrice,

@@ -11,17 +11,26 @@ import '../../widgets/featured_carousel.dart';
 import '../categories/real_estate/real_estate_detail_screen.dart';
 import '../../../data/services/category_service.dart';
 import '../../../data/models/category_model.dart';
+import '../../../data/services/category_service.dart';
+import '../../../data/models/category_model.dart';
+import '../../../core/config/api_service.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../widgets/common/location_search_sheet.dart';
 
 class ProductListScreen extends StatefulWidget {
   final String? searchQuery;
   final int? categoryId;
   final String? categoryName;
+  final int? locationId;
+  final String? locationName;
 
   const ProductListScreen({
     super.key,
     this.searchQuery,
     this.categoryId,
     this.categoryName,
+    this.locationId,
+    this.locationName,
   });
 
   @override
@@ -32,27 +41,47 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   Future<List<CategoryModel>>? _categoriesFuture;
+  Future<List<dynamic>>? _locationsFuture;
   
   // Persistent filter state
   double _minPrice = 0;
   double _maxPrice = 100000;
   String? _selectedCondition;
   int? _selectedCategoryId;
+  int? _selectedLocationId;
+  String? _selectedLocationName;
   String? _selectedSortBy;
 
   @override
   void initState() {
     super.initState();
     _selectedCategoryId = widget.categoryId;
+    _selectedLocationId = widget.locationId;
+    _selectedLocationName = widget.locationName;
     _categoriesFuture = CategoryService().getCategories();
+    _locationsFuture = _fetchLocations();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().fetchProducts(
             refresh: true,
             search: widget.searchQuery,
             categoryId: widget.categoryId,
+            locationId: widget.locationId,
+            locationSearch: widget.locationId == null ? widget.locationName : null,
           );
     });
     _scrollController.addListener(_onScroll);
+  }
+
+  Future<List<dynamic>> _fetchLocations() async {
+    try {
+      final response = await ApiService().get(ApiConstants.locations);
+      if (response.statusCode == 200) {
+        return response.data['data'] as List<dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error fetching locations in ProductListScreen: $e');
+    }
+    return [];
   }
 
   @override
@@ -69,6 +98,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
       context.read<ProductProvider>().loadMore(
             search: widget.searchQuery,
             categoryId: widget.categoryId,
+            locationId: _selectedLocationId,
+            locationSearch: _selectedLocationId == null ? _selectedLocationName : null,
           );
     }
   }
@@ -78,6 +109,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
           refresh: true,
           search: widget.searchQuery,
           categoryId: widget.categoryId,
+          locationId: _selectedLocationId,
+          locationSearch: _selectedLocationId == null ? _selectedLocationName : null,
         );
   }
 
@@ -115,6 +148,74 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       ],
                     ),
                     20.heightBox,
+
+                    // Location Filter
+                    "Location".text.bold.make(),
+                    10.heightBox,
+                    FutureBuilder<List<dynamic>>(
+                      future: _locationsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                          return "No locations available".text.color(Colors.grey).make();
+                        }
+                        
+                        final locations = snapshot.data!;
+                        final displayLocation = _selectedLocationId != null
+                            ? "${locations.firstWhere((l) => l['id'] == _selectedLocationId, orElse: () => {'name': 'Unknown', 'city_name': ''})['name']}, ${locations.firstWhere((l) => l['id'] == _selectedLocationId, orElse: () => {'city_name': ''})['city_name']}"
+                            : (_selectedLocationName ?? "All Locations");
+
+                        return InkWell(
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                              ),
+                              builder: (context) {
+                                return LocationSearchSheet(
+                                  locations: locations,
+                                  selectedLocationId: _selectedLocationId,
+                                  selectedLocationName: _selectedLocationName,
+                                  onSelect: (id, name) {
+                                    setModalState(() {
+                                      _selectedLocationId = id;
+                                      _selectedLocationName = name;
+                                    });
+                                  },
+                                );
+                              },
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    displayLocation,
+                                    style: TextStyle(
+                                      color: _selectedLocationId != null || _selectedLocationName != null ? Colors.black : Colors.black87,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    20.heightBox,
                     
                     // Category Filter
                     "Category".text.bold.make(),
@@ -135,6 +236,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         
                         final categories = snapshot.data!;
                         return DropdownButtonFormField<int>(
+                          isExpanded: true,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             border: OutlineInputBorder(
@@ -147,12 +249,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           items: [
                             const DropdownMenuItem<int>(
                               value: null,
-                              child: Text("All Categories"),
+                              child: Text("All Categories", overflow: TextOverflow.ellipsis),
                             ),
                             ...categories.map((cat) {
                               return DropdownMenuItem<int>(
                                 value: cat.id,
-                                child: Text(cat.name),
+                                child: Text(cat.name, overflow: TextOverflow.ellipsis),
                               );
                             }),
                           ],
@@ -269,6 +371,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 refresh: true,
                                 search: _searchController.text.isEmpty ? widget.searchQuery : _searchController.text,
                                 categoryId: _selectedCategoryId,
+                                locationId: _selectedLocationId,
+                                locationSearch: _selectedLocationId == null ? _selectedLocationName : null,
                                 minPrice: _minPrice > 0 ? _minPrice : null,
                                 maxPrice: _maxPrice < 100000 ? _maxPrice : null,
                                 condition: _selectedCondition,
@@ -296,6 +400,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                             _maxPrice = 100000;
                             _selectedCondition = null;
                             _selectedCategoryId = widget.categoryId;
+                            _selectedLocationId = widget.locationId;
+                            _selectedLocationName = widget.locationName;
                             _selectedSortBy = null;
                           });
                           Navigator.pop(context);
@@ -303,6 +409,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 refresh: true,
                                 search: _searchController.text.isEmpty ? widget.searchQuery : _searchController.text,
                                 categoryId: widget.categoryId,
+                                locationId: widget.locationId,
+                                locationSearch: widget.locationId == null ? widget.locationName : null,
                                 minPrice: null,
                                 maxPrice: null,
                                 condition: null,
@@ -415,6 +523,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                                       refresh: true,
                                                       search: widget.searchQuery,
                                                       categoryId: _selectedCategoryId ?? widget.categoryId,
+                                                      locationId: _selectedLocationId,
+                                                      locationSearch: _selectedLocationId == null ? _selectedLocationName : null,
                                                       minPrice: _minPrice > 0 ? _minPrice : null,
                                                       maxPrice: _maxPrice < 100000 ? _maxPrice : null,
                                                       condition: _selectedCondition,
@@ -432,6 +542,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                             refresh: true,
                                             search: val.isEmpty ? widget.searchQuery : val,
                                             categoryId: _selectedCategoryId ?? widget.categoryId,
+                                            locationId: _selectedLocationId,
+                                            locationSearch: _selectedLocationId == null ? _selectedLocationName : null,
                                             minPrice: _minPrice > 0 ? _minPrice : null,
                                             maxPrice: _maxPrice < 100000 ? _maxPrice : null,
                                             condition: _selectedCondition,
@@ -483,31 +595,60 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 else
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    sliver: SliverGrid(
+                    sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final product = provider.products[index];
-                          return ProductCard(
-                            product: product,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => RealEstateDetailScreen(
-                                    productId: product.id,
+                        (context, rowIndex) {
+                          final leftIndex = rowIndex * 2;
+                          final rightIndex = leftIndex + 1;
+                          final leftProduct = provider.products[leftIndex];
+                          final rightProduct = rightIndex < provider.products.length
+                              ? provider.products[rightIndex]
+                              : null;
+
+                          // NOTE: .animate() must wrap the outermost widget — NOT inside
+                          // IntrinsicHeight, because animate() uses LayoutBuilder internally
+                          // which doesn't support intrinsic dimensions.
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: ProductCard(
+                                    product: leftProduct,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => RealEstateDetailScreen(
+                                          productId: leftProduct.id,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              );
-                            },
-                          ).animate().fadeIn(duration: 400.ms, delay: (50 * index).ms).slideY(begin: 0.1, end: 0);
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: rightProduct != null
+                                      ? ProductCard(
+                                          product: rightProduct,
+                                          onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => RealEstateDetailScreen(
+                                                productId: rightProduct.id,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ],
+                            ),
+                          ).animate()
+                            .fadeIn(duration: 400.ms, delay: (50 * rowIndex).ms)
+                            .slideY(begin: 0.1, end: 0);
                         },
-                        childCount: provider.products.length,
-                      ),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.75, // Adjusted for card height
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+                        childCount: (provider.products.length / 2).ceil(),
                       ),
                     ),
                   ),
@@ -532,19 +673,34 @@ class _ProductListScreenState extends State<ProductListScreen> {
     return Shimmer.fromColors(
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
-      child: GridView.builder(
+      child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.75,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: 6,
-        itemBuilder: (_, __) => Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+        itemCount: 4,
+        itemBuilder: (_, __) => Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  height: 220,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

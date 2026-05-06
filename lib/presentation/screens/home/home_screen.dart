@@ -54,6 +54,8 @@ import '../agency/agency_registration_screen.dart';
 import '../agency/agency_dashboard_screen.dart';
 import '../../widgets/favorite_toggle_button.dart';
 import '../wishlist/wishlist_screen.dart';
+import '../../widgets/common/searchable_location_picker.dart';
+import '../../widgets/common/location_search_sheet.dart';
 import 'package:provider/provider.dart';
 import '../categories/all_categories_screen.dart';
 
@@ -93,6 +95,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final agencyProvider = Provider.of<AgencyProvider>(context);
+    if (agencyProvider.isAuthenticated) {
+      return const AgencyDashboardScreen();
+    }
+
     final authProvider = Provider.of<AuthProvider>(context);
     final isSellerMode = authProvider.isSellerMode;
     final screens = isSellerMode ? _sellerScreens : _buyerScreens;
@@ -115,13 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
       floatingActionButton: CustomFab(
-        onPressed: () {
-          if (isSellerMode) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const PostAdCategoryScreen()));
-          } else {
-            setState(() => _selectedIndex = 0);
-          }
-        },
+        onPressed: () {}, // speed-dial handles its own actions internally
         isSellerMode: isSellerMode,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -279,73 +280,55 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
-  Future<void> _saveLocation(int id, String name) async {
+  Future<void> _saveLocation(int? id, String name) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('selected_location_id', id);
+    if (id != null) {
+      await prefs.setInt('selected_location_id', id);
+    } else {
+      await prefs.remove('selected_location_id');
+    }
     await prefs.setString('selected_location_name', name);
     if (!mounted) return;
     setState(() {
       _selectedLocation = name;
       _selectedLocationId = id;
     });
+
+    // Redirect to All Categories with the selected location filter
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductListScreen(
+          categoryName: 'All Categories',
+          locationId: id,
+          locationName: name,
+        ),
+      ),
+    );
   }
 
   void _showLocationPicker() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  "Select Location".text.xl2.bold.make(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              if (_isLoadingLocations)
-                const Center(child: CircularProgressIndicator())
-              else if (_locations.isEmpty)
-                "No locations available".text.make().centered().p20()
-              else
-                Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _locations.length,
-                    itemBuilder: (context, index) {
-                      final loc = _locations[index];
-                      final name = "${loc['name']}, ${loc['city_name']}";
-                      final isSelected = loc['id'] == _selectedLocationId;
-
-                      return ListTile(
-                        leading: Icon(
-                          Icons.location_on,
-                          color: isSelected ? AppTheme.primaryColor : Colors.grey,
-                        ),
-                        title: name.text.semiBold.color(isSelected ? AppTheme.primaryColor : Colors.black).make(),
-                        subtitle: "${loc['state_name']}".text.xs.make(),
-                        onTap: () {
-                          _saveLocation(loc['id'], name);
-                          Navigator.pop(context);
-                        },
-                        trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
+        if (_isLoadingLocations) {
+          return const SizedBox(
+            height: 200,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        return LocationSearchSheet(
+          locations: _locations,
+          selectedLocationId: _selectedLocationId,
+          selectedLocationName: _selectedLocation,
+          onSelect: (id, name) {
+            _saveLocation(id, name);
+          },
         );
       },
     );
@@ -451,73 +434,43 @@ class _HomeTabState extends State<HomeTab> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-            Flexible(
-              child: Image.asset(
-                'assets/images/logo.png',
-                height: 40,
-                fit: BoxFit.contain,
-              ),
-            ),
+                Flexible(
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    height: 40,
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          // Show agency button ONLY if: agency is logged in, OR nobody is logged in
-          Consumer2<AgencyProvider, AuthProvider>(
-            builder: (context, agencyProvider, authProvider, _) {
-              // A regular buyer or seller is logged in — hide the store button entirely
-              if (authProvider.isAuthenticated && !agencyProvider.isAuthenticated) {
-                return const SizedBox.shrink();
-              }
-              // Agency authenticated → show "Agency Dashboard"
-              // Not authenticated → show "Setup Your Store"
-              return Flexible(
-                child: InkWell(
-                  onTap: () => _navigateToAgency(context, agencyProvider),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.secondaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.business_center_rounded,
-                          size: 16,
-                          color: AppTheme.secondaryColor,
-                        ),
-                        const SizedBox(width: 6),
-                        (agencyProvider.isAuthenticated ? "Agency Dashboard" : "Setup Your Store")
-                            .text.bold.color(AppTheme.secondaryColor)
-                            .size(11)
-                            .make(),
-                      ],
-                    ),
+          // Location Picker Button
+          InkWell(
+            onTap: _showLocationPicker,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.location_on, size: 16, color: AppTheme.primaryColor),
+                  const SizedBox(width: 4),
+                  Container(
+                    constraints: const BoxConstraints(maxWidth: 120),
+                    child: _selectedLocation.text.size(12).ellipsis.make(),
                   ),
-                ),
-              );
-            },
+                  const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
-  }
-
-  void _navigateToAgency(BuildContext context, AgencyProvider agencyProvider) {
-    if (agencyProvider.isAuthenticated) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const AgencyDashboardScreen()),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const AgencyRegistrationScreen()),
-      );
-    }
   }
 
   Widget _buildSearchSection(BuildContext context) {
@@ -680,7 +633,9 @@ class _HomeTabState extends State<HomeTab> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ProductListScreen(categoryName: "All Categories")),
+                MaterialPageRoute(
+                  builder: (context) => ProductListScreen(categoryName: 'All Categories'),
+                ),
               );
             },
             child: "View All".text.color(AppTheme.primaryColor).make(),
@@ -697,159 +652,221 @@ class _HomeTabState extends State<HomeTab> {
         child: CircularProgressIndicator(),
       ));
     }
-    
+
     if (_categories.isEmpty) {
       return const SizedBox(height: 100);
     }
 
-    // Process backend URL to remove /api if iconUrl already has it
     final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
 
-    final displayCategories = _categories.take(8).toList();
+    int categoryPriority(String name) {
+      final lower = name.toLowerCase();
+      if (lower.contains('real estate') || lower.contains('property')) return 0;
+      if (lower.contains('automobile') || lower.contains('car')) return 1;
+      if (lower.contains('service')) return 2;
+      if (lower.contains('electronic') || lower.contains('gadget')) return 3;
+      if (lower.contains('fashion')) return 4;
+      if (lower.contains('job')) return 5;
+      if (lower.contains('learning') || lower.contains('education')) return 6;
+      if (lower.contains('event')) return 7;
+      if (lower.contains('mobile') || lower.contains('phone')) return 8;
+      if (lower.contains('beauty')) return 9;
+      if (lower.contains('furniture')) return 10;
+      if (lower.contains('pet') || lower.contains('animal')) return 11;
+      return 99;
+    }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+    final displayCategories = List.of(_categories)
+      ..sort((a, b) => categoryPriority(a.name).compareTo(categoryPriority(b.name)));
+
+    // Build rows of 3 manually to avoid GridView shrinkWrap height issues
+    Widget buildCategoryCard(CategoryModel cat, int index) {
+      return InkWell(
+        onTap: () {
+          Widget? targetScreen;
+          final catName = cat.name.toLowerCase();
+          if (catName.contains('automobile')) {
+            targetScreen = AutomobileListScreen(categoryId: cat.id);
+          } else if (catName.contains('beauty')) {
+            targetScreen = BeautyListScreen(categoryId: cat.id);
+          } else if (catName.contains('electronic') || catName.contains('gadget')) {
+            targetScreen = ElectronicsListScreen(categoryId: cat.id);
+          } else if (catName.contains('fashion')) {
+            targetScreen = FashionListScreen(categoryId: cat.id);
+          } else if (catName.contains('furniture')) {
+            targetScreen = FurnitureListScreen(categoryId: cat.id);
+          } else if (catName.contains('job')) {
+            targetScreen = JobsListScreen(categoryId: cat.id);
+          } else if (catName.contains('real estate') || catName.contains('property')) {
+            targetScreen = RealEstateListScreen(categoryId: cat.id);
+          } else if (catName.contains('event')) {
+            targetScreen = LocalEventsListScreen(categoryId: cat.id);
+          } else if (catName.contains('education') || catName.contains('learning')) {
+            targetScreen = EducationListScreen(categoryId: cat.id);
+          } else if (catName.contains('pet') || catName.contains('animal')) {
+            targetScreen = PetsAccessoriesListScreen(categoryId: cat.id);
+          } else if (catName.contains('mobile') || catName.contains('phone')) {
+            targetScreen = MobilesListScreen(categoryId: cat.id);
+          } else if (catName.contains('service')) {
+            targetScreen = ServicesListScreen(categoryId: cat.id);
+          } else {
+            targetScreen = ProductListScreen(searchQuery: '');
+          }
+          if (targetScreen != null) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => targetScreen!));
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5, offset: const Offset(0, 2)),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (cat.iconUrl != null && cat.iconUrl!.isNotEmpty)
+                CachedNetworkImage(
+                  imageUrl: cat.iconUrl!.startsWith('http') ? cat.iconUrl! : '$baseUrl${cat.iconUrl}',
+                  height: 30,
+                  width: 30,
+                  fit: BoxFit.contain,
+                  errorWidget: (_, __, ___) => Icon(_getCategoryIcon(cat.name), size: 30, color: _getCategoryColor(cat.name)),
+                )
+              else
+                Icon(_getCategoryIcon(cat.name), size: 30, color: _getCategoryColor(cat.name)),
+              const SizedBox(height: 6),
+              Text(
+                cat.name,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      ).animate().scale(delay: (50 * index).ms, duration: 300.ms);
+    }
+
+    // Group into rows of 3
+    final rows = <List<CategoryModel>>[];
+    for (var i = 0; i < displayCategories.length; i += 3) {
+      final end = (i + 3 < displayCategories.length) ? i + 3 : displayCategories.length;
+      rows.add(displayCategories.sublist(i, end));
+    }
+
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 15,
-        mainAxisSpacing: 15,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: displayCategories.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const StoreListScreen()),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Category rows (3 per row)
+          for (var r = 0; r < rows.length; r++) ...[
+            if (r > 0) const SizedBox(height: 12),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var c = 0; c < 3; c++) ...[
+                    if (c > 0) const SizedBox(width: 12),
+                    Expanded(
+                      child: c < rows[r].length
+                          ? buildCategoryCard(rows[r][c], r * 3 + c)
+                          : const SizedBox.shrink(), // empty filler for incomplete last row
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+
+          // ── Bottom row: Listed Stores + Store Setup ──
+          Consumer<AgencyProvider>(
+            builder: (context, agencyProvider, _) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const StoreListScreen()),
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5, offset: const Offset(0, 2)),
+                          ],
+                        ),
+                        child: const Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.store_rounded, size: 32, color: AppTheme.secondaryColor),
+                            SizedBox(height: 8),
+                            Text('Listed Stores', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ).animate().scale(duration: 300.ms),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        if (agencyProvider.isAuthenticated) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AgencyDashboardScreen()),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AgencyRegistrationScreen()),
+                          );
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5, offset: const Offset(0, 2)),
+                          ],
+                        ),
+                        child: const Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.add_business_rounded, size: 32, color: AppTheme.secondaryColor),
+                            SizedBox(height: 8),
+                            Text('Store Setup', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ).animate().scale(delay: 50.ms, duration: 300.ms),
+                  ),
+                ],
               );
             },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.store_rounded,
-                    size: 32,
-                    color: AppTheme.secondaryColor,
-                  ),
-                  const SizedBox(height: 8),
-                  "Stores".text.bold.size(11).make(),
-                ],
-              ),
-            ),
-          ).animate().scale(duration: 300.ms);
-        }
-
-        final cat = displayCategories[index - 1];
-        return InkWell(
-          onTap: () {
-            Widget? targetScreen;
-            final catName = cat.name.toLowerCase();
-            
-            if (catName.contains('automobile')) {
-              targetScreen = AutomobileListScreen(categoryId: cat.id);
-            } else if (catName.contains('beauty')) {
-              targetScreen = BeautyListScreen(categoryId: cat.id);
-            } else if (catName.contains('electronic') || catName.contains('gadget')) {
-              targetScreen = ElectronicsListScreen(categoryId: cat.id);
-            } else if (catName.contains('fashion')) {
-              targetScreen = FashionListScreen(categoryId: cat.id);
-            } else if (catName.contains('furniture')) {
-              targetScreen = FurnitureListScreen(categoryId: cat.id);
-            } else if (catName.contains('job')) {
-              targetScreen = JobsListScreen(categoryId: cat.id);
-            } else if (catName.contains('real estate') || catName.contains('property')) {
-              targetScreen = RealEstateListScreen(categoryId: cat.id);
-            } else if (catName.contains('event')) {
-              targetScreen = LocalEventsListScreen(categoryId: cat.id);
-            } else if (catName.contains('education') || catName.contains('learning')) {
-              targetScreen = EducationListScreen(categoryId: cat.id);
-            } else if (catName.contains('pet') || catName.contains('animal')) {
-              targetScreen = PetsAccessoriesListScreen(categoryId: cat.id);
-            } else if (catName.contains('mobile') || catName.contains('phone')) {
-              targetScreen = MobilesListScreen(categoryId: cat.id);
-            } else if (catName.contains('service')) {
-              targetScreen = ServicesListScreen(categoryId: cat.id);
-            } else {
-              targetScreen = ProductListScreen(searchQuery: '', /*categoryId: cat.id*/);
-            }
-
-            if (targetScreen != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => targetScreen!),
-              );
-            }
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (cat.iconUrl != null && cat.iconUrl!.isNotEmpty)
-                  CachedNetworkImage(
-                    imageUrl: cat.iconUrl?.startsWith('http') == true 
-                        ? cat.iconUrl! 
-                        : '$baseUrl${cat.iconUrl}',
-                    height: 32,
-                    width: 32,
-                    fit: BoxFit.contain,
-                    // Remove color filter as it tints the entire image (making icons look like solid squares)
-                    // color: _getCategoryColor(cat.name),
-                    errorWidget: (context, url, error) => Icon(_getCategoryIcon(cat.name), size: 32, color: _getCategoryColor(cat.name)),
-                  )
-                else
-                  Icon(
-                    _getCategoryIcon(cat.name),
-                    size: 32,
-                    color: _getCategoryColor(cat.name),
-                  ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: Text(
-                    cat.name,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
-        ).animate().scale(delay: (50 * index).ms, duration: 300.ms);
-      },
+        ],
+      ),
     );
   }
 
@@ -861,27 +878,115 @@ class _HomeTabState extends State<HomeTab> {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
           _buildPromoCard(
-            title: "Ready to List Your Home?",
-            subtitle: "Reach Buyers and Rentals Fast.",
+            title: "Find Your Dream Home",
+            subtitle: "Browse verified property listings.",
             tag: "PROPERTY",
             imageUrl:
                 "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=500&q=60",
+            onTap: () {
+              final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('real estate') || c.name.toLowerCase().contains('property'));
+              if (cat != null) {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => RealEstateListScreen(categoryId: cat.id)));
+              }
+            },
           ),
           const SizedBox(width: 15),
           _buildPromoCard(
-            title: "Ready to List Your Car?",
-            subtitle: "Reach Buyers and Rentals Fast.",
+            title: "Upgrade Your Ride",
+            subtitle: "Best deals on new & used cars.",
             tag: "VEHICLES",
             imageUrl:
                 "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=500&q=60",
+            onTap: () {
+              final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('automobile') || c.name.toLowerCase().contains('car'));
+              if (cat != null) {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => AutomobileListScreen(categoryId: cat.id)));
+              }
+            },
           ),
           const SizedBox(width: 15),
           _buildPromoCard(
-            title: "Coming Soon - Fashion",
-            subtitle: "Find the latest trends.",
+            title: "Latest Fashion Trends",
+            subtitle: "Shop the newest styles.",
             tag: "FASHION",
             imageUrl:
                 "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=500&q=60",
+            onTap: () {
+              final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('fashion'));
+              if (cat != null) {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => FashionListScreen(categoryId: cat.id)));
+              }
+            },
+          ),
+          const SizedBox(width: 15),
+          _buildPromoCard(
+            title: "Top Gadgets & Tech",
+            subtitle: "Laptops, Mobiles & more.",
+            tag: "ELECTRONICS",
+            imageUrl:
+                "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=500&q=60",
+            onTap: () {
+              final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('electronic') || c.name.toLowerCase().contains('gadget'));
+              if (cat != null) {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ElectronicsListScreen(categoryId: cat.id)));
+              }
+            },
+          ),
+          const SizedBox(width: 15),
+          _buildPromoCard(
+            title: "Find Your Next Job",
+            subtitle: "Top companies are hiring now.",
+            tag: "JOBS",
+            imageUrl:
+                "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=500&q=60",
+            onTap: () {
+              final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('job'));
+              if (cat != null) {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => JobsListScreen(categoryId: cat.id)));
+              }
+            },
+          ),
+          const SizedBox(width: 15),
+          _buildPromoCard(
+            title: "Beauty & Personal Care",
+            subtitle: "Best products for your glow.",
+            tag: "BEAUTY",
+            imageUrl:
+                "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=500&q=60",
+            onTap: () {
+              final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('beauty'));
+              if (cat != null) {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => BeautyListScreen(categoryId: cat.id)));
+              }
+            },
+          ),
+          const SizedBox(width: 15),
+          _buildPromoCard(
+            title: "Style Your Space",
+            subtitle: "Premium furniture for your home.",
+            tag: "FURNITURE",
+            imageUrl:
+                "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=500&q=60",
+            onTap: () {
+              final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('furniture'));
+              if (cat != null) {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => FurnitureListScreen(categoryId: cat.id)));
+              }
+            },
+          ),
+          const SizedBox(width: 15),
+          _buildPromoCard(
+            title: "Home & Local Services",
+            subtitle: "Top professionals at your service.",
+            tag: "SERVICES",
+            imageUrl:
+                "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=500&q=60",
+            onTap: () {
+              final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('service'));
+              if (cat != null) {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ServicesListScreen(categoryId: cat.id)));
+              }
+            },
           ),
         ],
       ),
@@ -893,46 +998,66 @@ class _HomeTabState extends State<HomeTab> {
     required String subtitle,
     required String tag,
     required String imageUrl,
+    VoidCallback? onTap,
   }) {
-    return SizedBox(
-      width: 280,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        width: 280,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                image: DecorationImage(
-                  image: NetworkImage(imageUrl),
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
                   fit: BoxFit.cover,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
+                  width: double.infinity,
+                  placeholder: (context, url) => Container(
+                    color: Colors.grey.shade100,
+                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Colors.grey.shade100,
+                    child: const Icon(Icons.image_not_supported_outlined, color: Colors.grey),
+                  ),
+                  imageBuilder: (context, imageProvider) => Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: imageProvider,
+                        fit: BoxFit.cover,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: tag.text.size(8).bold.make(),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 12,
+                          left: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: tag.text.size(8).bold.make(),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          title.text.lg.bold.make(),
-          subtitle.text.gray500.sm.make(),
-        ],
+            const SizedBox(height: 10),
+            title.text.lg.bold.make(),
+            subtitle.text.gray500.sm.make(),
+          ],
+        ),
       ),
     );
   }
@@ -1065,7 +1190,7 @@ class _HomeTabState extends State<HomeTab> {
                               ),
                               const SizedBox(height: 2),
                               Flexible(
-                                child: (item.location?['name'] ?? 'Unknown').toString().text.gray500
+                                child: (item.cityName ?? item.locationName ?? 'N/A').toString().text.gray500
                                     .size(9)
                                     .maxLines(1)
                                     .ellipsis

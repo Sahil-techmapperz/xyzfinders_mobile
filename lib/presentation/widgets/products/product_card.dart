@@ -30,43 +30,49 @@ class ProductCard extends StatelessWidget {
         // Handle Base64 Data URI
         try {
           final base64String = imageUrl.split(',').last;
-          imageWidget = Image.memory(
-            base64Decode(base64String),
-            height: 110,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _buildPlaceholder(),
+          imageWidget = AspectRatio(
+            aspectRatio: 1.3,
+            child: Image.memory(
+              base64Decode(base64String),
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _buildPlaceholder(),
+            ),
           );
         } catch (e) {
           imageWidget = _buildPlaceholder();
         }
       } else if (imageUrl.startsWith('http')) {
         // Handle Full URL
-        imageWidget = CachedNetworkImage(
-          imageUrl: imageUrl,
-          height: 110,
-          width: double.infinity,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
-            child: Container(color: Colors.white, height: 110),
+        imageWidget = AspectRatio(
+          aspectRatio: 1.3,
+          child: CachedNetworkImage(
+            imageUrl: imageUrl,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: AspectRatio(aspectRatio: 1.3, child: Container(color: Colors.white)),
+            ),
+            errorWidget: (context, url, error) => _buildPlaceholder(),
           ),
-          errorWidget: (context, url, error) => _buildPlaceholder(),
         );
       } else {
         // Handle Relative Path
-        imageWidget = CachedNetworkImage(
-          imageUrl: '$baseUrl$imageUrl',
-          height: 110,
-          width: double.infinity,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
-            child: Container(color: Colors.white, height: 110),
+        imageWidget = AspectRatio(
+          aspectRatio: 1.3,
+          child: CachedNetworkImage(
+            imageUrl: '$baseUrl$imageUrl',
+            width: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: AspectRatio(aspectRatio: 1.3, child: Container(color: Colors.white)),
+            ),
+            errorWidget: (context, url, error) => _buildPlaceholder(),
           ),
-          errorWidget: (context, url, error) => _buildPlaceholder(),
         );
       }
     } else {
@@ -100,7 +106,7 @@ class ProductCard extends StatelessWidget {
           6.heightBox,
           
           HStack([
-            "₹ ${product.price.toStringAsFixed(0)}".text.bold.xl.color(AppTheme.secondaryColor).make(), // Orange Price
+            "₹ ${product.price.toStringAsFixed(0)}".text.bold.xl.color(AppTheme.secondaryColor).make(),
           ]),
 
           6.heightBox,
@@ -148,13 +154,14 @@ class ProductCard extends StatelessWidget {
   }
 
   Widget _buildPlaceholder() {
-    return Container(
-      height: 110,
-      color: Vx.gray200,
-      child: const Center(
-        child: Icon(Icons.image, color: Vx.gray400),
+    return AspectRatio(
+      aspectRatio: 1.3,
+      child: Container(
+        color: Vx.gray200,
+        child: const Center(
+          child: Icon(Icons.image, color: Vx.gray400),
+        ),
       ),
     );
   }
 }
-
