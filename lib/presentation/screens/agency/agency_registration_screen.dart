@@ -74,8 +74,8 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
       'phone': _phoneController.text,
       'location': _locationController.text,
       'govt_id_number': _govtIdNumberController.text,
-      'trade_license': await dio.MultipartFile.fromFile(_tradeLicense!.path),
-      'govt_id': await dio.MultipartFile.fromFile(_govtId!.path),
+      'trade_license': _tradeLicense!,
+      'govt_id': _govtId!,
     };
 
     final success = await provider.register(registrationData);

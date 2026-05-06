@@ -47,39 +47,89 @@ class AgencyService {
     }
   }
 
+  // Get ImageKit Auth Parameters
+  Future<Map<String, dynamic>> getImageKitAuth() async {
+    final response = await _apiService.get('/auth/imagekit');
+    return response.data;
+  }
+
+  // Upload to ImageKit directly
+  Future<String?> uploadToImageKit(dynamic file) async {
+    try {
+      debugPrint('Fetching ImageKit auth data...');
+      final authData = await getImageKitAuth();
+      debugPrint("Auth data received: ${authData.keys.join(', ')}");
+      
+      final fileName = "agency_${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}";
+      debugPrint('Uploading file: $fileName');
+
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(file.path, filename: fileName),
+        'fileName': fileName,
+        'publicKey': authData['publicKey']?.toString(),
+        'signature': authData['signature']?.toString(),
+        'expire': authData['expire']?.toString(),
+        'token': authData['token']?.toString(),
+        'useUniqueFileName': 'true',
+      });
+
+      debugPrint('FormData created, starting Dio post...');
+
+      final response = await Dio().post(
+        'https://upload.imagekit.io/api/v1/files/upload',
+        data: formData,
+        options: Options(
+          validateStatus: (status) => true,
+        ),
+      );
+
+      debugPrint('Upload response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        String url = response.data['url'];
+        final lowerUrl = url.toLowerCase();
+        if (lowerUrl.endsWith('.heic') || lowerUrl.endsWith('.heif')) {
+          url = url.contains('?') ? '$url&tr=f-webp' : '$url?tr=f-webp';
+        }
+        return url;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('ImageKit upload exception: $e');
+      return null;
+    }
+  }
+
   // Register new agency
   Future<Map<String, dynamic>> register(Map<String, dynamic> data) async {
-    // If data contains files (XFile), convert to FormData
-    dynamic requestData;
-    
-    if (data.values.any((v) => v is String && v.startsWith('FILE:'))) {
-      // This is a simplified logic, I'll check for actual file types in the screen
-    }
+    final Map<String, dynamic> payload = Map.from(data);
 
-    // Actual implementation for the screen will pass a Map with XFile or MultipartFile
-    final formData = FormData.fromMap(data);
+    // If trade_license or govt_id are Files, upload them to ImageKit first
+    if (payload['trade_license'] != null) {
+      final tradeUrl = await uploadToImageKit(payload['trade_license']);
+      if (tradeUrl == null) throw Exception('Failed to upload Trade License');
+      payload['trade_license_url'] = tradeUrl;
+      payload.remove('trade_license');
+    }
+    
+    if (payload['govt_id'] != null) {
+      final govtUrl = await uploadToImageKit(payload['govt_id']);
+      if (govtUrl == null) throw Exception('Failed to upload Govt ID');
+      payload['govt_id_url'] = govtUrl;
+      payload.remove('govt_id');
+    }
 
     final response = await _apiService.post(
       ApiConstants.agencyRegister,
-      data: formData,
+      data: payload, // Sending as JSON
     );
 
     final responseData = response.data;
     if (responseData['success'] == true) {
-      final data = responseData['data'];
-      final user = AgencyUser.fromJson(data['user']);
-      final token = data['token'] as String;
-
-      await _apiService.setAuthToken(token);
-      await _apiService.saveUserData(
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-      );
-
+      // Just return success message, since the backend returns { success: true, message: '...', data: { email: '...' } }
+      // without auto-login tokens yet.
       return {
-        'user': user,
-        'token': token,
+        'message': responseData['message'],
       };
     } else {
       throw Exception(responseData['message'] ?? 'Registration failed');
