@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../providers/auth_provider.dart';
+import '../../../data/services/image_upload_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../widgets/auth/auth_modal.dart';
@@ -65,6 +68,11 @@ class ProfileScreen extends StatelessWidget {
                     
                     // Settings List
                     _buildSettingsList(context, authProvider),
+                    
+                    if (!authProvider.isSellerMode) ...[
+                      const SizedBox(height: 16),
+                      _buildCVManagementTile(context, authProvider),
+                    ],
                     
                   ],
                 ),
@@ -668,5 +676,171 @@ class ProfileScreen extends StatelessWidget {
       ),
       onTap: onTap ?? () {},
     );
+  }
+
+  Widget _buildCVManagementTile(BuildContext context, AuthProvider authProvider) {
+    final user = authProvider.user;
+    final hasCV = user?.resumeUrl != null && user!.resumeUrl!.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: hasCV ? Colors.blue.shade50 : Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: hasCV ? Colors.blue.shade100 : Colors.orange.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                hasCV ? Icons.description : Icons.description_outlined,
+                color: hasCV ? Colors.blue.shade700 : Colors.orange.shade700,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasCV ? "CV Uploaded" : "No CV Uploaded",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: hasCV ? Colors.blue.shade900 : Colors.orange.shade900,
+                      ),
+                    ),
+                    if (hasCV)
+                      Text(
+                        "You can manage your CV here",
+                        style: TextStyle(fontSize: 12, color: Colors.blue.shade700),
+                      ),
+                  ],
+                ),
+              ),
+              if (!hasCV)
+                ElevatedButton(
+                  onPressed: () => _handleCVUpload(context, authProvider),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text("Upload Now", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+            ],
+          ),
+          if (hasCV) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _viewCV(user!.resumeUrl!),
+                    icon: const Icon(Icons.visibility, size: 18),
+                    label: const Text("View"),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue.shade700,
+                      side: BorderSide(color: Colors.blue.shade200),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _handleCVUpload(context, authProvider),
+                    icon: const Icon(Icons.edit, size: 18),
+                    label: const Text("Change"),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.green.shade700,
+                      side: BorderSide(color: Colors.green.shade200),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => _confirmDeleteCV(context, authProvider),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  tooltip: "Delete CV",
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _viewCV(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _confirmDeleteCV(BuildContext context, AuthProvider authProvider) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete CV"),
+        content: const Text("Are you sure you want to delete your CV?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await authProvider.deleteResume();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("CV deleted successfully")),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleCVUpload(BuildContext context, AuthProvider authProvider) async {
+    try {
+      FilePickerResult? result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        final uploadService = ImageUploadService();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Uploading CV...")),
+          );
+        }
+        
+        final resumeUrl = await uploadService.uploadToImageKit(file, prefix: 'resume');
+        
+        if (resumeUrl != null) {
+          await authProvider.updateResumeUrl(resumeUrl);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("CV updated successfully"), backgroundColor: Colors.green),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
+      }
+    }
   }
 }

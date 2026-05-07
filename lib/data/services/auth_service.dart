@@ -166,6 +166,18 @@ class AuthService {
     return UserModel.fromJson(data);
   }
 
+  // Update resume URL (buyer specific)
+  Future<void> updateResumeUrl(String resumeUrl) async {
+    final formData = FormData.fromMap({
+      'resumeUrl': resumeUrl,
+    });
+
+    await _apiService.put(
+      ApiConstants.buyerProfile,
+      data: formData,
+    );
+  }
+
   // Upload profile image
   Future<void> uploadProfileImage(File file) async {
     final formData = FormData.fromMap({

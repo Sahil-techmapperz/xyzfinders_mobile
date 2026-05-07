@@ -78,11 +78,15 @@ class CustomBottomNavBar extends StatelessWidget {
   }
 
   static void handleGlobalNavigation(BuildContext context, int index, int currentIndex, bool isSellerMode) {
-    if (index == currentIndex) return;
-    
+    // Home always pops to root — no early-return guard for index 0
     if (index == 0) {
       Navigator.popUntil(context, (route) => route.isFirst);
-    } else if (index == 1) {
+      return;
+    }
+
+    if (index == currentIndex) return;
+
+    if (index == 1) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => isSellerMode ? MyProductsScreen() : const WishlistScreen()),

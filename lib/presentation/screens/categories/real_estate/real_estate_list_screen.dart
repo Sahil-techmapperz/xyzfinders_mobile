@@ -592,6 +592,7 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
                                   'avatarUrl': item.sellerAvatar,
                                   'isAgencyChat': false,
                                   'agencyIdResolved': null,
+                                  'categoryId': item.categoryId,
                                 },
                               ),
                             ),

@@ -382,6 +382,36 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Update Resume URL
+  Future<bool> updateResumeUrl(String resumeUrl) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _authService.updateResumeUrl(resumeUrl);
+      await refreshUser();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to update CV';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Delete Resume
+  Future<bool> deleteResume() async {
+    return await updateResumeUrl('');
+  }
+
   // Clear error
   void clearError() {
     _error = null;

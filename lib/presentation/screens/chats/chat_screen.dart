@@ -37,7 +37,8 @@ class _ChatScreenState extends State<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final String entityId = widget.chatData['otherUserId'];
-      final int? productId = widget.chatData['productId'];
+      final dynamic rawProductId = widget.chatData['productId'];
+      final int? productId = rawProductId != null ? int.tryParse(rawProductId.toString()) : null;
       _chatProvider = context.read<ChatProvider>();
       _chatProvider!.loadMessages(entityId: entityId, productId: productId);
       // Register scroll callback so incoming socket messages scroll into view
@@ -218,22 +219,32 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           ElevatedButton(
             onPressed: () {
+              final rawId = widget.chatData['productId'];
+              if (rawId == null) return;
+              final int? productId = int.tryParse(rawId.toString());
               if (productId == null) return;
+
               final t = title.toString().toLowerCase();
+              final catId = widget.chatData['categoryId'];
               Widget target;
               
-              if (t.contains('car') || t.contains('bike') || t.contains('scooter')) {
-                target = AutomobileDetailScreen(productId: productId, title: title);
-              } else if (t.contains('electronic') || t.contains('gadget') || t.contains('processor')) {
-                target = ElectronicsDetailScreen(productId: productId, title: title);
-              } else if (t.contains('mobile') || t.contains('phone') || t.contains('iphone')) {
-                target = MobilesDetailScreen(productId: productId, title: title);
-              } else if (t.contains('fashion') || t.contains('dress')) {
-                target = FashionDetailScreen(productId: productId, title: title);
-              } else if (t.contains('furniture') || t.contains('sofa')) {
-                target = FurnitureDetailScreen(productId: productId, title: title);
+              // Try categoryId first if available (ID mapping from your backend)
+              if (catId != null) {
+                final int id = int.parse(catId.toString());
+                if (id == 2) { // Automobiles
+                  target = AutomobileDetailScreen(productId: productId, title: title);
+                } else if (id == 5) { // Electronics
+                  target = ElectronicsDetailScreen(productId: productId, title: title);
+                } else if (id == 3) { // Mobiles
+                  target = MobilesDetailScreen(productId: productId, title: title);
+                } else if (id == 1) { // Real Estate
+                  target = RealEstateDetailScreen(productId: productId, title: title);
+                } else {
+                  // Fallback to title matching if categoryId is unknown or other
+                  target = _detectTargetByTitle(t, productId, title);
+                }
               } else {
-                target = RealEstateDetailScreen(productId: productId, title: title);
+                target = _detectTargetByTitle(t, productId, title);
               }
               
               Navigator.push(context, MaterialPageRoute(builder: (context) => target));
@@ -250,6 +261,22 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
+  }
+
+  Widget _detectTargetByTitle(String t, int productId, dynamic title) {
+    if (t.contains('car') || t.contains('bike') || t.contains('scooter') || t.contains('auto') || t.contains('vehicle')) {
+      return AutomobileDetailScreen(productId: productId, title: title);
+    } else if (t.contains('electronic') || t.contains('gadget') || t.contains('processor') || t.contains('tv') || t.contains('laptop')) {
+      return ElectronicsDetailScreen(productId: productId, title: title);
+    } else if (t.contains('mobile') || t.contains('phone') || t.contains('iphone') || t.contains('android')) {
+      return MobilesDetailScreen(productId: productId, title: title);
+    } else if (t.contains('fashion') || t.contains('dress') || t.contains('cloth') || t.contains('shoe')) {
+      return FashionDetailScreen(productId: productId, title: title);
+    } else if (t.contains('furniture') || t.contains('sofa') || t.contains('chair') || t.contains('table')) {
+      return FurnitureDetailScreen(productId: productId, title: title);
+    } else {
+      return RealEstateDetailScreen(productId: productId, title: title);
+    }
   }
 
   Widget _buildProductImage(dynamic image) {

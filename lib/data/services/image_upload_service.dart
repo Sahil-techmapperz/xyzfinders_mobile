@@ -88,9 +88,44 @@ class ImageUploadService {
     await _apiService.delete('/upload/profile-image');
   }
 
-  // Get profile image URL for a user
-  String getProfileImageUrl(int userId) {
-    final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
-    return '$baseUrl/api/images/user/$userId';
+  // Get ImageKit Auth Parameters
+  Future<Map<String, dynamic>> getImageKitAuth() async {
+    final response = await _apiService.get('/auth/imagekit'); // Updated to match backend
+    return response.data;
+  }
+
+  // Upload to ImageKit directly
+  Future<String?> uploadToImageKit(File file, {String prefix = 'file'}) async {
+    try {
+      final authData = await getImageKitAuth();
+      
+      final fileName = "${prefix}_${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}";
+
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(file.path, filename: fileName),
+        'fileName': fileName,
+        'publicKey': authData['publicKey']?.toString(),
+        'signature': authData['signature']?.toString(),
+        'expire': authData['expire']?.toString(),
+        'token': authData['token']?.toString(),
+        'useUniqueFileName': 'true',
+      });
+
+      final response = await Dio().post(
+        'https://upload.imagekit.io/api/v1/files/upload',
+        data: formData,
+        options: Options(
+          validateStatus: (status) => true,
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data['url'];
+      }
+      return null;
+    } catch (e) {
+      print('ImageKit upload exception: $e');
+      return null;
+    }
   }
 }

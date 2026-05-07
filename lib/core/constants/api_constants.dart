@@ -39,6 +39,7 @@ class ApiConstants {
   
   // Users
   static const String userProfile = '/users/profile';
+  static const String buyerProfile = '/buyer/profile';
   static const String myProducts = '/users/my-products';
   static String userById(int id) => '/users/$id';
   static String userReviews(int id) => '/users/$id/reviews';

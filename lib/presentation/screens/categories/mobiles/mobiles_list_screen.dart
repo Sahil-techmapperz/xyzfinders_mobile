@@ -230,6 +230,7 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
                                   'avatarUrl': item.sellerAvatar,
                                   'isAgencyChat': item.agencyId != null,
                                   'agencyIdResolved': item.agencyId?.toString(),
+                                  'categoryId': item.categoryId,
                                 },
                               ),
                             ),

@@ -12,6 +12,7 @@ class UserModel {
   final String updatedAt;
   final String? buyerLocation;
   final String? businessAddress;
+  final String? resumeUrl;
 
   UserModel({
     required this.id,
@@ -27,6 +28,7 @@ class UserModel {
     required this.updatedAt,
     this.buyerLocation,
     this.businessAddress,
+    this.resumeUrl,
   }) : _currentMode = currentMode;
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -45,6 +47,7 @@ class UserModel {
       updatedAt: json['updated_at'] != null ? json['updated_at'] as String : '',
       buyerLocation: json['buyer_location'] as String?,
       businessAddress: json['business_address'] as String?,
+      resumeUrl: json['resume_url'] as String?,
     );
   }
 
@@ -63,6 +66,7 @@ class UserModel {
       'updated_at': updatedAt,
       'buyer_location': buyerLocation,
       'business_address': businessAddress,
+      'resume_url': resumeUrl,
     };
   }
 
@@ -86,6 +90,7 @@ class UserModel {
     String? updatedAt,
     String? buyerLocation,
     String? businessAddress,
+    String? resumeUrl,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -101,6 +106,7 @@ class UserModel {
       updatedAt: updatedAt ?? this.updatedAt,
       buyerLocation: buyerLocation ?? this.buyerLocation,
       businessAddress: businessAddress ?? this.businessAddress,
+      resumeUrl: resumeUrl ?? this.resumeUrl,
     );
   }
 }

@@ -20,6 +20,12 @@ import 'mobiles/mobiles_list_screen.dart';
 import 'real_estate/real_estate_list_screen.dart';
 import 'services/services_list_screen.dart';
 import '../seller/store_list_screen.dart';
+import '../../widgets/common/job_selection_sheet.dart';
+import 'jobs/find_jobs_screen.dart';
+import '../ads/post_ad_form_screen.dart';
+import '../../widgets/auth/auth_modal.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 
 class AllCategoriesScreen extends StatelessWidget {
   final List<CategoryModel> categories;
@@ -129,9 +135,28 @@ class AllCategoriesScreen extends StatelessWidget {
           final cat = categories[index - 1];
           return InkWell(
             onTap: () {
-              Widget? targetScreen;
               final catName = cat.name.toLowerCase();
               
+              if (catName.contains('job')) {
+                JobSelectionSheet.show(
+                  context,
+                  onGetHired: () {
+                    final auth = context.read<AuthProvider>();
+                    if (auth.isAuthenticated) {
+                      if (!auth.isSellerMode) {
+                        auth.toggleMode();
+                      }
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PostAdFormScreen(category: 'Jobs')));
+                    } else {
+                      AuthModal.show(context);
+                    }
+                  },
+                  onFindJobs: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FindJobsScreen(categoryId: cat.id))),
+                );
+                return;
+              }
+
+              Widget? targetScreen;
               if (catName.contains('automobile')) {
                 targetScreen = AutomobileListScreen(categoryId: cat.id);
               } else if (catName.contains('beauty')) {
@@ -142,8 +167,6 @@ class AllCategoriesScreen extends StatelessWidget {
                 targetScreen = FashionListScreen(categoryId: cat.id);
               } else if (catName.contains('furniture')) {
                 targetScreen = FurnitureListScreen(categoryId: cat.id);
-              } else if (catName.contains('job')) {
-                targetScreen = JobsListScreen(categoryId: cat.id);
               } else if (catName.contains('real estate') || catName.contains('property')) {
                 targetScreen = RealEstateListScreen(categoryId: cat.id);
               } else if (catName.contains('event')) {

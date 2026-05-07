@@ -58,6 +58,10 @@ import '../../widgets/common/searchable_location_picker.dart';
 import '../../widgets/common/location_search_sheet.dart';
 import 'package:provider/provider.dart';
 import '../categories/all_categories_screen.dart';
+import '../../widgets/common/job_selection_sheet.dart';
+import '../categories/jobs/find_jobs_screen.dart';
+import '../ads/post_ad_form_screen.dart';
+import '../../widgets/auth/auth_modal.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -683,8 +687,28 @@ class _HomeTabState extends State<HomeTab> {
     Widget buildCategoryCard(CategoryModel cat, int index) {
       return InkWell(
         onTap: () {
-          Widget? targetScreen;
           final catName = cat.name.toLowerCase();
+          
+          if (catName.contains('job')) {
+            JobSelectionSheet.show(
+              context,
+              onGetHired: () {
+                final auth = context.read<AuthProvider>();
+                if (auth.isAuthenticated) {
+                  if (!auth.isSellerMode) {
+                    auth.toggleMode();
+                  }
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PostAdFormScreen(category: 'Jobs')));
+                } else {
+                  AuthModal.show(context);
+                }
+              },
+              onFindJobs: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FindJobsScreen(categoryId: cat.id))),
+            );
+            return;
+          }
+
+          Widget? targetScreen;
           if (catName.contains('automobile')) {
             targetScreen = AutomobileListScreen(categoryId: cat.id);
           } else if (catName.contains('beauty')) {
@@ -695,8 +719,6 @@ class _HomeTabState extends State<HomeTab> {
             targetScreen = FashionListScreen(categoryId: cat.id);
           } else if (catName.contains('furniture')) {
             targetScreen = FurnitureListScreen(categoryId: cat.id);
-          } else if (catName.contains('job')) {
-            targetScreen = JobsListScreen(categoryId: cat.id);
           } else if (catName.contains('real estate') || catName.contains('property')) {
             targetScreen = RealEstateListScreen(categoryId: cat.id);
           } else if (catName.contains('event')) {

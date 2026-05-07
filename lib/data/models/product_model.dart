@@ -30,6 +30,7 @@ class ProductModel {
   final String? stateName;
   final String? locationName;
   final String? postalCode;
+  final String? companyLogo;
 
   // Relationships (can be null if not included)
   final Map<String, dynamic>? user;
@@ -66,6 +67,7 @@ class ProductModel {
     this.stateName,
     this.locationName,
     this.postalCode,
+    this.companyLogo,
     this.user,
     this.category,
     this.location,
@@ -131,6 +133,7 @@ class ProductModel {
       stateName: json['state_name'],
       locationName: json['location_name'],
       postalCode: json['postal_code'],
+      companyLogo: json['company_logo'],
       user: json['user'],
       category: json['category'],
       location: json['location'],
@@ -170,6 +173,7 @@ class ProductModel {
       'state_name': stateName,
       'location_name': locationName,
       'postal_code': postalCode,
+      'company_logo': companyLogo,
       'user': user,
       'category': category,
       'location': location,

@@ -93,447 +93,285 @@ class _JobsDetailScreenState extends State<JobsDetailScreen> {
         final attrs = product.productAttributes ?? {};
         final specs = attrs['specs'] as Map<String, dynamic>? ?? {};
         
-        final List<Map<String, String>> specsList = [];
-        specs.forEach((key, value) {
-          specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
-        });
-
-        if (specsList.isEmpty) {
-          specsList.add({"label": "Job Type", "value": specs['type'] ?? "Full-time"});
-          specsList.add({"label": "Experience", "value": specs['experience'] ?? "N/A"});
-          specsList.add({"label": "Salary Range", "value": specs['salary_range'] ?? "Contact for info"});
-        }
+        final jobType = attrs['work_mode'] ?? attrs['job_type'] ?? 'Full-Time';
+        final qualification = attrs['qualification'] ?? 'Graduation/Post-Graduation';
+        final experience = attrs['experience'] ?? '2-4 Years';
+        final candidate = attrs['candidate_type'] ?? 'Any Candidate';
 
         return Scaffold(
           backgroundColor: Colors.white,
-          body: Stack(
-            children: [
-              CustomScrollView(
-                slivers: [
-                  _buildImageHeader(product),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildPriceSection(product),
-                          const SizedBox(height: 12),
-                          product.title.text.xl.bold.make(),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                              const SizedBox(width: 4),
-                              "${product.locationName ?? product.cityName ?? 'N/A'}, ${product.stateName ?? ''}".text.gray500.size(12).ellipsis.make().expand(),
-                            ],
-                          ),
-                          const Divider(height: 32),
-                          (attrs['highlights']?.toString() ?? "Growth Opportunity | Competitive Pay | Great Work Environment").text.bold.size(13).make(),
-                          const SizedBox(height: 20),
-                          "Job Requirements".text.bold.size(15).make(),
-                          const SizedBox(height: 16),
-                          _buildSpecsTable(specsList),
-                          const Divider(height: 40),
-                          "Job Description".text.bold.size(15).make(),
-                          const SizedBox(height: 8),
-                          product.description.text.gray600.size(13).lineHeight(1.5).make(),
-                          const SizedBox(height: 16),
-                          "Posted on : ${product.createdAt.split('T')[0]}".text.gray500.size(13).make(),
-                          const Divider(height: 48),
-                          "Benefits & Perks".text.bold.size(15).make(),
-                          const SizedBox(height: 16),
-                          _buildAmenities(attrs['amenities'] ?? attrs['perks']),
-                          const SizedBox(height: 32),
-                          _buildMapView(product),
-                          const SizedBox(height: 32),
-                          _buildSellerCard(product),
-                          const SizedBox(height: 100),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              _buildBackButton(),
-              _buildFavoriteButton(product),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0.5,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: "Job Profile".text.semiBold.black.make(),
+            centerTitle: true,
+            actions: [
+              _buildNotificationIcon(context),
+              const SizedBox(width: 16),
             ],
           ),
-          bottomNavigationBar: _buildStickyBottomBar(product),
+          body: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.shade100),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: (product.companyLogo != null || (product.agencyId != null && product.sellerAvatar != null))
+                                      ? CachedNetworkImage(
+                                          imageUrl: (product.companyLogo ?? product.sellerAvatar)!.startsWith('http')
+                                              ? (product.companyLogo ?? product.sellerAvatar)!
+                                              : (product.companyLogo != null)
+                                                  ? "${ApiConstants.baseUrl.replaceAll('/api', '')}/images/product/${product.companyLogo}"
+                                                  : "${ApiConstants.baseUrl.replaceAll('/api', '')}/images/user/${product.sellerAvatar}",
+                                          fit: BoxFit.contain,
+                                          errorWidget: (context, url, error) => const Icon(Icons.business, size: 40, color: Colors.grey),
+                                        )
+                                      : const Icon(Icons.business, size: 40, color: Colors.grey),
+                                ),
+                                const Spacer(),
+                                Row(
+                                  children: [
+                                    FavoriteToggleButton(product: product, iconSize: 24),
+                                    const SizedBox(width: 12),
+                                    const Icon(Icons.share_outlined, size: 24, color: Colors.black87),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            product.title.toUpperCase().text.xl.bold.black.make(),
+                            const SizedBox(height: 4),
+                            (product.sellerName ?? "Company Name").text.xl.color(Colors.blue.shade400).semiBold.make(),
+                            const SizedBox(height: 24),
+                            
+                            _buildInfoRow(Icons.payments_outlined, "₹ ${product.price} - ${product.price + 5000}/-"),
+                            _buildInfoRow(Icons.location_on_outlined, "${product.locationName ?? product.cityName ?? 'Gurgaon, Sector 62, New Delhi'}, India"),
+                            _buildInfoRow(Icons.access_time, jobType.toString()),
+                            _buildInfoRow(Icons.business_center_outlined, experience.toString()),
+                            _buildInfoRow(Icons.person_outline, candidate.toString()),
+                            _buildInfoRow(Icons.school_outlined, qualification.toString()),
+                            
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: () {},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFE8F5B),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: "APPLY".text.xl.bold.make(),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                "440 Applicants".text.size(11).semiBold.gray700.make(),
+                                const SizedBox(width: 12),
+                                Container(width: 4, height: 4, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                                const SizedBox(width: 6),
+                                "Posted On 3hr Ago".text.size(11).color(Colors.green.shade600).semiBold.make(),
+                              ],
+                            ),
+                            
+                            const Divider(height: 48),
+                            "Job Details".text.xl.bold.make(),
+                            const SizedBox(height: 12),
+                            product.description.text.size(13).gray700.lineHeight(1.5).make(),
+                            
+                            const SizedBox(height: 24),
+                            "Key Responsibilities".text.semiBold.make(),
+                            const SizedBox(height: 8),
+                            _buildBulletList([
+                              "Plan, manage, and optimize social media marketing across LinkedIn, Instagram, and Facebook.",
+                              "Support SEO and SEM activities, including keyword research and on-page optimisation.",
+                              "Track, analyse, and report performance using Google Analytics and platform insights.",
+                            ]),
+                            
+                            const SizedBox(height: 24),
+                            "Benefits".text.semiBold.make(),
+                            const SizedBox(height: 8),
+                            _buildBulletList([
+                              "Cell Phone Reimbursement",
+                              "Commuter Assistance",
+                              "Health Insurance",
+                              "Internet Reimbursement",
+                            ]),
+                            
+                            const SizedBox(height: 32),
+                            _buildHiredFasterBox(),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              _buildStickyBottomBar(product),
+            ],
+          ),
         );
       },
     );
   }
 
-  Widget _buildImageHeader(ProductModel product) {
-    final images = product.allImageUrls;
-    return SliverAppBar(
-      expandedHeight: 250,
-      automaticallyImplyLeading: false,
-      backgroundColor: Colors.white,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (images.isEmpty)
-              Container(color: Colors.blue.withOpacity(0.1), child: const Icon(Icons.business_center, size: 50, color: Colors.blue))
-            else
-              PageView.builder(
-                itemCount: images.length,
-                onPageChanged: (index) => setState(() => _activeImageIndex = index),
-                itemBuilder: (context, index) => _buildProductImage(images[index]),
-              ),
-            if (images.isNotEmpty)
-              Positioned(
-                bottom: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.image_outlined, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      "${_activeImageIndex + 1}/${images.length}".text.white.size(8).bold.make(),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFavoriteButton(ProductModel product) {
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 10,
-      right: 16,
-      child: FavoriteToggleButton(product: product),
-    );
-  }
-
-  Widget _buildBackButton() {
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 10,
-      left: 16,
-      child: GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-              )
-            ],
+  Widget _buildInfoRow(IconData icon, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: Colors.black54),
+          const SizedBox(width: 16),
+          Expanded(
+            child: label.text.size(15).gray700.medium.make(),
           ),
-          child: const Icon(Icons.close, color: Colors.black, size: 20),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildPriceSection(ProductModel product) {
-    if (product.price == 0) {
-      return "Salary: Not Disclosed".text.xl.bold.blue600.make();
-    }
-    return Row(
-      children: [
-        "₹ ${NumberFormat('#,##,###').format(product.price)}".text.xl2.bold.blue600.make(),
-        " / month".text.gray500.size(14).make(),
-      ],
-    );
-  }
-
-  Widget _buildSpecsTable(List<Map<String, String>> specsList) {
+  Widget _buildBulletList(List<String> items) {
     return Column(
-      children: specsList.map((spec) => Padding(
-        padding: const EdgeInsets.only(bottom: 16),
+      children: items.map((item) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            spec['label']!.text.gray500.size(14).make(),
-            spec['value']!.text.bold.size(14).make(),
+            "• ".text.xl.make(),
+            Expanded(
+              child: item.text.size(13).gray700.make(),
+            ),
           ],
         ),
       )).toList(),
     );
   }
 
-  Widget _buildAmenities(dynamic amenitiesData) {
-    final List<Map<String, dynamic>> allAmenities = [];
-    if (amenitiesData is List) {
-      for (var item in amenitiesData) {
-         allAmenities.add({"icon": Icons.verified, "label": item.toString()});
-      }
-    } else if (amenitiesData is Map) {
-      amenitiesData.forEach((key, value) {
-        if (value == true || value == 1) {
-          allAmenities.add({"icon": Icons.verified, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
-        }
-      });
-    }
-
-    if (allAmenities.isEmpty) {
-      return "Standard employee benefits included.".text.gray500.size(13).make();
-    }
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
+  Widget _buildHiredFasterBox() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE1F5FE).withOpacity(0.4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.lightBlue.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ...allAmenities.take(3).map((item) => _buildAmenityCircle(item)).toList(),
-          if (allAmenities.length > 3)
-            _buildMoreCircle(allAmenities.length - 3, allAmenities),
+          "6 Step to get hired faster.".text.bold.size(15).make(),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person_outline, color: Colors.blue),
+                ),
+                const SizedBox(width: 12),
+                "Add Basic Info....".text.size(13).medium.make(),
+                const Spacer(),
+                const Icon(Icons.add_circle_outline, color: Colors.blue, size: 24),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) => Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: index == 0 ? Colors.grey.shade700 : Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+            )),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildAmenityCircle(Map<String, dynamic> item) {
-    return Container(
-      height: 60,
-      width: 60,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1.0),
-      ),
-      child: Icon(item['icon'] as IconData, size: 28, color: Colors.blueAccent).centered(),
-    );
-  }
-
-  Widget _buildMoreCircle(int count, List<Map<String, dynamic>> allAmenities) {
+  Widget _buildNotificationIcon(BuildContext context) {
     return InkWell(
-      onTap: () => _showAllAmenitiesModal(allAmenities),
-      child: Container(
-        height: 60,
-        width: 60,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1.0),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            "+$count".text.bold.gray800.size(12).make(),
-            "More".text.bold.gray800.size(10).make(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAllAmenitiesModal(List<Map<String, dynamic>> allAmenities) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.7,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                "Benefits & Perks".text.xl.bold.make(),
-                const CloseButton(),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Flexible(
-              child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 20,
-                  runSpacing: 20,
-                  children: allAmenities.map((item) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        height: 50,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.blue.withOpacity(0.05),
-                          border: Border.all(color: Colors.blue.withOpacity(0.2)),
-                        ),
-                        child: Icon(item['icon'] as IconData, color: Colors.blue, size: 24),
-                      ),
-                      const SizedBox(height: 8),
-                      (item['label'] as String).text.gray700.size(10).make(),
-                    ],
-                  ).box.width(70).make()).toList(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMapView(ProductModel product) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        "Company Location".text.bold.size(15).make(),
-        const SizedBox(height: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: GoogleMap(
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(29.2104, 78.9619),
-                zoom: 15,
-              ),
-              markers: {
-                Marker(
-                  markerId: const MarkerId("company_location"),
-                  position: const LatLng(29.2104, 78.9619),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-                ),
-              },
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              mapToolbarEnabled: false,
+      onTap: () {},
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          const Icon(Icons.notifications_none, color: Colors.black87, size: 28),
+          Positioned(
+            right: 0,
+            top: 12,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+              child: "6+".text.white.size(8).bold.make().centered(),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        "${product.locationName ?? product.cityName ?? 'Location N/A'}".text.gray600.size(12).make(),
-      ],
-    );
-  }
-
-  Widget _buildSellerCard(ProductModel product) {
-    return Column(
-      children: [
-        Center(
-          child: CircleAvatar(
-            radius: 35,
-            backgroundImage: product.sellerAvatar != null 
-                ? (product.sellerAvatar!.startsWith('http') 
-                    ? NetworkImage(product.sellerAvatar!) 
-                    : MemoryImage(base64Decode(product.sellerAvatar!)) as ImageProvider)
-                : const NetworkImage("https://randomuser.me/api/portraits/men/15.jpg"),
-          ),
-        ),
-        const SizedBox(height: 12),
-        (product.sellerName ?? "Recruiter").text.bold.size(16).center.make(),
-        "Verified Employer".text.gray500.size(14).make(),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            "Member Since ${product.sellerCreatedAt ?? 'Recently'}".text.gray600.size(12).make(),
-            if (product.sellerIsVerified) ...[
-              const SizedBox(width: 4),
-              const Icon(Icons.verified, color: Colors.blue, size: 16),
-            ]
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildStickyBottomBar(ProductModel product) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))],
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: InkWell(
-              onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(
-                                chatData: {
-                                  'rawId': null,
-                                  'otherUserId': product.userId?.toString() ?? '',
-                                  'name': product.sellerName ?? 'Seller',
-                                  'productId': product.id,
-                                  'productTitle': product.title,
-                                  'productPrice': product.price,
-                                  'productImage': product.allImageUrls.isNotEmpty ? product.allImageUrls.first : null,
-                                  'avatarUrl': product.sellerAvatar,
-                                  'isAgencyChat': false,
-                                  'agencyIdResolved': null,
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                        child: Container(
-                height: 55,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.send_outlined, color: Color(0xFF1E88E5), size: 24),
-                    const SizedBox(width: 10),
-                    "Apply Now".text.color(const Color(0xFF1E88E5)).xl.bold.make(),
-                  ],
-                ),
-              ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFE8F5B),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
+            child: "APPLY NOW".text.xl.bold.make(),
           ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: InkWell(
-              onTap: () {},
-              child: Container(
-                height: 55,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F8E9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.chat_bubble_outline, color: Color(0xFF43A047), size: 24),
-                    const SizedBox(width: 10),
-                    "Query".text.color(const Color(0xFF43A047)).xl.bold.make(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
