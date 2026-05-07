@@ -18,6 +18,27 @@ class ProductService {
     double? maxPrice,
     String? search,
     String? sortBy,
+    bool? verifiedOnly,
+    // Automobile filters
+    String? make,
+    String? model,
+    String? year,
+    String? km,
+    String? fuel,
+    String? transmission,
+    // Job filters
+    String? jobType,
+    String? experience,
+    double? minSalary,
+    String? workMode,
+    // Real Estate filters
+    String? bedroom,
+    String? purpose,
+    // Mobile filters
+    String? brand,
+    String? storage,
+    String? ram,
+    String? type,
   }) async {
     final Map<String, dynamic> queryParams = {
       'page': page,
@@ -30,6 +51,27 @@ class ProductService {
       if (maxPrice != null) 'max_price': maxPrice,
       if (search != null) 'search': search,
       if (sortBy != null) 'sort_by': sortBy,
+      if (verifiedOnly != null) 'verified_only': verifiedOnly,
+      // Automobile
+      if (make != null) 'make': make,
+      if (model != null) 'model': model,
+      if (year != null) 'year': year,
+      if (km != null) 'km': km,
+      if (fuel != null) 'fuel': fuel,
+      if (transmission != null) 'transmission': transmission,
+      // Jobs
+      if (jobType != null) 'job_type': jobType,
+      if (experience != null) 'experience': experience,
+      if (minSalary != null) 'min_salary': minSalary,
+      if (workMode != null) 'work_mode': workMode,
+      // Real Estate
+      if (bedroom != null) 'bedroom': bedroom,
+      if (purpose != null) 'purpose': purpose,
+      // Mobiles
+      if (brand != null) 'brand': brand,
+      if (storage != null) 'storage': storage,
+      if (ram != null) 'ram': ram,
+      if (type != null) 'type': type,
     };
 
     final response = await _apiService.get('/products', queryParameters: queryParams);

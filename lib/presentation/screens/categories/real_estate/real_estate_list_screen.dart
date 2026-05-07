@@ -30,11 +30,18 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
   List<ProductModel> _products = [];
   bool _isLoading = true;
   String? _error;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchProducts() async {
@@ -43,7 +50,14 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
       _error = null;
     });
     try {
-      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      final response = await _productService.getProducts(
+        categoryId: widget.categoryId,
+        verifiedOnly: _showVerifiedOnly,
+        type: _selectedPropertyType == "All" ? null : _selectedPropertyType,
+        bedroom: _selectedBedrooms.toString(),
+        search: _searchController.text.isNotEmpty ? _searchController.text : null,
+        // Add more as needed
+      );
       if (mounted) {
         setState(() {
           _products = List<ProductModel>.from(response['products']);
@@ -60,6 +74,18 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
     }
   }
 
+  void _resetFilters() {
+    setState(() {
+      _showVerifiedOnly = false;
+      _selectedPropertyType = "Residential";
+      _selectedFurnishing = "All";
+      _selectedBedrooms = 3;
+      _selectedBathrooms = 2;
+      _searchController.clear();
+    });
+    _fetchProducts();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,6 +97,8 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
               prefixIcon: Icons.location_on_outlined,
               hintText: "Search Location...",
               onBack: () => Navigator.pop(context),
+              controller: _searchController,
+              onSubmitted: (val) => _fetchProducts(),
             ),
             _buildFilterBar(),
             _buildResultsSummary(),
@@ -93,9 +121,7 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: 0,
         onItemSelected: (index) {
-          if (index != 0) {
-            Navigator.popUntil(context, (route) => route.isFirst);
-          }
+          CustomBottomNavBar.handleGlobalNavigation(context, index, 0, false);
         },
       ),
       floatingActionButton: CustomFab(onPressed: () {}),
@@ -383,20 +409,22 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
       ),
       child: Row(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              "Showing Results".text.gray500.size(10).make(),
-              "14,256".text.xl.bold.make(),
-            ],
+          TextButton(
+            onPressed: () {
+              _resetFilters();
+              Navigator.pop(context);
+            },
+            child: "Reset All".text.gray500.make(),
           ),
           const Spacer(),
           SizedBox(
             width: 180,
             height: 50,
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                _fetchProducts();
+                Navigator.pop(context);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.secondaryColor,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -425,7 +453,10 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
                 width: 40,
                 child: Switch(
                   value: _showVerifiedOnly,
-                  onChanged: (val) => setState(() => _showVerifiedOnly = val),
+                  onChanged: (val) {
+                    setState(() => _showVerifiedOnly = val);
+                    _fetchProducts();
+                  },
                   activeColor: AppTheme.secondaryColor,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),

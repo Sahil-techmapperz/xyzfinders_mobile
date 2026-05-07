@@ -139,8 +139,8 @@ class AgencyProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _agencyService.register(data);
-      _agencyUser = result['user'] as AgencyUser;
+      await _agencyService.register(data);
+      // Registration successful, but requires approval/login, so we don't set _agencyUser here.
       _isLoading = false;
       notifyListeners();
       return true;

@@ -84,11 +84,25 @@ class AuthService {
       email: user.email,
       role: user.role,
     );
+    // Save credentials securely for biometric login replay
+    await _apiService.saveCredentials(
+      email: email,
+      password: password,
+    );
 
     return {
       'user': user,
       'token': token,
     };
+  }
+
+  // Biometric Login — replays stored credentials to get a fresh token
+  Future<Map<String, dynamic>> loginWithBiometric() async {
+    final credentials = await _apiService.getStoredCredentials();
+    if (credentials == null) {
+      throw ApiException(message: 'No saved credentials. Please log in with your password first to enable biometric login.');
+    }
+    return login(email: credentials['email']!, password: credentials['password']!);
   }
 
   // Google Login
@@ -189,6 +203,8 @@ class AuthService {
   // Logout
   Future<void> logout() async {
     await _apiService.clearUserData();
+    // NOTE: biometric credentials are intentionally NOT cleared here
+    // so the user can still log back in with fingerprint/face ID
   }
 
   // Check if user is logged in
@@ -260,6 +276,7 @@ class AuthService {
   Future<void> deleteAccount() async {
     await _apiService.delete(ApiConstants.deleteAccount);
     await _apiService.clearUserData();
+    await _apiService.clearStoredCredentials(); // wipe saved biometric credentials too
   }
 
   // Refresh token

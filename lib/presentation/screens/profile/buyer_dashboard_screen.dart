@@ -110,8 +110,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
         selectedIndex: 4, // Profile/Menu index
         isSellerMode: auth.isSellerMode,
         onItemSelected: (index) {
-          if (index == 4) return;
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          CustomBottomNavBar.handleGlobalNavigation(context, index, 4, auth.isSellerMode);
         },
       ),
       floatingActionButton: CustomFab(

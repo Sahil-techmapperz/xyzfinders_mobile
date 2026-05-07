@@ -116,6 +116,24 @@ class ApiService {
   Future<void> clearAuthToken() async {
     await _secureStorage.delete(key: AppConstants.authTokenKey);
   }
+
+  // Securely store credentials for biometric login replay
+  Future<void> saveCredentials({required String email, required String password}) async {
+    await _secureStorage.write(key: 'biometric_email', value: email);
+    await _secureStorage.write(key: 'biometric_password', value: password);
+  }
+
+  Future<Map<String, String>?> getStoredCredentials() async {
+    final email = await _secureStorage.read(key: 'biometric_email');
+    final password = await _secureStorage.read(key: 'biometric_password');
+    if (email == null || password == null) return null;
+    return {'email': email, 'password': password};
+  }
+
+  Future<void> clearStoredCredentials() async {
+    await _secureStorage.delete(key: 'biometric_email');
+    await _secureStorage.delete(key: 'biometric_password');
+  }
   
   // HTTP Methods
   Future<Response> get(

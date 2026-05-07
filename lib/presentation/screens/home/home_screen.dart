@@ -204,7 +204,7 @@ class _HomeTabState extends State<HomeTab> {
       if (name.contains('real estate') || name.contains('property') || name.contains('home')) realEstateId = cat.id;
       if (name.contains('automobile') || name.contains('car') || name.contains('vehicle')) carsId = cat.id;
       if (name.contains('electronic') || name.contains('gadget') || name.contains('laptop')) gadgetId = cat.id;
-      if (name.contains('mobile') || name.contains('phone') || name.contains('tablet')) mobileId = cat.id;
+      if ((name.contains('mobile') && !name.contains('auto')) || name.contains('phone') || name.contains('tablet')) mobileId = cat.id;
     }
     
     debugPrint('Home Category Matching: RE:$realEstateId, Cars:$carsId, Electronics:$gadgetId, Mobiles:$mobileId');
@@ -404,7 +404,7 @@ class _HomeTabState extends State<HomeTab> {
                 products: _latestMobiles,
                 isLoading: _isMobilesLoading,
                 onViewMore: () {
-                  final cat = _categories.firstWhereOrNull((c) => c.name.toLowerCase().contains('mobile'));
+                  final cat = _categories.firstWhereOrNull((c) => (c.name.toLowerCase().contains('mobile') && !c.name.toLowerCase().contains('auto')) || c.name.toLowerCase().contains('phone') || c.name.toLowerCase().contains('tablet'));
                   if (cat != null) {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => MobilesListScreen(categoryId: cat.id)));
                   }
@@ -705,7 +705,7 @@ class _HomeTabState extends State<HomeTab> {
             targetScreen = EducationListScreen(categoryId: cat.id);
           } else if (catName.contains('pet') || catName.contains('animal')) {
             targetScreen = PetsAccessoriesListScreen(categoryId: cat.id);
-          } else if (catName.contains('mobile') || catName.contains('phone')) {
+          } else if ((catName.contains('mobile') && !catName.contains('auto')) || catName.contains('phone')) {
             targetScreen = MobilesListScreen(categoryId: cat.id);
           } else if (catName.contains('service')) {
             targetScreen = ServicesListScreen(categoryId: cat.id);

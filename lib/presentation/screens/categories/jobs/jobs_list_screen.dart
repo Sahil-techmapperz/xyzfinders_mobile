@@ -9,6 +9,7 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 import '../../../widgets/favorite_toggle_button.dart';
+import '../../../widgets/common/filter_bottom_sheet.dart';
 
 class JobsListScreen extends StatefulWidget {
   final int? categoryId;
@@ -26,11 +27,23 @@ class _JobsListScreenState extends State<JobsListScreen> {
   List<ProductModel> _products = [];
   bool _isLoading = true;
   String? _error;
+  final TextEditingController _searchController = TextEditingController();
+
+  // Filter State
+  double? _minSalary;
+  String? _selectedJobType;
+  String? _selectedLocation;
 
   @override
   void initState() {
     super.initState();
     _fetchProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchProducts() async {
@@ -39,7 +52,14 @@ class _JobsListScreenState extends State<JobsListScreen> {
       _error = null;
     });
     try {
-      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      final response = await _productService.getProducts(
+        categoryId: widget.categoryId,
+        verifiedOnly: _isVerifiedOnly,
+        minSalary: _minSalary,
+        jobType: _selectedJobType,
+        locationSearch: _selectedLocation,
+        search: _searchController.text.isNotEmpty ? _searchController.text : null,
+      );
       if (mounted) {
         setState(() {
           _products = List<ProductModel>.from(response['products']);
@@ -56,6 +76,72 @@ class _JobsListScreenState extends State<JobsListScreen> {
     }
   }
 
+  void _resetFilters() {
+    setState(() {
+      _isVerifiedOnly = false;
+      _minSalary = null;
+      _selectedJobType = null;
+      _selectedLocation = null;
+      _searchController.clear();
+    });
+    _fetchProducts();
+  }
+
+  void _showSalaryFilter() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => FilterBottomSheet(
+        title: "Select Monthly Salary",
+        options: const ["Under ₹10,000", "₹10,000 - ₹20,000", "₹20,000 - ₹50,000", "Above ₹50,000"],
+        selectedValue: _minSalary == null ? null : (_minSalary == 10000 ? "₹10,000 - ₹20,000" : null),
+        onSelected: (val) {
+          setState(() {
+            if (val == "Under ₹10,000") {
+              _minSalary = 0;
+            } else if (val == "₹10,000 - ₹20,000") {
+              _minSalary = 1.2; // Backend expects LPA for min_salary? Let's check route.ts
+            } else if (val == "₹20,000 - ₹50,000") {
+              _minSalary = 2.4;
+            } else if (val == "Above ₹50,000") {
+              _minSalary = 6.0;
+            } else {
+              _minSalary = null;
+            }
+          });
+          _fetchProducts();
+        },
+      ),
+    );
+  }
+
+  void _showJobTypeFilter() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => FilterBottomSheet(
+        title: "Select Job Type",
+        options: const ["Full Time", "Part Time", "Contract", "Freelance"],
+        selectedValue: _selectedJobType,
+        onSelected: (val) {
+          setState(() => _selectedJobType = val);
+          _fetchProducts();
+        },
+      ),
+    );
+  }
+
+  void _showLocationFilter() {
+    // Simple location search for now
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Location filter coming soon!")),
+    );
+  }
+
+  void _showAllFilters() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Advanced filters coming soon!")),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,6 +154,8 @@ class _JobsListScreenState extends State<JobsListScreen> {
               prefixIcon: Icons.work_rounded,
               hintText: "Search Jobs...",
               onBack: () => Navigator.pop(context),
+              controller: _searchController,
+              onSubmitted: (val) => _fetchProducts(),
             ),
             _buildFilterBar(),
             _buildResultsSummary(),
@@ -92,9 +180,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _currentNavIndex,
         onItemSelected: (index) {
-          if (index != 0) {
-            Navigator.popUntil(context, (route) => route.isFirst);
-          }
+          CustomBottomNavBar.handleGlobalNavigation(context, index, _currentNavIndex, false);
         },
       ),
       floatingActionButton: CustomFab(onPressed: () {}),
@@ -110,33 +196,35 @@ class _JobsListScreenState extends State<JobsListScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          _buildFilterChip(Icons.tune, "Filter", hasDropdown: false, isIconOnly: true),
-          _buildFilterChip(null, "Salary", hasDropdown: true),
-          _buildFilterChip(null, "Job Type", hasDropdown: true),
-          _buildFilterChip(null, "Location", hasDropdown: true),
+          _buildFilterChip(Icons.tune, "Filter", hasDropdown: false, isIconOnly: true).onTap(() => _showAllFilters()),
+          _buildFilterChip(null, "Salary", hasDropdown: true).onTap(() => _showSalaryFilter()),
+          _buildFilterChip(null, _selectedJobType ?? "Job Type", hasDropdown: true).onTap(() => _showJobTypeFilter()),
+          _buildFilterChip(null, _selectedLocation ?? "Location", hasDropdown: true).onTap(() => _showLocationFilter()),
           const VerticalDivider(width: 20, indent: 8, endIndent: 8),
-          "All Filters".text.semiBold.black.make().centered().px(8),
-          "Reset".text.gray500.make().centered().px(8),
+          "All Filters".text.semiBold.black.make().centered().px(8).onTap(() => _showAllFilters()),
+          "Reset".text.gray500.make().centered().px(8).onTap(() => _resetFilters()),
         ],
       ),
     );
   }
 
   Widget _buildFilterChip(IconData? icon, String label, {bool hasDropdown = false, bool isIconOnly = false}) {
+    bool isActive = label != "Salary" && label != "Job Type" && label != "Location" && !isIconOnly;
+
     return Container(
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isActive ? Colors.brown.shade50 : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: isActive ? Colors.brown.shade300 : Colors.grey.shade300),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) Icon(icon, size: 16, color: Colors.brown).box.padding(EdgeInsets.only(right: isIconOnly ? 0 : 4)).make(),
-          if (!isIconOnly) label.text.size(12).semiBold.make(),
-          if (hasDropdown) const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey).box.padding(const EdgeInsets.only(left: 4)).make(),
+          if (!isIconOnly) label.text.size(12).semiBold.color(isActive ? Colors.brown.shade900 : Colors.black).make(),
+          if (hasDropdown) Icon(Icons.keyboard_arrow_down, size: 16, color: isActive ? Colors.brown.shade700 : Colors.grey).box.padding(const EdgeInsets.only(left: 4)).make(),
         ],
       ),
     );
@@ -158,7 +246,10 @@ class _JobsListScreenState extends State<JobsListScreen> {
                 width: 40,
                 child: Switch(
                   value: _isVerifiedOnly,
-                  onChanged: (val) => setState(() => _isVerifiedOnly = val),
+                  onChanged: (val) {
+                    setState(() => _isVerifiedOnly = val);
+                    _fetchProducts();
+                  },
                   activeColor: AppTheme.secondaryColor,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),

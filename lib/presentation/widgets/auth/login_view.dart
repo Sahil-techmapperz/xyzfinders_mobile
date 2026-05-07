@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/security_provider.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../screens/auth/forgot_password_screen.dart';
@@ -26,6 +27,25 @@ class _LoginViewState extends State<LoginView> {
   bool _obscurePassword = true;
   bool _rememberMe = false;
   String? _errorMessage;
+  bool _biometricTriggeredOnLoad = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-trigger biometric prompt after first frame if enabled
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _tryAutoBiometricLogin();
+    });
+  }
+
+  Future<void> _tryAutoBiometricLogin() async {
+    if (!mounted) return;
+    final secProvider = Provider.of<SecurityProvider>(context, listen: false);
+    if (secProvider.isBiometricEnabled && secProvider.isBiometricAvailable) {
+      _biometricTriggeredOnLoad = true;
+      await _biometricLogin();
+    }
+  }
 
   @override
   void dispose() {
@@ -35,6 +55,17 @@ class _LoginViewState extends State<LoginView> {
   }
 
   Future<void> _login() async {
+    // If biometric is enabled, try it first before password
+    final secProvider = Provider.of<SecurityProvider>(context, listen: false);
+    if (secProvider.isBiometricEnabled && secProvider.isBiometricAvailable) {
+      await _biometricLogin();
+      return;
+    }
+    // No biometric — proceed with normal password login
+    await _normalLogin();
+  }
+
+  Future<void> _normalLogin() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
     setState(() => _errorMessage = null);
@@ -45,11 +76,46 @@ class _LoginViewState extends State<LoginView> {
     );
     if (success && mounted) {
       ToastUtils.showSuccess('Welcome back!');
-      if (widget.onSuccess != null) {
-        widget.onSuccess!();
-      }
+      widget.onSuccess?.call();
     } else if (mounted && authProvider.error != null) {
       setState(() => _errorMessage = authProvider.error);
+    }
+  }
+
+  Future<void> _biometricLogin() async {
+    final securityProvider = Provider.of<SecurityProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Safety check: if device has no biometric, fall back to normal login
+    if (!securityProvider.isBiometricAvailable) {
+      if (_biometricTriggeredOnLoad) return; // silent fallback on auto-trigger
+      setState(() => _errorMessage = 'Biometric not available on this device. Please use your password.');
+      return;
+    }
+
+    final authenticated = await securityProvider.authenticateWithBiometrics(
+      reason: 'Authenticate to log in to XYZFinders',
+    );
+
+    if (!mounted) return;
+
+    if (authenticated) {
+      final success = await authProvider.loginWithBiometric();
+      if (success && mounted) {
+        ToastUtils.showSuccess('Welcome back!');
+        widget.onSuccess?.call();
+      } else if (mounted) {
+        // Biometric passed but no saved session — fall back to password form
+        setState(() => _errorMessage = authProvider.error ?? 'No saved session. Please log in with your password.');
+      }
+    } else {
+      if (!mounted) return;
+      if (_biometricTriggeredOnLoad) {
+        // Auto-trigger failed silently — user can still use password
+        setState(() => _errorMessage = 'Biometric failed. Please use your password to log in.');
+      } else {
+        setState(() => _errorMessage = 'Biometric authentication failed. Please try again or use your password.');
+      }
     }
   }
   
@@ -261,7 +327,52 @@ class _LoginViewState extends State<LoginView> {
             ),
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
+
+          // Biometric Login Button (only if enabled)
+          Consumer<SecurityProvider>(
+            builder: (context, secProv, _) {
+              if (!secProv.isBiometricEnabled) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.grey.shade200)),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('or', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                      ),
+                      Expanded(child: Divider(color: Colors.grey.shade200)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: OutlinedButton.icon(
+                      onPressed: _biometricLogin,
+                      icon: const Icon(Icons.fingerprint_rounded, size: 28),
+                      label: const Text(
+                        'Sign in with Biometrics',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF1E293B),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            },
+          ),
           
           // Create Account Link
           InkWell(

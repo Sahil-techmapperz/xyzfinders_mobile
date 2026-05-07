@@ -7,7 +7,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:image_picker/image_picker.dart';
 import '../../providers/agency_provider.dart';
 import 'agency_login_screen.dart';
-import 'agency_dashboard_screen.dart';
+import 'agency_registration_success_screen.dart';
 import '../../../core/theme/app_theme.dart';
 
 class AgencyRegistrationScreen extends StatefulWidget {
@@ -83,7 +83,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
     if (success && mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const AgencyDashboardScreen()),
+        MaterialPageRoute(builder: (_) => const AgencyRegistrationSuccessScreen()),
         (route) => false,
       );
     } else if (mounted) {

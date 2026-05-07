@@ -312,6 +312,32 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Biometric Login — replays securely stored credentials after biometric passes
+  Future<bool> loginWithBiometric() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final result = await _authService.loginWithBiometric();
+      _user = result['user'] as UserModel;
+      _currentMode = _user?.currentMode ?? 'buyer';
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Biometric login failed. Please log in with your password.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Toggle mode
   Future<bool> toggleMode() async {
     if (_user == null) return false;

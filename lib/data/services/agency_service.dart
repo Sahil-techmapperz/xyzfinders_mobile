@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/agency_models.dart';
 import '../../core/config/api_service.dart';
@@ -49,7 +50,7 @@ class AgencyService {
 
   // Get ImageKit Auth Parameters
   Future<Map<String, dynamic>> getImageKitAuth() async {
-    final response = await _apiService.get('/auth/imagekit');
+    final response = await _apiService.get('/imagekit/public-auth');
     return response.data;
   }
 

@@ -34,10 +34,13 @@ class CustomBottomNavBar extends StatelessWidget {
       color: AppTheme.secondaryColor,
       elevation: 0,
       padding: EdgeInsets.zero,
-      child: Container(
-        height: 65,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Row(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {}, // Consume taps on blank space
+        child: Container(
+          height: 65,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(0, isSellerMode ? Icons.dashboard_rounded : Icons.home_filled, isSellerMode ? 'Dashboard' : 'Home'),
@@ -46,6 +49,7 @@ class CustomBottomNavBar extends StatelessWidget {
             _buildNavItem(3, Icons.forum_outlined, 'Chats'),
             _buildNavItem(4, Icons.person_rounded, 'Profile'), // changed from Icons.menu
           ],
+        ),
         ),
       ),
     );
@@ -71,6 +75,29 @@ class CustomBottomNavBar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  static void handleGlobalNavigation(BuildContext context, int index, int currentIndex, bool isSellerMode) {
+    if (index == currentIndex) return;
+    
+    if (index == 0) {
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } else if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => isSellerMode ? MyProductsScreen() : const WishlistScreen()),
+      );
+    } else if (index == 3) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ChatListScreen()),
+      );
+    } else if (index == 4) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+      );
+    }
   }
 }
 
@@ -372,7 +399,7 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
                 builder: (_, __) {
                   return Container(
                     decoration: BoxDecoration(
-                      color: Color.lerp(AppTheme.secondaryColor, Colors.redAccent, _controller.value),
+                      color: Color.lerp(Colors.white, Colors.redAccent, _controller.value),
                       shape: BoxShape.circle,
                       boxShadow: const [
                         BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 4)),
@@ -385,10 +412,10 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
                       elevation: 0,
                       child: Transform.rotate(
                         angle: (math.pi / 4) * _controller.value, // Rotates 45 degrees
-                        child: const Icon(
+                        child: Icon(
                           Icons.add,
                           size: 32,
-                          color: Colors.white,
+                          color: Color.lerp(AppTheme.secondaryColor, Colors.white, _controller.value),
                         ),
                       ),
                     ),
@@ -410,7 +437,7 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
         height: 60,
         width: 60,
         decoration: const BoxDecoration(
-          color: AppTheme.secondaryColor,
+          color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 4)),
@@ -424,7 +451,7 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
           child: const Icon(
             Icons.add,
             size: 32,
-            color: Colors.white,
+            color: AppTheme.secondaryColor,
           ),
         ),
       ),

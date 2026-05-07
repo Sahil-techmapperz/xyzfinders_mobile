@@ -12,6 +12,7 @@ import 'fashion_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 import '../../../widgets/favorite_toggle_button.dart';
+import '../../../widgets/common/filter_bottom_sheet.dart';
 
 class FashionListScreen extends StatefulWidget {
   final int? categoryId;
@@ -29,11 +30,22 @@ class _FashionListScreenState extends State<FashionListScreen> {
   List<ProductModel> _products = [];
   bool _isLoading = true;
   String? _error;
+  final TextEditingController _searchController = TextEditingController();
+
+  // Filter State
+  double? _minPrice;
+  double? _maxPrice;
 
   @override
   void initState() {
     super.initState();
     _fetchProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchProducts() async {
@@ -42,7 +54,13 @@ class _FashionListScreenState extends State<FashionListScreen> {
       _error = null;
     });
     try {
-      final response = await _productService.getProducts(categoryId: widget.categoryId);
+      final response = await _productService.getProducts(
+        categoryId: widget.categoryId,
+        verifiedOnly: _isVerifiedOnly,
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
+        search: _searchController.text.isNotEmpty ? _searchController.text : null,
+      );
       if (mounted) {
         setState(() {
           _products = List<ProductModel>.from(response['products']);
@@ -59,6 +77,49 @@ class _FashionListScreenState extends State<FashionListScreen> {
     }
   }
 
+  void _resetFilters() {
+    setState(() {
+      _isVerifiedOnly = false;
+      _minPrice = null;
+      _maxPrice = null;
+      _searchController.clear();
+    });
+    _fetchProducts();
+  }
+
+  void _showPriceFilter() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => FilterBottomSheet(
+        title: "Select Price Range",
+        options: const ["Under ₹500", "₹500 - ₹2,000", "₹2,000 - ₹5,000", "Above ₹5,000"],
+        selectedValue: _maxPrice == null ? null : (_maxPrice == 500 ? "Under ₹500" : null),
+        onSelected: (val) {
+          setState(() {
+            if (val == "Under ₹500") {
+              _minPrice = 0; _maxPrice = 500;
+            } else if (val == "₹500 - ₹2,000") {
+              _minPrice = 500; _maxPrice = 2000;
+            } else if (val == "₹2,000 - ₹5,000") {
+              _minPrice = 2000; _maxPrice = 5000;
+            } else if (val == "Above ₹5,000") {
+              _minPrice = 5000; _maxPrice = 1000000;
+            } else {
+              _minPrice = null; _maxPrice = null;
+            }
+          });
+          _fetchProducts();
+        },
+      ),
+    );
+  }
+
+  void _showAllFilters() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Advanced filters coming soon!")),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,6 +132,8 @@ class _FashionListScreenState extends State<FashionListScreen> {
               prefixIcon: Icons.search_rounded,
               hintText: "Search in Fashion...",
               onBack: () => Navigator.pop(context),
+              controller: _searchController,
+              onSubmitted: (val) => _fetchProducts(),
             ),
             _buildFilterBar(),
             _buildResultsSummary(),
@@ -95,9 +158,7 @@ class _FashionListScreenState extends State<FashionListScreen> {
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _currentNavIndex,
         onItemSelected: (index) {
-          if (index != 0) {
-            Navigator.popUntil(context, (route) => route.isFirst);
-          }
+          CustomBottomNavBar.handleGlobalNavigation(context, index, _currentNavIndex, false);
         },
       ),
       floatingActionButton: CustomFab(onPressed: () {}),
@@ -113,33 +174,35 @@ class _FashionListScreenState extends State<FashionListScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          _buildFilterChip(Icons.tune, "Filter", hasDropdown: false, isIconOnly: true),
-          _buildFilterChip(null, "Price", hasDropdown: true),
-          _buildFilterChip(null, "Size", hasDropdown: true),
-          _buildFilterChip(null, "Color", hasDropdown: true),
+          _buildFilterChip(Icons.tune, "Filter", hasDropdown: false, isIconOnly: true).onTap(() => _showAllFilters()),
+          _buildFilterChip(null, "Price", hasDropdown: true).onTap(() => _showPriceFilter()),
+          _buildFilterChip(null, "Size", hasDropdown: true).onTap(() => _showAllFilters()),
+          _buildFilterChip(null, "Color", hasDropdown: true).onTap(() => _showAllFilters()),
           const VerticalDivider(width: 20, indent: 8, endIndent: 8),
-          "All Filters".text.semiBold.black.make().centered().px(8),
-          "Reset".text.gray500.make().centered().px(8),
+          "All Filters".text.semiBold.black.make().centered().px(8).onTap(() => _showAllFilters()),
+          "Reset".text.gray500.make().centered().px(8).onTap(() => _resetFilters()),
         ],
       ),
     );
   }
 
   Widget _buildFilterChip(IconData? icon, String label, {bool hasDropdown = false, bool isIconOnly = false}) {
+    bool isActive = label != "Price" && label != "Size" && label != "Color" && !isIconOnly;
+
     return Container(
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isActive ? Colors.black.withOpacity(0.05) : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: isActive ? Colors.black : Colors.grey.shade300),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) Icon(icon, size: 16, color: Colors.black).box.padding(EdgeInsets.only(right: isIconOnly ? 0 : 4)).make(),
-          if (!isIconOnly) label.text.size(12).semiBold.make(),
-          if (hasDropdown) const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey).box.padding(const EdgeInsets.only(left: 4)).make(),
+          if (!isIconOnly) label.text.size(12).semiBold.color(isActive ? Colors.black : Colors.black).make(),
+          if (hasDropdown) Icon(Icons.keyboard_arrow_down, size: 16, color: isActive ? Colors.black : Colors.grey).box.padding(const EdgeInsets.only(left: 4)).make(),
         ],
       ),
     );
@@ -161,7 +224,10 @@ class _FashionListScreenState extends State<FashionListScreen> {
                 width: 40,
                 child: Switch(
                   value: _isVerifiedOnly,
-                  onChanged: (val) => setState(() => _isVerifiedOnly = val),
+                  onChanged: (val) {
+                    setState(() => _isVerifiedOnly = val);
+                    _fetchProducts();
+                  },
                   activeColor: AppTheme.secondaryColor,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),

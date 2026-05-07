@@ -65,14 +65,21 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             title: 'Face ID / Fingerprint',
             subtitle: 'Quick and secure access to your profile',
             value: securityProvider.isBiometricEnabled,
-            onChanged: (val) {
-              securityProvider.toggleBiometric(val);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(val ? 'Biometric login enabled' : 'Biometric login disabled'),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+            onChanged: (val) async {
+              final error = await securityProvider.toggleBiometric(val);
+              if (!mounted) return;
+              if (error != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(error), backgroundColor: Colors.red),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(val ? 'Biometric login enabled' : 'Biometric login disabled'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
             },
           ),
           

@@ -8,6 +8,12 @@ import '../../providers/chat_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../../data/models/chat_model.dart';
 import '../../../../core/constants/api_constants.dart';
+import '../categories/real_estate/real_estate_detail_screen.dart';
+import '../categories/automobiles/automobile_detail_screen.dart';
+import '../categories/electronics/electronics_detail_screen.dart';
+import '../categories/fashion/fashion_detail_screen.dart';
+import '../categories/furniture/furniture_detail_screen.dart';
+import '../categories/mobiles/mobiles_detail_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final Map<String, dynamic> chatData;
@@ -169,6 +175,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final title = widget.chatData['productTitle'] ?? 'Product';
     final price = widget.chatData['productPrice'] ?? '';
     final image = widget.chatData['productImage'];
+    final productId = widget.chatData['productId'];
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -210,7 +217,27 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              if (productId == null) return;
+              final t = title.toString().toLowerCase();
+              Widget target;
+              
+              if (t.contains('car') || t.contains('bike') || t.contains('scooter')) {
+                target = AutomobileDetailScreen(productId: productId, title: title);
+              } else if (t.contains('electronic') || t.contains('gadget') || t.contains('processor')) {
+                target = ElectronicsDetailScreen(productId: productId, title: title);
+              } else if (t.contains('mobile') || t.contains('phone') || t.contains('iphone')) {
+                target = MobilesDetailScreen(productId: productId, title: title);
+              } else if (t.contains('fashion') || t.contains('dress')) {
+                target = FashionDetailScreen(productId: productId, title: title);
+              } else if (t.contains('furniture') || t.contains('sofa')) {
+                target = FurnitureDetailScreen(productId: productId, title: title);
+              } else {
+                target = RealEstateDetailScreen(productId: productId, title: title);
+              }
+              
+              Navigator.push(context, MaterialPageRoute(builder: (context) => target));
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
               foregroundColor: AppTheme.primaryColor,

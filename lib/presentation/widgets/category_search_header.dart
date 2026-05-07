@@ -7,6 +7,9 @@ class CategorySearchHeader extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback? onNotificationTap;
   final bool showNotification;
+  final Function(String)? onChanged;
+  final Function(String)? onSubmitted;
+  final TextEditingController? controller;
 
   const CategorySearchHeader({
     super.key,
@@ -15,6 +18,9 @@ class CategorySearchHeader extends StatelessWidget {
     required this.onBack,
     this.onNotificationTap,
     this.showNotification = true,
+    this.onChanged,
+    this.onSubmitted,
+    this.controller,
   });
 
   @override
@@ -57,6 +63,9 @@ class CategorySearchHeader extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
+                      controller: controller,
+                      onChanged: onChanged,
+                      onSubmitted: onSubmitted,
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                       decoration: InputDecoration(
                         hintText: hintText,

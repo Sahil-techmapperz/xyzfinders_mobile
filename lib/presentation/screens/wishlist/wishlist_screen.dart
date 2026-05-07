@@ -15,6 +15,8 @@ import '../categories/fashion/fashion_detail_screen.dart';
 import '../categories/furniture/furniture_detail_screen.dart';
 import '../categories/mobiles/mobiles_detail_screen.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
+import '../../widgets/auth/auth_modal.dart';
+import '../home/home_screen.dart';
 
 class WishlistScreen extends StatefulWidget {
   final bool showAppBar;
@@ -78,6 +80,74 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    
+    if (!authProvider.isAuthenticated) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: widget.showAppBar ? AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+              }
+            },
+          ),
+          title: const Text('My Wishlist', style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
+          centerTitle: true,
+        ) : null,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade400),
+                const SizedBox(height: 24),
+                const Text(
+                  'Log in to view your wishlist',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Save items you\'re interested in and we\'ll track them for you.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => AuthModal.show(context, initialIsLogin: true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Log In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        bottomNavigationBar: !widget.showAppBar ? null : CustomBottomNavBar(
+          selectedIndex: 1,
+          isSellerMode: false,
+          onItemSelected: (index) {
+            CustomBottomNavBar.handleGlobalNavigation(context, index, 1, false);
+          },
+        ),
+      );
+    }
+
     final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
 
     return Scaffold(
@@ -130,8 +200,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           selectedIndex: 1,
           isSellerMode: auth.isSellerMode,
           onItemSelected: (index) {
-            if (index == 1) return;
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            CustomBottomNavBar.handleGlobalNavigation(context, index, 1, auth.isSellerMode);
           },
         ),
       ),
@@ -172,6 +241,20 @@ class _WishlistScreenState extends State<WishlistScreen> {
       pinned: true,
       elevation: 0,
       backgroundColor: Colors.white,
+      iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.black),
+        onPressed: () {
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          }
+        },
+      ),
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.pin,
         background: Container(
@@ -215,18 +298,12 @@ class _WishlistScreenState extends State<WishlistScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: TextField(
         controller: _searchController,
         onChanged: (val) => setState(() => _searchQuery = val),
         decoration: InputDecoration(
+          filled: false,
           hintText: "Search in wishlist...",
           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
           prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
@@ -240,6 +317,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
               )
             : null,
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
         ),
       ),
@@ -564,7 +643,13 @@ class _WishlistScreenState extends State<WishlistScreen> {
           "Save items you're interested in\nand we'll track them for you.".text.center.gray500.make(),
           const SizedBox(height: 40),
           ElevatedButton(
-            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                (route) => false,
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,

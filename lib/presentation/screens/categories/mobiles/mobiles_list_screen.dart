@@ -10,6 +10,7 @@ import 'mobiles_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../widgets/category_search_header.dart';
 import '../../../widgets/favorite_toggle_button.dart';
+import '../../../widgets/common/filter_bottom_sheet.dart';
 
 class MobilesListScreen extends StatefulWidget {
   final int? categoryId;
@@ -27,79 +28,34 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
   List<ProductModel> _products = [];
   bool _isLoading = true;
   String? _error;
+  final TextEditingController _searchController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchProducts();
-  }
+  // Filter State
+  String? _selectedBrand;
+  String? _selectedStorage;
+  String? _selectedRam;
+  double? _minPrice;
+  double? _maxPrice;
 
-  Future<void> _fetchProducts() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final response = await _productService.getProducts(categoryId: widget.categoryId);
-      if (mounted) {
-        setState(() {
-          _products = List<ProductModel>.from(response['products']);
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
-  }
+  Widget _buildFilterChip(IconData? icon, String label, {bool hasDropdown = false, bool isIconOnly = false}) {
+    bool isActive = label != "Brand" && label != "Storage" && label != "RAM" && label != "Price" && !isIconOnly;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFDFCF9),
-      extendBody: true,
-      body: SafeArea(
-        child: Column(
-          children: [
-            CategorySearchHeader(
-              prefixIcon: Icons.search_rounded,
-              hintText: "Search Mobiles & Tablets...",
-              onBack: () => Navigator.pop(context),
-            ),
-            _buildFilterBar(),
-            _buildResultsSummary(),
-            Expanded(
-              child: _isLoading 
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null 
-                  ? Center(child: "Error: $_error".text.make())
-                  : _products.isEmpty
-                    ? Center(child: "No mobiles found".text.make())
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                        itemCount: _products.length,
-                        itemBuilder: (context, index) {
-                          return _buildProductCard(context, _products[index]);
-                        },
-                      ),
-            ),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: isActive ? Colors.orange.shade50 : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: isActive ? Colors.orange.shade300 : Colors.grey.shade300),
       ),
-      bottomNavigationBar: CustomBottomNavBar(
-        selectedIndex: _currentNavIndex,
-        onItemSelected: (index) {
-          if (index != 0) {
-            Navigator.popUntil(context, (route) => route.isFirst);
-          }
-        },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) Icon(icon, size: 16, color: Colors.orange.shade700).box.padding(EdgeInsets.only(right: isIconOnly ? 0 : 4)).make(),
+          if (!isIconOnly) label.text.size(12).semiBold.color(isActive ? Colors.orange.shade900 : Colors.black).make(),
+          if (hasDropdown) Icon(Icons.keyboard_arrow_down, size: 16, color: isActive ? Colors.orange.shade700 : Colors.grey).box.padding(const EdgeInsets.only(left: 4)).make(),
+        ],
       ),
-      floatingActionButton: CustomFab(onPressed: () {}),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -111,34 +67,14 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          _buildFilterChip(Icons.tune, "Filter", hasDropdown: false, isIconOnly: true),
-          _buildFilterChip(null, "Brand", hasDropdown: true),
-          _buildFilterChip(null, "Storage", hasDropdown: true),
-          _buildFilterChip(null, "RAM", hasDropdown: true),
-          _buildFilterChip(null, "Price", hasDropdown: true),
+          _buildFilterChip(Icons.tune, "Filter", hasDropdown: false, isIconOnly: true).onTap(() => _showAllFilters()),
+          _buildFilterChip(null, _selectedBrand ?? "Brand", hasDropdown: true).onTap(() => _showBrandFilter()),
+          _buildFilterChip(null, _selectedStorage ?? "Storage", hasDropdown: true).onTap(() => _showStorageFilter()),
+          _buildFilterChip(null, _selectedRam ?? "RAM", hasDropdown: true).onTap(() => _showRamFilter()),
+          _buildFilterChip(null, "Price", hasDropdown: true).onTap(() => _showPriceFilter()),
           const VerticalDivider(width: 20, indent: 8, endIndent: 8),
-          "All Filters".text.semiBold.black.make().centered().px(8),
-          "Reset".text.gray500.make().centered().px(8),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(IconData? icon, String label, {bool hasDropdown = false, bool isIconOnly = false}) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) Icon(icon, size: 16, color: Colors.orange.shade700).box.padding(EdgeInsets.only(right: isIconOnly ? 0 : 4)).make(),
-          if (!isIconOnly) label.text.size(12).semiBold.make(),
-          if (hasDropdown) const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey).box.padding(const EdgeInsets.only(left: 4)).make(),
+          "All Filters".text.semiBold.black.make().centered().px(8).onTap(() => _showAllFilters()),
+          "Reset".text.gray500.make().centered().px(8).onTap(() => _resetFilters()),
         ],
       ),
     );
@@ -160,7 +96,10 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
                 width: 40,
                 child: Switch(
                   value: _isVerifiedOnly,
-                  onChanged: (val) => setState(() => _isVerifiedOnly = val),
+                  onChanged: (val) {
+                    setState(() => _isVerifiedOnly = val);
+                    _fetchProducts();
+                  },
                   activeColor: AppTheme.secondaryColor,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -321,6 +260,187 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await _productService.getProducts(
+        categoryId: widget.categoryId,
+        verifiedOnly: _isVerifiedOnly,
+        brand: _selectedBrand,
+        storage: _selectedStorage,
+        ram: _selectedRam,
+        minPrice: _minPrice,
+        maxPrice: _maxPrice,
+        search: _searchController.text.isNotEmpty ? _searchController.text : null,
+      );
+      if (mounted) {
+        setState(() {
+          _products = List<ProductModel>.from(response['products']);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _isVerifiedOnly = false;
+      _selectedBrand = null;
+      _selectedStorage = null;
+      _selectedRam = null;
+      _minPrice = null;
+      _maxPrice = null;
+      _searchController.clear();
+    });
+    _fetchProducts();
+  }
+
+  void _showBrandFilter() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => FilterBottomSheet(
+        title: "Select Brand",
+        options: const ["Apple", "Samsung", "Google", "OnePlus", "Xiaomi", "Vivo", "Oppo"],
+        selectedValue: _selectedBrand,
+        onSelected: (val) {
+          setState(() => _selectedBrand = val);
+          _fetchProducts();
+        },
+      ),
+    );
+  }
+
+  void _showStorageFilter() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => FilterBottomSheet(
+        title: "Select Storage",
+        options: const ["64 GB", "128 GB", "256 GB", "512 GB", "1 TB"],
+        selectedValue: _selectedStorage,
+        onSelected: (val) {
+          setState(() => _selectedStorage = val);
+          _fetchProducts();
+        },
+      ),
+    );
+  }
+
+  void _showRamFilter() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => FilterBottomSheet(
+        title: "Select RAM",
+        options: const ["4 GB", "6 GB", "8 GB", "12 GB", "16 GB"],
+        selectedValue: _selectedRam,
+        onSelected: (val) {
+          setState(() => _selectedRam = val);
+          _fetchProducts();
+        },
+      ),
+    );
+  }
+
+  void _showPriceFilter() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => FilterBottomSheet(
+        title: "Select Price Range",
+        options: const ["Under ₹10,000", "₹10,000 - ₹30,000", "₹30,000 - ₹70,000", "Above ₹70,000"],
+        selectedValue: _maxPrice == null ? null : (_maxPrice == 10000 ? "Under ₹10,000" : null),
+        onSelected: (val) {
+          setState(() {
+            if (val == "Under ₹10,000") {
+              _minPrice = 0; _maxPrice = 10000;
+            } else if (val == "₹10,000 - ₹30,000") {
+              _minPrice = 10000; _maxPrice = 30000;
+            } else if (val == "₹30,000 - ₹70,000") {
+              _minPrice = 30000; _maxPrice = 70000;
+            } else if (val == "Above ₹70,000") {
+              _minPrice = 70000; _maxPrice = 1000000;
+            } else {
+              _minPrice = null; _maxPrice = null;
+            }
+          });
+          _fetchProducts();
+        },
+      ),
+    );
+  }
+
+  void _showAllFilters() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Advanced filters coming soon!")),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDFCF9),
+      extendBody: true,
+      body: SafeArea(
+        child: Column(
+          children: [
+            CategorySearchHeader(
+              prefixIcon: Icons.search_rounded,
+              hintText: "Search Mobiles & Tablets...",
+              onBack: () => Navigator.pop(context),
+              controller: _searchController,
+              onSubmitted: (val) => _fetchProducts(),
+            ),
+            _buildFilterBar(),
+            _buildResultsSummary(),
+            Expanded(
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null 
+                  ? Center(child: "Error: $_error".text.make())
+                  : _products.isEmpty
+                    ? Center(child: "No mobiles found".text.make())
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                        itemCount: _products.length,
+                        itemBuilder: (context, index) {
+                          return _buildProductCard(context, _products[index]);
+                        },
+                      ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: CustomBottomNavBar(
+        selectedIndex: _currentNavIndex,
+        onItemSelected: (index) {
+          CustomBottomNavBar.handleGlobalNavigation(context, index, _currentNavIndex, false);
+        },
+      ),
+      floatingActionButton: CustomFab(onPressed: () {}),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

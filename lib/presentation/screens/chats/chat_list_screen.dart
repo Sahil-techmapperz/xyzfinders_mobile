@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/auth/auth_modal.dart';
 import 'chat_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -13,15 +14,27 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (context.read<AuthProvider>().isAuthenticated) {
         context.read<ChatProvider>().loadConversations();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   String _formatTime(DateTime date) {
@@ -34,23 +47,94 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    
+    if (!authProvider.isAuthenticated) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text('Chats', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 22)),
+          backgroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey.shade400),
+                const SizedBox(height: 24),
+                const Text(
+                  'Log in to view your messages',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Chat with sellers, ask questions, and make deals.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => AuthModal.show(context, initialIsLogin: true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Log In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Chats',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (value) => setState(() {}),
+                decoration: const InputDecoration(
+                  hintText: 'Search chats...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.black54),
+                ),
+                style: const TextStyle(color: Colors.black87, fontSize: 16),
+              )
+            : const Text(
+                'Chats',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                ),
+              ),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.black87),
-            onPressed: () {},
+            icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.black87),
+            onPressed: () {
+              setState(() {
+                if (_isSearching) {
+                  _isSearching = false;
+                  _searchController.clear();
+                } else {
+                  _isSearching = true;
+                }
+              });
+            },
           ),
         ],
       ),
@@ -82,18 +166,41 @@ class _ChatListScreenState extends State<ChatListScreen> {
             return _buildEmptyState();
           }
 
+          final searchQuery = _searchController.text.trim().toLowerCase();
+          final filteredConversations = chatProvider.conversations.where((chat) {
+            if (searchQuery.isEmpty) return true;
+            
+            final currentUserId = context.read<AuthProvider>().user?.id?.toString();
+            final isMeSender = chat.senderId == currentUserId;
+            final otherUserName = isMeSender ? chat.receiverName : chat.senderName;
+            
+            final nameMatch = (otherUserName?.toLowerCase() ?? '').contains(searchQuery);
+            final productMatch = (chat.productTitle?.toLowerCase() ?? '').contains(searchQuery);
+            
+            return nameMatch || productMatch;
+          }).toList();
+
+          if (filteredConversations.isEmpty && searchQuery.isNotEmpty) {
+            return Center(
+              child: Text(
+                'No chats found for "$searchQuery"',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+              ),
+            );
+          }
+
           return RefreshIndicator(
             onRefresh: () => chatProvider.loadConversations(),
             color: AppTheme.primaryColor,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: chatProvider.conversations.length,
+              itemCount: filteredConversations.length,
               separatorBuilder: (context, index) => Padding(
                 padding: const EdgeInsets.only(left: 76, right: 16),
                 child: Divider(height: 1, thickness: 0.5, color: Colors.grey.shade300),
               ),
               itemBuilder: (context, index) {
-                return _buildChatTile(context, chatProvider.conversations[index], chatProvider);
+                return _buildChatTile(context, filteredConversations[index], chatProvider);
               },
             ),
           );
@@ -134,7 +241,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget _buildChatTile(BuildContext context, dynamic chat, ChatProvider provider) {
     final bool isUnread = chat.unreadCount > 0;
     
-    final currentUserId = context.read<AuthProvider>().user?.id;
+    final currentUserId = context.read<AuthProvider>().user?.id?.toString();
     final isMeSender = chat.senderId == currentUserId;
     final otherUserId = isMeSender ? chat.receiverId : chat.senderId;
     final otherUserName = isMeSender ? chat.receiverName : chat.senderName;
