@@ -11,6 +11,9 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.xyzfinders.web
 
+    integrations:
+      app_store_connect: Codemagic
+
     scripts:
       - flutter clean
       - flutter pub get
@@ -22,3 +25,4 @@ workflows:
 
     artifacts:
       - build/ios/ipa/*.ipa
+      - build/ios/archive/*.xcarchive
