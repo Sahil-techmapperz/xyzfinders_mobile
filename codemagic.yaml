@@ -1,15 +1,17 @@
 workflows:
-  ios-simulator:
-    name: iOS Simulator Build
+  ios-release:
+    name: iOS Release Build
+
     environment:
       flutter: stable
       xcode: latest
+      cocoapods: default
 
     scripts:
       - flutter clean
       - flutter pub get
-      - cd ios && rm -rf Pods Podfile.lock && pod install --repo-update --verbose
-      - flutter build ios --simulator --debug
+      - cd ios && pod install
+      - flutter build ipa --release
 
     artifacts:
-      - build/ios/iphonesimulator/Runner.app
+      - build/ios/ipa/*.ipa
