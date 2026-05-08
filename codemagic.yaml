@@ -21,7 +21,11 @@ workflows:
 
       - xcode-project use-profiles
 
-      - flutter build ipa --release
+      - flutter build ios --release --no-codesign
+
+      - xcode-project build-ipa \
+          --workspace ios/Runner.xcworkspace \
+          --scheme Runner
 
     artifacts:
       - build/ios/ipa/*.ipa
