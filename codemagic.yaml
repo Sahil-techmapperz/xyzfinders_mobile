@@ -23,8 +23,12 @@ workflows:
 
       - flutter build ios --release --no-codesign
 
-      - xcode-project build-ipa --workspace ios/Runner.xcworkspace --scheme Runner
+      - xcode-project build-ipa
 
     artifacts:
       - build/ios/ipa/*.ipa
-      - build/ios/archive/*.xcarchive
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
