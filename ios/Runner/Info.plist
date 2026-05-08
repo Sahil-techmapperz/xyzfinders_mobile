@@ -63,5 +63,16 @@
 		<string>This app requires access to Face ID for secure authentication.</string>
 		<key>ITSAppUsesNonExemptEncryption</key>
 		<false/>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.817332061056-4fupn9bcfl3rsgekm5giecqsoiglu1hq</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>
