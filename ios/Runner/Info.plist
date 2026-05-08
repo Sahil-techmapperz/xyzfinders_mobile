@@ -61,5 +61,7 @@
 		<string>This app requires access to your location to show you nearby listings and search for services in your area.</string>
 		<key>NSFaceIDUsageDescription</key>
 		<string>This app requires access to Face ID for secure authentication.</string>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 	</dict>
 </plist>
