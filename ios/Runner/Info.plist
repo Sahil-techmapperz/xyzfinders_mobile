@@ -49,5 +49,17 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>This app requires access to your photo library to allow you to upload images for your profile and advertisements.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>This app requires access to your camera to allow you to take photos for your profile and advertisements.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>This app requires access to your microphone when recording videos for advertisements.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>This app requires access to your location to show you nearby listings and search for services in your area.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>This app requires access to your location to show you nearby listings and search for services in your area.</string>
+		<key>NSFaceIDUsageDescription</key>
+		<string>This app requires access to Face ID for secure authentication.</string>
 	</dict>
 </plist>
