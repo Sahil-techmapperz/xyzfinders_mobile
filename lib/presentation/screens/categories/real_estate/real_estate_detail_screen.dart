@@ -1,3 +1,4 @@
+import '../../../widgets/share_button.dart';
 import '../../chats/chat_screen.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -157,7 +158,7 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
                 ],
               ),
               _buildBackButton(),
-              _buildFavoriteButton(product),
+              _buildActionButtons(product),
             ],
           ),
           bottomNavigationBar: _buildStickyBottomBar(product),
@@ -253,11 +254,21 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
     );
   }
 
-  Widget _buildFavoriteButton(ProductModel product) {
+  Widget _buildActionButtons(ProductModel product) {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 10,
       right: 16,
-      child: FavoriteToggleButton(product: product),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: ShareButton(product: product, iconSize: 22),
+          ),
+          const SizedBox(width: 10),
+          FavoriteToggleButton(product: product),
+        ],
+      ),
     );
   }
 

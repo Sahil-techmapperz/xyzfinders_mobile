@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:collection/collection.dart';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +11,8 @@ import '../../providers/address_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../data/models/address_model.dart';
 import '../home/home_screen.dart';
+import '../../widgets/common/searchable_location_picker.dart';
+
 
 class PostAdFormScreen extends StatefulWidget {
   final String category;
@@ -137,6 +141,16 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
   final List<File> _images = [];
   final ImagePicker _picker = ImagePicker();
 
+  // Location Data
+  List<StateModel> _states = [];
+  List<CityModel> _cities = [];
+  StateModel? _selectedState;
+  CityModel? _selectedCity;
+  int? _selectedStateId;
+  int? _selectedCityId;
+  bool _isLoadingStates = false;
+  bool _isLoadingCities = false;
+
   final List<Map<String, dynamic>> _amenitiesList = [
     {'name': 'Parking', 'icon': Icons.directions_car_outlined},
     {'name': 'Lift', 'icon': Icons.elevator_outlined},
@@ -155,12 +169,46 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AddressProvider>().fetchAddresses();
+      _fetchStates();
       final auth = context.read<AuthProvider>();
       if (auth.user?.phone != null && auth.user!.phone!.isNotEmpty) {
         _phoneController.text = auth.user!.phone!;
       }
     });
   }
+
+  Future<void> _fetchStates() async {
+    setState(() => _isLoadingStates = true);
+    try {
+      final states = await context.read<AddressProvider>().getStates();
+      setState(() {
+        _states = states;
+        _isLoadingStates = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingStates = false);
+    }
+  }
+
+  Future<void> _fetchCities(int stateId) async {
+    setState(() {
+      _isLoadingCities = true;
+      _cities = [];
+      _cityController.clear();
+      _selectedCityId = null;
+    });
+    try {
+      final cities = await context.read<AddressProvider>().getCities(stateId);
+      setState(() {
+        _cities = cities;
+        _isLoadingCities = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingCities = false);
+    }
+  }
+
+
 
   @override
   void dispose() {
@@ -1219,9 +1267,28 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                         final selectedAddress = addresses.firstWhere((a) => '${a.name} (${a.cityName ?? a.areaName})' == val);
                         _stateController.text = selectedAddress.stateName ?? '';
                         _cityController.text = selectedAddress.cityName ?? '';
+                        _selectedStateId = selectedAddress.stateId;
+                        _selectedCityId = selectedAddress.cityId;
+                        
+                        // Sync with objects if lists are already loaded
+                        if (_states.isNotEmpty && _selectedStateId != null) {
+                          _selectedState = _states.firstWhereOrNull((s) => s.id == _selectedStateId);
+                        }
+                        
                         _locationAreaController.text = selectedAddress.areaName ?? '';
                         _pincodeController.text = selectedAddress.pincode ?? '';
                         _landmarkController.text = selectedAddress.fullAddress ?? '';
+
+                        // If state is selected, fetch cities to sync city object later
+                        if (_selectedStateId != null) {
+                          _fetchCities(_selectedStateId!).then((_) {
+                            if (_cities.isNotEmpty && _selectedCityId != null) {
+                              setState(() {
+                                _selectedCity = _cities.firstWhereOrNull((c) => c.id == _selectedCityId);
+                              });
+                            }
+                          });
+                        }
                       }
                     });
                   }
@@ -1232,9 +1299,49 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         const SizedBox(height: 24),
         Row(
           children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('State *'), _buildTextField(_stateController, 'Search State...', suffixIcon: Icons.keyboard_arrow_down_rounded)])),
+            Expanded(
+              child: SearchableLocationPicker<StateModel>(
+                label: 'State *',
+                hint: 'Select State',
+                icon: Icons.map_outlined,
+                items: _states,
+                selectedItem: _selectedState,
+                itemLabel: (s) => s.name,
+                isLoading: _isLoadingStates && _states.isEmpty,
+                onChanged: (s) {
+                  setState(() {
+                    _selectedState = s;
+                    _selectedStateId = s?.id;
+                    _selectedCity = null;
+                    _selectedCityId = null;
+                    _cityController.clear();
+                    _stateController.text = s?.name ?? '';
+                    if (s != null) _fetchCities(s.id);
+                  });
+                },
+                validator: (v) => v == null ? 'Required' : null,
+              ),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('City *'), _buildTextField(_cityController, 'Search City...', suffixIcon: Icons.keyboard_arrow_down_rounded)])),
+            Expanded(
+              child: SearchableLocationPicker<CityModel>(
+                label: 'City *',
+                hint: 'Select City',
+                icon: Icons.location_city_outlined,
+                items: _cities,
+                selectedItem: _selectedCity,
+                itemLabel: (c) => c.name,
+                isLoading: _isLoadingCities && _selectedState != null && _cities.isEmpty,
+                onChanged: (c) {
+                  setState(() {
+                    _selectedCity = c;
+                    _selectedCityId = c?.id;
+                    _cityController.text = c?.name ?? '';
+                  });
+                },
+                validator: (v) => v == null ? 'Required' : null,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 20),
@@ -1338,11 +1445,13 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType? keyboardType, int maxLines = 1, IconData? suffixIcon}) {
+  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType? keyboardType, int maxLines = 1, IconData? suffixIcon, bool readOnly = false, VoidCallback? onTap}) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      readOnly: readOnly,
+      onTap: onTap,
       style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,

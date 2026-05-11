@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../../../data/models/notification_model.dart';
+import '../../widgets/auth/auth_modal.dart';
 import 'notification_detail_screen.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -18,7 +20,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<NotificationProvider>().fetchNotifications();
+      if (context.read<AuthProvider>().isAuthenticated) {
+        context.read<NotificationProvider>().fetchNotifications();
+      }
     });
   }
 
@@ -43,46 +47,105 @@ class _NotificationScreenState extends State<NotificationScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Consumer<NotificationProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && provider.notifications.isEmpty) {
-            return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+      body: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          if (!authProvider.isAuthenticated) {
+            return _buildLoginRequiredState();
           }
+          
+          return Consumer<NotificationProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading && provider.notifications.isEmpty) {
+                return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+              }
 
-          if (provider.error != null && provider.notifications.isEmpty) {
-            return Center(
-              child: VStack([
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                16.heightBox,
-                provider.error!.text.center.make(),
-                16.heightBox,
-                ElevatedButton(
-                  onPressed: () => provider.fetchNotifications(),
-                  child: const Text('Retry'),
+              if (provider.error != null && provider.notifications.isEmpty) {
+                return Center(
+                  child: VStack([
+                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    16.heightBox,
+                    provider.error!.text.center.make(),
+                    16.heightBox,
+                    ElevatedButton(
+                      onPressed: () => provider.fetchNotifications(),
+                      child: const Text('Retry'),
+                    ),
+                  ]).p16(),
+                );
+              }
+
+              if (provider.notifications.isEmpty) {
+                return _buildEmptyState(provider);
+              }
+
+              return RefreshIndicator(
+                onRefresh: () => provider.fetchNotifications(),
+                color: AppTheme.primaryColor,
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  itemCount: provider.notifications.length,
+                  separatorBuilder: (context, index) => const Divider(height: 24, thickness: 0.5),
+                  itemBuilder: (context, index) {
+                    final notification = provider.notifications[index];
+                    return _buildNotificationTile(context, notification, provider);
+                  },
                 ),
-              ]).p16(),
-            );
-          }
-
-          if (provider.notifications.isEmpty) {
-            return _buildEmptyState(provider);
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => provider.fetchNotifications(),
-            color: AppTheme.primaryColor,
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              itemCount: provider.notifications.length,
-              separatorBuilder: (context, index) => const Divider(height: 24, thickness: 0.5),
-              itemBuilder: (context, index) {
-                final notification = provider.notifications[index];
-                return _buildNotificationTile(context, notification, provider);
-              },
-            ),
+              );
+            },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLoginRequiredState() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.notifications_none_outlined, size: 120, color: Colors.grey.shade300),
+            const SizedBox(height: 32),
+            const Text(
+              'Login Required',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Please login to view your notifications and updates.',
+              style: TextStyle(fontSize: 15, color: Colors.grey.shade500, height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 48),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  AuthModal.show(context, initialIsLogin: true).then((_) {
+                    if (context.read<AuthProvider>().isAuthenticated) {
+                      context.read<NotificationProvider>().fetchNotifications();
+                    }
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Login Now', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 100),
+          ],
+        ),
       ),
     );
   }

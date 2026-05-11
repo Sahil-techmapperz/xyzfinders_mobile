@@ -88,53 +88,58 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(backgroundColor: Colors.white, elevation: 0, toolbarHeight: 0),
-      body: Center(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: Colors.white,
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.person_off_outlined, size: 80, color: Colors.grey.shade400),
-              const SizedBox(height: 24),
+              Icon(Icons.person_outline, size: 120, color: Colors.grey.shade300),
+              const SizedBox(height: 32),
               const Text(
                 'Create an account or log in',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Text(
                 'Log in to access your profile, manage your ads, and chat with buyers.',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 15, color: Colors.grey.shade500, height: 1.5),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: () => AuthModal.show(context, initialIsLogin: true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.secondaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Log In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text('Log In', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
+                height: 56,
                 child: OutlinedButton(
                   onPressed: () => AuthModal.show(context, initialIsLogin: false),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.secondaryColor,
-                    side: const BorderSide(color: AppTheme.secondaryColor),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    side: const BorderSide(color: AppTheme.secondaryColor, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Register', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text('Register', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
               ),
+              const SizedBox(height: 100),
             ],
           ),
         ),

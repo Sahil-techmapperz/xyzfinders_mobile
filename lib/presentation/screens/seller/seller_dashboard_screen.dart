@@ -10,9 +10,11 @@ import '../seller/my_products_screen.dart';
 import '../seller/seller_reports_screen.dart';
 import '../seller/my_job_posts_screen.dart';
 import '../ads/post_ad_category_screen.dart';
+import '../seller/seller_product_detail_screen.dart';
 
 class SellerDashboardScreen extends StatefulWidget {
-  const SellerDashboardScreen({super.key});
+  final VoidCallback? onInventoryTap;
+  const SellerDashboardScreen({super.key, this.onInventoryTap});
 
   @override
   State<SellerDashboardScreen> createState() => _SellerDashboardScreenState();
@@ -90,7 +92,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                       _buildRecentPerformance(),
                       const SizedBox(height: 32),
                       _buildRecentAds(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 100),
                     ],
                   ],
                 ),
@@ -104,9 +106,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
 
   Widget _buildAppBar(BuildContext context, String name) {
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 120,
       floating: false,
-      pinned: true,
+      pinned: false,
       backgroundColor: AppTheme.primaryColor,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
@@ -219,7 +221,13 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 'Inventory', 
                 Icons.inventory_2_outlined, 
                 Colors.indigo,
-                () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProductsScreen())),
+                () {
+                  if (widget.onInventoryTap != null) {
+                    widget.onInventoryTap!();
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProductsScreen()));
+                  }
+                },
               ),
               _buildActionItem(
                 'Reports', 
@@ -357,37 +365,59 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
   }
 
   Widget _buildRecentAdCard(ProductModel product) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.image, color: Colors.grey),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                product.title.toString().text.bold.sm.maxLines(1).ellipsis.make(),
-                "${product.viewsCount} views".text.xs.gray400.make(),
-              ],
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SellerProductDetailScreen(
+              productId: product.id,
+              title: product.title,
             ),
           ),
-          "₹ ${product.price}".text.bold.color(AppTheme.primaryColor).make(),
-        ],
+        ).then((_) => _loadDashboardData());
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade100),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
+                image: product.firstImageUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(product.firstImageUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: product.firstImageUrl == null
+                  ? const Icon(Icons.image, color: Colors.grey)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  product.title.toString().text.bold.sm.maxLines(1).ellipsis.make(),
+                  "${product.viewsCount} views".text.xs.gray400.make(),
+                ],
+              ),
+            ),
+            "₹ ${product.price}".text.bold.color(AppTheme.primaryColor).make(),
+          ],
+        ),
       ),
     );
   }

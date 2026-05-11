@@ -90,7 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   List<Widget> get _sellerScreens => [
-    SellerDashboardScreen(),
+    SellerDashboardScreen(
+      onInventoryTap: () {
+        setState(() => _selectedIndex = 1);
+      },
+    ),
     MyProductsScreen(),
     const SizedBox.shrink(), // FAB placeholder
     const ChatListScreen(), // Use same chats for both roles

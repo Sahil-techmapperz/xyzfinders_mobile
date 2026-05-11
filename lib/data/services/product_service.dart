@@ -218,6 +218,11 @@ class ProductService {
     return productsJson.map((json) => ProductModel.fromJson(json)).toList();
   }
 
+  Future<ProductModel> getMyProductById(int id) async {
+    final response = await _apiService.get('/seller/products/$id');
+    return ProductModel.fromJson(response.data['data']);
+  }
+
   Future<bool> deleteProduct(int id) async {
     final response = await _apiService.delete('/seller/products/$id');
     return response.data['success'] == true;

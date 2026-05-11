@@ -1,4 +1,8 @@
+import '../../../widgets/share_button.dart';
 import '../../chats/chat_screen.dart';
+import '../../../widgets/auth/auth_modal.dart';
+import 'job_apply_form_screen.dart';
+import '../../../providers/auth_provider.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -29,13 +33,49 @@ class JobsDetailScreen extends StatefulWidget {
 
 class _JobsDetailScreenState extends State<JobsDetailScreen> {
   int _activeImageIndex = 0;
+  final ScrollController _scrollController = ScrollController();
+  bool _showStickyButton = false;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_scrollListener);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().fetchProductDetail(widget.productId);
     });
+  }
+
+  void _scrollListener() {
+    // Show sticky button only after scrolling past the first apply button (approx 420 pixels)
+    if (_scrollController.offset > 420 && !_showStickyButton) {
+      setState(() => _showStickyButton = true);
+    } else if (_scrollController.offset <= 420 && _showStickyButton) {
+      setState(() => _showStickyButton = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleApply(ProductModel product) {
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.isAuthenticated) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => JobApplyFormScreen(
+            jobId: product.id,
+            jobTitle: product.title,
+          ),
+        ),
+      );
+    } else {
+      AuthModal.show(context);
+    }
   }
 
   Widget _buildProductImage(String? imageVal, {double? height, double? width, BoxFit fit = BoxFit.cover}) {
@@ -118,6 +158,7 @@ class _JobsDetailScreenState extends State<JobsDetailScreen> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -155,7 +196,7 @@ class _JobsDetailScreenState extends State<JobsDetailScreen> {
                                   children: [
                                     FavoriteToggleButton(product: product, iconSize: 24),
                                     const SizedBox(width: 12),
-                                    const Icon(Icons.share_outlined, size: 24, color: Colors.black87),
+                                    ShareButton(product: product, iconSize: 24),
                                   ],
                                 ),
                               ],
@@ -174,20 +215,21 @@ class _JobsDetailScreenState extends State<JobsDetailScreen> {
                             _buildInfoRow(Icons.school_outlined, qualification.toString()),
                             
                             const SizedBox(height: 24),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFE8F5B),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            if (!_showStickyButton)
+                              SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: () => _handleApply(product),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFE8F5B),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  child: "APPLY".text.xl.bold.make(),
                                 ),
-                                child: "APPLY".text.xl.bold.make(),
                               ),
-                            ),
                             const SizedBox(height: 12),
                             Row(
                               children: [
@@ -233,7 +275,7 @@ class _JobsDetailScreenState extends State<JobsDetailScreen> {
                   ),
                 ),
               ),
-              _buildStickyBottomBar(product),
+              if (_showStickyButton) _buildStickyBottomBar(product),
             ],
           ),
         );
@@ -362,7 +404,7 @@ class _JobsDetailScreenState extends State<JobsDetailScreen> {
           width: double.infinity,
           height: 54,
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed: () => _handleApply(product),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFE8F5B),
               foregroundColor: Colors.white,

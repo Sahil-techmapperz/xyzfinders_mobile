@@ -42,7 +42,7 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
     });
 
     try {
-      final product = await _productService.getProductById(widget.productId);
+      final product = await _productService.getMyProductById(widget.productId);
       if (mounted) {
         setState(() {
           _product = product;

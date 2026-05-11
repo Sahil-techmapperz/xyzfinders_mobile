@@ -55,4 +55,45 @@ class JobApplicationService {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>> applyToJob({
+    required int jobId,
+    required String fullName,
+    required String email,
+    required String phone,
+    required String coverLetter,
+    required String resumeUrl,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        '/jobs/apply',
+        data: {
+          'job_id': jobId,
+          'full_name': fullName,
+          'email': email,
+          'phone': phone,
+          'cover_letter': coverLetter,
+          'resume_url': resumeUrl,
+        },
+      );
+      return {
+        'success': response.data['success'] == true,
+        'message': response.data['message'] ?? (response.data['success'] == true ? 'Application submitted' : 'Failed to submit'),
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'An error occurred while submitting your application',
+      };
+    }
+  }
+
+  Future<bool> checkApplicationStatus(int jobId) async {
+    try {
+      final response = await _apiService.get('/jobs/apply', queryParameters: {'job_id': jobId});
+      return response.data['data']['hasApplied'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
 }

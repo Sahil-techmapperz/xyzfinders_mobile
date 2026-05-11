@@ -101,39 +101,45 @@ class _WishlistScreenState extends State<WishlistScreen> {
           title: const Text('My Wishlist', style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
           centerTitle: true,
         ) : null,
-        body: Center(
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          color: Colors.white,
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade400),
-                const SizedBox(height: 24),
+                Icon(Icons.favorite_outline, size: 120, color: Colors.grey.shade300),
+                const SizedBox(height: 32),
                 const Text(
                   'Log in to view your wishlist',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Text(
                   'Save items you\'re interested in and we\'ll track them for you.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 15, color: Colors.grey.shade500, height: 1.5),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
                 SizedBox(
                   width: double.infinity,
+                  height: 56,
                   child: ElevatedButton(
                     onPressed: () => AuthModal.show(context, initialIsLogin: true),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.secondaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Log In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: const Text('Log In', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
+                // Add some bottom padding if nav bar is hidden (unlikely in this context but good for safety)
+                const SizedBox(height: 100),
               ],
             ),
           ),
