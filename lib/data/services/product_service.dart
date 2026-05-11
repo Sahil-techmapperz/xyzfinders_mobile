@@ -260,6 +260,37 @@ class ProductService {
     return ProductModel.fromJson(response.data['data']);
   }
 
+  Future<bool> updateProductNew(int id, Map<String, dynamic> data, List<File> newImages) async {
+    try {
+      final formData = FormData.fromMap(data);
+      
+      if (newImages.isNotEmpty) {
+        for (int i = 0; i < newImages.length; i++) {
+          final file = newImages[i];
+          final lowerPath = file.path.toLowerCase();
+          
+          if (lowerPath.endsWith('.heic') || lowerPath.endsWith('.heif')) {
+            formData.files.add(MapEntry(
+              'images', 
+              await MultipartFile.fromFile(file.path, filename: file.path.split('/').last)
+            ));
+          } else {
+            final url = await uploadToImageKit(file);
+            if (url != null) {
+              formData.fields.add(MapEntry('images', url));
+            }
+          }
+        }
+      }
+
+      final response = await _apiService.patch('/seller/products/$id', data: formData);
+      return response.data['success'] == true;
+    } catch (e) {
+      debugPrint('Error updating product: $e');
+      return false;
+    }
+  }
+
   // Updated specialized upload to use client-side ImageKit, but fallback to backend for HEIF/HEIC
   Future<bool> uploadProductImages(int productId, List<File> images, {bool isPrimary = false, int displayOrder = 0}) async {
     try {

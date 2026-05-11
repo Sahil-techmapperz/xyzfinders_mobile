@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class ProductModel {
   final int id;
   final int userId;
@@ -95,11 +97,35 @@ class ProductModel {
       }
     }
 
-    // Handle product_attributes which might be a JSON string or an object
     Map<String, dynamic>? attributes;
     if (json['product_attributes'] != null) {
       if (json['product_attributes'] is Map) {
         attributes = Map<String, dynamic>.from(json['product_attributes']);
+      } else if (json['product_attributes'] is String && json['product_attributes'].toString().isNotEmpty) {
+        try {
+          attributes = jsonDecode(json['product_attributes'].toString()) as Map<String, dynamic>;
+        } catch (_) {}
+      }
+    }
+
+    // Deep parsing for legacy or complex structures where attributes are nested
+    if (attributes != null && attributes.containsKey('product_attributes')) {
+      final nested = attributes['product_attributes'];
+      if (nested is String && nested.isNotEmpty) {
+        try {
+          final decodedNested = jsonDecode(nested);
+          if (decodedNested is Map) {
+            // Flatten 'specs' and 'details' if they exist in the nested JSON
+            if (decodedNested.containsKey('specs') && decodedNested['specs'] is Map) {
+              attributes.addAll(Map<String, dynamic>.from(decodedNested['specs']));
+            }
+            if (decodedNested.containsKey('details') && decodedNested['details'] is Map) {
+              attributes.addAll(Map<String, dynamic>.from(decodedNested['details']));
+            }
+            // Also merge the whole thing just in case
+            attributes.addAll(Map<String, dynamic>.from(decodedNested));
+          }
+        } catch (_) {}
       }
     }
 
@@ -111,7 +137,7 @@ class ProductModel {
       categoryId: parseInt(json['category_id']),
       locationId: parseInt(json['location_id']),
       title: (json['title'] ?? '').toString(),
-      description: (json['description'] ?? '').toString(),
+      description: (json['description'] ?? json['content'] ?? json['body'] ?? '').toString(),
       price: safeParseDouble(json['price']),
       originalPrice: json['original_price'] != null 
           ? safeParseDouble(json['original_price']) 
@@ -123,16 +149,16 @@ class ProductModel {
       createdAt: (json['created_at'] ?? '').toString(),
       updatedAt: (json['updated_at'] ?? '').toString(),
       productAttributes: attributes,
-      sellerName: json['seller_name'],
-      sellerAvatar: json['seller_avatar'],
-      sellerPhone: json['seller_phone'],
+      sellerName: json['seller_name'] ?? json['name'],
+      sellerAvatar: json['seller_avatar'] ?? json['avatar'],
+      sellerPhone: json['seller_phone'] ?? json['phone'] ?? json['mobile'],
       sellerCreatedAt: json['seller_created_at'],
       sellerIsVerified: json['seller_is_verified'] == 1 || json['seller_is_verified'] == true,
-      categoryName: json['category_name'],
-      cityName: json['city'] ?? json['city_name'],
-      stateName: json['state_name'],
-      locationName: json['location_name'],
-      postalCode: json['postal_code'],
+      categoryName: json['category_name'] ?? (json['category'] is Map ? json['category']['name'] : null),
+      cityName: json['city'] ?? json['city_name'] ?? (json['location'] is Map ? json['location']['city'] : null),
+      stateName: json['state_name'] ?? json['state'] ?? (json['location'] is Map ? json['location']['state'] : null),
+      locationName: json['location_name'] ?? json['locationArea'] ?? (json['location'] is Map ? json['location']['name'] : null),
+      postalCode: json['postal_code'] ?? json['pincode'],
       companyLogo: json['company_logo'],
       user: json['user'],
       category: json['category'],

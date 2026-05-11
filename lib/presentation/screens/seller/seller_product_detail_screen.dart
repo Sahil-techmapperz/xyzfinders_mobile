@@ -287,9 +287,9 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                       children: [
                         _buildAnalyticItem(Icons.visibility, '${_product!.viewsCount}', 'Views'),
                         Container(height: 30, width: 1, color: Colors.grey[300]),
-                        _buildAnalyticItem(Icons.favorite, '0', 'Likes'), // Placeholder for likes
+                        _buildAnalyticItem(Icons.favorite_outline, '0', 'Likes'),
                         Container(height: 30, width: 1, color: Colors.grey[300]),
-                        _buildAnalyticItem(Icons.calendar_today, '2 days', 'Listed'), // Placeholder
+                        _buildAnalyticItem(Icons.update, _getListedTime(), 'Listed'),
                       ],
                     ),
                   ),
@@ -301,6 +301,12 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                   Text(_product!.description, style: const TextStyle(fontSize: 15, height: 1.5, color: Colors.black87)),
                   
                   const SizedBox(height: 24),
+                  
+                  Text(
+                    _getSpecsTitle(_product!.categoryName ?? 'Other'), 
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                  ),
+                  const SizedBox(height: 12),
                   _buildSpecsGrid(),
                   
                   const SizedBox(height: 100),
@@ -311,6 +317,30 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
         ),
       ],
     );
+  }
+
+  String _getListedTime() {
+    if (_product?.createdAt == null) return 'Recent';
+    try {
+      final created = DateTime.parse(_product!.createdAt!);
+      final diff = DateTime.now().difference(created);
+      if (diff.inDays > 0) return '${diff.inDays} days';
+      if (diff.inHours > 0) return '${diff.inHours} hrs';
+      return 'Recent';
+    } catch (_) {
+      return 'Recent';
+    }
+  }
+
+  String _getSpecsTitle(String category) {
+    final cat = category.toLowerCase();
+    if (cat.contains('education')) return 'Education Details';
+    if (cat.contains('service')) return 'Service Details';
+    if (cat.contains('job')) return 'Job Specifications';
+    if (cat.contains('fashion')) return 'Product Details';
+    if (cat.contains('pet')) return 'Pet Information';
+    if (cat.contains('electronic')) return 'Technical Specs';
+    return 'Specifications';
   }
 
   Widget _buildAnalyticItem(IconData icon, String value, String label) {
@@ -325,24 +355,229 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
   }
 
   Widget _buildSpecsGrid() {
+    final attrs = _product!.productAttributes ?? {};
+    final cat = (_product!.categoryName ?? '').toLowerCase();
+
+    // Keys that are always internal and should never be shown
+    final alwaysExclude = {
+      'termsAccepted', 'product_attributes', 'specs', 'details',
+      'category_id', 'location_id', 'location_area', 'user_id',
+    };
+
+    // Build a list of {label, value} pairs based on category
+    List<Map<String, String>> items = [];
+
+    // Condition display string
+    final condDisplay = _product!.condition == 'like_new'
+        ? 'Used - Like New'
+        : _product!.condition.toUpperCase();
+
+    // Condition: only relevant for physical goods, not real estate or jobs
+    if (!cat.contains('real estate') && !cat.contains('propert') && !cat.contains('job') && !cat.contains('education') && !cat.contains('learning')) {
+      items.add({'label': 'Condition', 'value': condDisplay});
+    }
+
+    if (cat.contains('education') || cat.contains('learning') || cat.contains('tutor')) {
+      _addIfNotEmpty(items, 'Type', attrs['educationType']);
+      _addIfNotEmpty(items, 'Subject', attrs['subject'] ?? attrs['course_name']);
+      _addIfNotEmpty(items, 'Level', attrs['level']);
+      _addIfNotEmpty(items, 'Institute', attrs['institute']);
+      _addIfNotEmpty(items, 'Duration', attrs['duration']);
+      _addIfNotEmpty(items, 'Experience', attrs['experience']);
+      _addIfNotEmpty(items, 'Batch Size', attrs['batchSize'] ?? attrs['batch_size']);
+      _addIfNotEmpty(items, 'Mode', attrs['mode']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('beauty') || cat.contains('wellness') || cat.contains('salon') || cat.contains('spa')) {
+      _addIfNotEmpty(items, 'Category', attrs['beautyType']);
+      _addIfNotEmpty(items, 'Service Type', attrs['serviceType']);
+      _addIfNotEmpty(items, 'Duration', attrs['duration']);
+      _addIfNotEmpty(items, 'Gender Preference', attrs['genderPreference']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('service')) {
+      _addIfNotEmpty(items, 'Service Type', attrs['serviceSubtype'] ?? attrs['serviceType']);
+      _addIfNotEmpty(items, 'Experience', attrs['experience']);
+      _addIfNotEmpty(items, 'Availability', attrs['availability']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('job')) {
+      _addIfNotEmpty(items, 'Company', attrs['companyName'] ?? attrs['company']);
+      _addIfNotEmpty(items, 'Experience Level', attrs['experienceLevel']);
+      _addIfNotEmpty(items, 'Work Mode', attrs['jobType'] ?? attrs['workMode']);
+      _addIfNotEmpty(items, 'Qualification', attrs['qualification']);
+      _addIfNotEmpty(items, 'Gender Preference', attrs['gender'] ?? attrs['genderPreference']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('event')) {
+      _addIfNotEmpty(items, 'Event Type', attrs['eventType']);
+      _addIfNotEmpty(items, 'Date', attrs['eventDate']);
+      _addIfNotEmpty(items, 'Time', attrs['eventTime']);
+      _addIfNotEmpty(items, 'Venue', attrs['venue']);
+      _addIfNotEmpty(items, 'Organizer', attrs['organizer']);
+      // Highlights — stored as a list, join them
+      final highlights = attrs['highlights'];
+      if (highlights != null) {
+        String highlightStr = '';
+        if (highlights is List) {
+          highlightStr = highlights.join(', ');
+        } else {
+          highlightStr = highlights.toString();
+        }
+        _addIfNotEmpty(items, 'Highlights', highlightStr);
+      }
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('pet')) {
+      _addIfNotEmpty(items, 'Pet Type', attrs['petType']);
+      _addIfNotEmpty(items, 'Breed', attrs['breed']);
+      _addIfNotEmpty(items, 'Age', attrs['age']);
+      _addIfNotEmpty(items, 'Gender', attrs['gender']);
+      _addIfNotEmpty(items, 'Color', attrs['color']);
+      _addIfNotEmpty(items, 'Vaccinated', attrs['vaccinated']);
+      _addIfNotEmpty(items, 'KCI Registered', attrs['kci']);
+      _addIfNotEmpty(items, 'Health Certificate', attrs['certificate']);
+      _addIfNotEmpty(items, 'Dewormed', attrs['dewormed']);
+      _addIfNotEmpty(items, 'Microchipped', attrs['microchipped']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('real estate') || cat.contains('propert') || cat.contains('rent') || cat.contains('pg')) {
+      _addIfNotEmpty(items, 'Listing Type', attrs['listingType']);
+      _addIfNotEmpty(items, 'Property Type', attrs['propertyType'] ?? attrs['type']);
+      _addIfNotEmpty(items, 'Bedrooms', attrs['bedrooms']);
+      _addIfNotEmpty(items, 'Bathrooms', attrs['bathrooms']);
+      _addIfNotEmpty(items, 'Balcony', attrs['balcony']);
+      _addIfNotEmpty(items, 'Area (sq ft)', attrs['area']);
+      _addIfNotEmpty(items, 'Kitchen', attrs['kitchen']);
+      _addIfNotEmpty(items, 'Attached Bath', attrs['attachedBathroom']);
+      _addIfNotEmpty(items, 'Furnished', attrs['furnished'] ?? attrs['furnishedStatus']);
+      _addIfNotEmpty(items, 'Tenant Preference', attrs['tenants'] ?? attrs['tenantPreference']);
+      _addIfNotEmpty(items, 'Room Type', attrs['roomType']);
+      _addIfNotEmpty(items, 'Security Deposit', attrs['securityDeposit']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+      // Amenities — stored as a list, join them
+      final amenities = attrs['amenities'];
+      if (amenities != null) {
+        String amenityStr = '';
+        if (amenities is List) {
+          amenityStr = amenities.map((a) => a is Map ? a['name'] ?? '' : a.toString()).where((s) => s.isNotEmpty).join(', ');
+        } else {
+          amenityStr = amenities.toString();
+        }
+        _addIfNotEmpty(items, 'Amenities', amenityStr);
+      }
+    } else if (cat.contains('fashion')) {
+      _addIfNotEmpty(items, 'Category', attrs['fashionType']);
+      _addIfNotEmpty(items, 'Brand', attrs['brand']);
+      _addIfNotEmpty(items, 'Size', attrs['size']);
+      _addIfNotEmpty(items, 'Color', attrs['color']);
+      _addIfNotEmpty(items, 'Material', attrs['material']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('automobile') || cat.contains('car') || cat.contains('bike') || cat.contains('vehicle')) {
+      _addIfNotEmpty(items, 'Vehicle Type', attrs['vehicleType']);
+      _addIfNotEmpty(items, 'Brand', attrs['brand']);
+      _addIfNotEmpty(items, 'Model', attrs['model']);
+      _addIfNotEmpty(items, 'Year', attrs['year']);
+      _addIfNotEmpty(items, 'KM Driven', attrs['kmDriven']);
+      _addIfNotEmpty(items, 'Owners', attrs['owners']);
+      _addIfNotEmpty(items, 'Mileage', attrs['mileage']);
+      _addIfNotEmpty(items, 'Fuel Type', attrs['fuelType']);
+      _addIfNotEmpty(items, 'Transmission', attrs['transmission']);
+      _addIfNotEmpty(items, 'Insurance', attrs['insurance']);
+      _addIfNotEmpty(items, 'Warranty', attrs['warranty']);
+      _addIfNotEmpty(items, 'Body Type', attrs['bodyType']);
+      _addIfNotEmpty(items, 'Exterior Color', attrs['exteriorColor']);
+      _addIfNotEmpty(items, 'Interior Color', attrs['interiorColor']);
+      _addIfNotEmpty(items, 'Horsepower', attrs['horsepower']);
+      _addIfNotEmpty(items, 'Engine Capacity', attrs['engineCapacity']);
+      _addIfNotEmpty(items, 'Seater Capacity', attrs['seaterCapacity']);
+      _addIfNotEmpty(items, 'Doors', attrs['doors']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('furniture')) {
+      _addIfNotEmpty(items, 'Type', attrs['furnitureType']);
+      _addIfNotEmpty(items, 'Material', attrs['material']);
+      _addIfNotEmpty(items, 'Color', attrs['color']);
+      _addIfNotEmpty(items, 'Dimensions', attrs['dimensions']);
+      _addIfNotEmpty(items, 'Age', attrs['age']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('mobile') || cat.contains('tablet') || cat.contains('phone')) {
+      _addIfNotEmpty(items, 'Type', attrs['mobileType']);
+      _addIfNotEmpty(items, 'Brand', attrs['brand']);
+      _addIfNotEmpty(items, 'Model', attrs['model']);
+      _addIfNotEmpty(items, 'Storage', attrs['storage']);
+      _addIfNotEmpty(items, 'RAM', attrs['ram']);
+      _addIfNotEmpty(items, 'Battery Health', attrs['battery']);
+      _addIfNotEmpty(items, 'OS Version', attrs['version']);
+      _addIfNotEmpty(items, 'Physical Damage', attrs['damage']);
+      _addIfNotEmpty(items, 'Age', attrs['age']);
+      _addIfNotEmpty(items, 'Color', attrs['colour'] ?? attrs['color']);
+      _addIfNotEmpty(items, 'Warranty', attrs['warranty']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else if (cat.contains('electronic') || cat.contains('gadget') || cat.contains('laptop') || cat.contains('camera')) {
+      _addIfNotEmpty(items, 'Gadget Type', attrs['gadgetType']);
+      _addIfNotEmpty(items, 'Brand', attrs['brand']);
+      _addIfNotEmpty(items, 'Model', attrs['model']);
+      _addIfNotEmpty(items, 'Warranty', attrs['warranty']);
+      _addIfNotEmpty(items, 'Age', attrs['age']);
+      _addIfNotEmpty(items, 'Color', attrs['color']);
+      _addIfNotEmpty(items, 'Battery Life', attrs['batteryLife']);
+      _addIfNotEmpty(items, 'Connectivity', attrs['connectivity']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    } else {
+      // Generic fallback
+      _addIfNotEmpty(items, 'Brand', attrs['brand']);
+      _addIfNotEmpty(items, 'Model', attrs['model']);
+      _addIfNotEmpty(items, 'Warranty', attrs['warranty']);
+      _addIfNotEmpty(items, 'Color', attrs['color']);
+      _addIfNotEmpty(items, 'Phone', attrs['phone']);
+    }
+
+    // If no category-specific fields found, show all non-excluded fields as fallback
+    if (items.length <= 1) {
+      for (final e in attrs.entries) {
+        if (!alwaysExclude.contains(e.key) && e.value.toString().isNotEmpty) {
+          items.add({'label': _formatKey(e.key), 'value': e.value.toString()});
+        }
+      }
+    }
+
+    // Build widget pairs (2 columns per row)
+    List<Widget> rows = [];
+    for (int i = 0; i < items.length; i += 2) {
+      if (i > 0) rows.add(const Divider(height: 20, thickness: 0.5));
+      rows.add(Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _buildSpecItem(items[i]['label']!, items[i]['value']!)),
+          if (i + 1 < items.length) ...[
+            Container(width: 1, height: 40, color: Colors.grey[300]),
+            Expanded(child: _buildSpecItem(items[i+1]['label']!, items[i+1]['value']!)),
+          ] else
+            const Expanded(child: SizedBox.shrink()),
+        ],
+      ));
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
-        children: [
-           Row(
-            children: [
-              Expanded(child: _buildSpecItem('Condition', _product!.condition == 'LIKE_NEW' ? 'Used - Like New' : _product!.condition.toUpperCase())),
-              Container(width: 1, height: 40, color: Colors.black),
-              Expanded(child: _buildSpecItem('Brand', 'Studio 64')), // Mock
-            ],
-          ),
-        ],
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: rows,
       ),
     );
+  }
+
+  void _addIfNotEmpty(List<Map<String, String>> items, String label, dynamic value) {
+    if (value == null) return;
+    final str = value.toString().trim();
+    if (str.isEmpty || str == 'null' || str == 'false') return;
+    items.add({'label': label, 'value': str});
+  }
+
+  String _formatKey(String key) {
+    String result = key.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}');
+    result = result.replaceAll('_', ' ').trim();
+    return result[0].toUpperCase() + result.substring(1);
   }
   
   Widget _buildSpecItem(String label, String value) {

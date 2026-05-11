@@ -242,6 +242,28 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
+  // Update Ad
+  Future<bool> updateAd(int id, Map<String, dynamic> data, List<File> newImages) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final success = await _productService.updateProductNew(id, data, newImages);
+      _isLoading = false;
+      if (!success) {
+        _error = 'Failed to update ad. Please try again.';
+      }
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Clear products
   void clear() {
     _products = [];
