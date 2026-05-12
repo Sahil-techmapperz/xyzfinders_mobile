@@ -54,6 +54,19 @@ class AddressModel {
       'is_default': isDefault ? 1 : 0,
     };
   }
+
+  String get displayName {
+    if (areaName != null && areaName!.isNotEmpty) {
+      return '$areaName, ${cityName ?? stateName ?? ''}';
+    }
+    if (cityName != null && cityName!.isNotEmpty) {
+      return '$cityName${stateName != null ? ', $stateName' : ''}';
+    }
+    if (stateName != null && stateName!.isNotEmpty) {
+      return stateName!;
+    }
+    return name;
+  }
 }
 
 class StateModel {

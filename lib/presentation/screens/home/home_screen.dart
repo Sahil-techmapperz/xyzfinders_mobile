@@ -49,6 +49,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/favorite_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/agency_provider.dart';
+import '../../providers/address_provider.dart';
 import '../agency/agency_login_screen.dart';
 import '../agency/agency_registration_screen.dart';
 import '../agency/agency_dashboard_screen.dart';
@@ -227,7 +228,17 @@ class _HomeTabState extends State<HomeTab> {
   Future<void> _fetchSection(int catId, Function(List<ProductModel>) onData, Function(bool) onLoading) async {
     if (mounted) setState(() => onLoading(true));
     try {
-      final response = await _productService.getProducts(categoryId: catId, perPage: 6);
+      String? searchVal = _selectedLocationId == null && _selectedLocation != "All Locations" ? _selectedLocation : null;
+      if (searchVal != null && searchVal.contains(',')) {
+        searchVal = searchVal.split(',').last.trim();
+      }
+
+      final response = await _productService.getProducts(
+        categoryId: catId, 
+        perPage: 6,
+        locationId: _selectedLocationId,
+        locationSearch: searchVal,
+      );
       final fetchedProducts = List<ProductModel>.from(response['products']);
       debugPrint('Home Section fetched for cat $catId: ${fetchedProducts.length} items');
       
@@ -263,11 +274,50 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Future<void> _loadSavedLocation() async {
+    debugPrint('[LOCATION DEBUG] _loadSavedLocation called');
+
     final prefs = await SharedPreferences.getInstance();
+    String savedLocationName = prefs.getString('selected_location_name') ?? "";
+    int? savedLocationId = prefs.getInt('selected_location_id');
+    debugPrint('[LOCATION DEBUG] SharedPrefs location: $savedLocationName, id: $savedLocationId');
+
+    // Check if user is logged in and has saved addresses
+    final authProvider = context.read<AuthProvider>();
+    debugPrint('[LOCATION DEBUG] isAuthenticated: ${authProvider.isAuthenticated}, user: ${authProvider.user?.name}');
+
+    if (authProvider.isAuthenticated) {
+      // First try to use user's saved profile location
+      final userLocation = authProvider.user?.buyerLocation;
+      debugPrint('[LOCATION DEBUG] userLocation from profile: $userLocation');
+
+      if (userLocation != null && userLocation.isNotEmpty) {
+        setState(() {
+          _selectedLocation = userLocation;
+        });
+        return;
+      }
+
+      // Then try saved addresses
+      final addressProvider = context.read<AddressProvider>();
+      await addressProvider.fetchAddresses();
+      final defaultAddr = addressProvider.defaultAddress;
+      debugPrint('[LOCATION DEBUG] defaultAddr: ${defaultAddr?.displayName}');
+
+      if (defaultAddr != null) {
+        setState(() {
+          _selectedLocation = defaultAddr.displayName;
+          _selectedLocationId = null; // Use name-based filtering for saved addresses
+        });
+        return;
+      }
+    }
+
+    // Fall back to SharedPreferences location
+    debugPrint('[LOCATION DEBUG] Falling back to SharedPrefs: $savedLocationName');
     if (!mounted) return;
     setState(() {
-      _selectedLocation = prefs.getString('selected_location_name') ?? "Bidhannagar, Kolkata";
-      _selectedLocationId = prefs.getInt('selected_location_id');
+      _selectedLocation = savedLocationName;
+      _selectedLocationId = null; // Default to name-based if coming from saved location preference without specific ID mapping
     });
   }
 
@@ -302,17 +352,8 @@ class _HomeTabState extends State<HomeTab> {
       _selectedLocationId = id;
     });
 
-    // Redirect to All Categories with the selected location filter
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProductListScreen(
-          categoryName: 'All Categories',
-          locationId: id,
-          locationName: name,
-        ),
-      ),
-    );
+    // Refresh home screen content with new location
+    _fetchDynamicHomeProducts();
   }
 
   void _showLocationPicker() {
@@ -469,7 +510,7 @@ class _HomeTabState extends State<HomeTab> {
                   const SizedBox(width: 4),
                   Container(
                     constraints: const BoxConstraints(maxWidth: 120),
-                    child: _selectedLocation.text.size(12).ellipsis.make(),
+                    child: (_selectedLocation.isEmpty ? "Select Location" : _selectedLocation).text.size(12).ellipsis.make(),
                   ),
                   const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
                 ],

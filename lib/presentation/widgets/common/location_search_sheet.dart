@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../providers/address_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../auth/auth_modal.dart';
 
 class LocationSearchSheet extends StatefulWidget {
   final List<dynamic> locations;
@@ -34,6 +38,14 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
       _searchController.text = widget.selectedLocationName!;
       _filterLocations(widget.selectedLocationName!);
     }
+
+    // Fetch addresses if authenticated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = context.read<AuthProvider>();
+      if (authProvider.isAuthenticated) {
+        context.read<AddressProvider>().fetchAddresses();
+      }
+    });
   }
 
   void _filterLocations(String query) {
@@ -129,6 +141,75 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                       },
                     ),
 
+                  const Divider(),
+                  
+                  // Saved Addresses Section
+                  Consumer2<AuthProvider, AddressProvider>(
+                    builder: (context, auth, addressProvider, child) {
+                      if (!auth.isAuthenticated) {
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              "Login to see your saved addresses".text.semiBold.make(),
+                              10.heightBox,
+                              ElevatedButton(
+                                onPressed: () => AuthModal.show(context),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: "Login / Sign Up".text.make(),
+                              ),
+                            ],
+                          ),
+                        ).pSymmetric(v: 10);
+                      }
+
+                      if (addressProvider.isLoading) {
+                        return const Center(child: CircularProgressIndicator()).p20();
+                      }
+
+                      if (addressProvider.addresses.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          child: "No saved addresses found".text.color(Colors.grey).make().centered(),
+                        );
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          "Saved Addresses".text.semiBold.gray600.make().pOnly(left: 16, bottom: 8, top: 8),
+                          ...addressProvider.addresses.map((address) {
+                            final isSelected = address.cityId == widget.selectedLocationId || address.id == widget.selectedLocationId;
+                            return ListTile(
+                              leading: Icon(
+                                address.name.toLowerCase().contains('home') ? Icons.home : 
+                                address.name.toLowerCase().contains('work') ? Icons.work : 
+                                Icons.bookmark,
+                                color: isSelected ? AppTheme.primaryColor : Colors.grey,
+                              ),
+                              title: address.name.text.semiBold.color(isSelected ? AppTheme.primaryColor : Colors.black).make(),
+                              subtitle: address.displayName.text.xs.make(),
+                              onTap: () {
+                                widget.onSelect(null, address.displayName);
+                                Navigator.pop(context);
+                              },
+                              trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+                            );
+                          }),
+                          const Divider(),
+                        ],
+                      );
+                    },
+                  ),
+
                   // Option to search custom query
                   if (isCustomQuery)
                     ListTile(
@@ -148,30 +229,31 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                       },
                     ),
                   
-                  if (isCustomQuery && _filteredLocations.isNotEmpty)
-                    const Divider(),
+                  // Filtered Location Items (Only show if searching)
+                  if (query.isNotEmpty) ...[
+                    if (isCustomQuery && _filteredLocations.isNotEmpty)
+                      const Divider(),
+                    ..._filteredLocations.map((loc) {
+                      final name = "${loc['name']}, ${loc['city_name']}";
+                      final isSelected = loc['id'] == widget.selectedLocationId;
 
-                  // Filtered Location Items
-                  ..._filteredLocations.map((loc) {
-                    final name = "${loc['name']}, ${loc['city_name']}";
-                    final isSelected = loc['id'] == widget.selectedLocationId;
+                      return ListTile(
+                        leading: Icon(
+                          Icons.location_on,
+                          color: isSelected ? AppTheme.primaryColor : Colors.grey,
+                        ),
+                        title: name.text.semiBold.color(isSelected ? AppTheme.primaryColor : Colors.black).make(),
+                        subtitle: "${loc['state_name']}".text.xs.make(),
+                        onTap: () {
+                          widget.onSelect(loc['id'], name);
+                          Navigator.pop(context);
+                        },
+                        trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+                      );
+                    }).toList(),
+                  ],
 
-                    return ListTile(
-                      leading: Icon(
-                        Icons.location_on,
-                        color: isSelected ? AppTheme.primaryColor : Colors.grey,
-                      ),
-                      title: name.text.semiBold.color(isSelected ? AppTheme.primaryColor : Colors.black).make(),
-                      subtitle: "${loc['state_name']}".text.xs.make(),
-                      onTap: () {
-                        widget.onSelect(loc['id'], name);
-                        Navigator.pop(context);
-                      },
-                      trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
-                    );
-                  }).toList(),
-
-                  if (_filteredLocations.isEmpty && !isCustomQuery)
+                  if (query.isNotEmpty && _filteredLocations.isEmpty && !isCustomQuery)
                     "No locations found".text.color(Colors.grey).make().centered().p20(),
                 ],
               ),
