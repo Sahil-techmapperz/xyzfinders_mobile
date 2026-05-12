@@ -11,21 +11,23 @@ class NotificationDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String type = notification['type'] as String;
+    final String type = (notification['type'] ?? 'system').toString();
     
     IconData iconData;
     Color iconBgColor;
     Color iconColor;
     String actionText;
 
-    switch (type) {
+    switch (type.toLowerCase()) {
       case 'promo':
+      case 'promotion':
         iconData = Icons.local_offer;
         iconBgColor = Colors.orange.shade50;
         iconColor = AppTheme.secondaryColor;
         actionText = 'Shop Now';
         break;
       case 'order':
+      case 'product':
         iconData = Icons.local_shipping;
         iconBgColor = Colors.blue.shade50;
         iconColor = Colors.blue;
@@ -38,10 +40,18 @@ class NotificationDetailScreen extends StatelessWidget {
         actionText = 'Review Settings';
         break;
       case 'wishlist':
+      case 'favorite':
         iconData = Icons.favorite;
         iconBgColor = Colors.red.shade50;
         iconColor = Colors.red;
         actionText = 'View Item';
+        break;
+      case 'message':
+      case 'chat':
+        iconData = Icons.chat_bubble;
+        iconBgColor = Colors.green.shade50;
+        iconColor = Colors.green;
+        actionText = 'Reply Now';
         break;
       default:
         iconData = Icons.notifications;
@@ -90,7 +100,7 @@ class NotificationDetailScreen extends StatelessWidget {
               
               // Title
               Text(
-                notification['title'] as String,
+                (notification['title'] ?? 'Notification').toString(),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 22,
@@ -102,7 +112,7 @@ class NotificationDetailScreen extends StatelessWidget {
 
               // Timestamp
               Text(
-                notification['time'] as String,
+                (notification['time'] ?? notification['created_at'] ?? 'Just now').toString(),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -115,7 +125,7 @@ class NotificationDetailScreen extends StatelessWidget {
 
               // Full Body Content
               Text(
-                notification['body'] as String,
+                (notification['body'] ?? notification['message'] ?? '').toString(),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 16,

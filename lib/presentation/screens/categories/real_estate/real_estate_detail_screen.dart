@@ -13,6 +13,9 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../providers/product_provider.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../widgets/favorite_toggle_button.dart';
+import '../../../providers/auth_provider.dart';
+import 'package:xyzfinders_mobile/presentation/providers/notification_provider.dart';
+import '../../notifications/notification_screen.dart';
 
 class RealEstateDetailScreen extends StatefulWidget {
   final int productId;
@@ -92,19 +95,39 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
         }
 
         final attrs = product.productAttributes ?? {};
-        final specs = attrs['specs'] as Map<String, dynamic>? ?? {};
+        
+        // Try to get specs Map, if not found use attrs themselves as specs
+        final specs = attrs['specs'] is Map 
+            ? Map<String, dynamic>.from(attrs['specs']) 
+            : Map<String, dynamic>.from(attrs);
         
         final List<Map<String, String>> specsList = [];
-        specs.forEach((key, value) {
-          specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
-        });
-
-        if (specsList.isEmpty) {
-          specsList.add({"label": "Bedrooms", "value": specs['bedrooms']?.toString() ?? "N/A"});
-          specsList.add({"label": "Bathrooms", "value": specs['bathrooms']?.toString() ?? "N/A"});
-          specsList.add({"label": "Furnishing", "value": specs['furnishing']?.toString() ?? "Unfurnished"});
-          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+        
+        // Helper to add if present
+        void addSpec(String label, List<String> keys) {
+          for (var key in keys) {
+            final val = specs[key] ?? attrs[key];
+            if (val != null && val.toString().isNotEmpty) {
+              specsList.add({"label": label, "value": val.toString()});
+              return;
+            }
+          }
+          specsList.add({"label": label, "value": "N/A"});
         }
+
+        addSpec("Bedrooms", ["bedrooms", "bedroom", "bhk"]);
+        addSpec("Bathrooms", ["bathrooms", "bathroom", "washrooms"]);
+        addSpec("Furnishing", ["furnishing", "furnished"]);
+        specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+
+        // Add other dynamic specs that aren't already included
+        specs.forEach((key, value) {
+          if (!['bedrooms', 'bedroom', 'bhk', 'bathrooms', 'bathroom', 'washrooms', 'furnishing', 'furnished', 'specs', 'location', 'city', 'state', 'address'].contains(key.toLowerCase())) {
+            if (value != null && value.toString().isNotEmpty && value is! Map && value is! List) {
+              specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+            }
+          }
+        });
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -139,15 +162,25 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
                           const Divider(height: 40),
                           "Description".text.bold.size(15).make(),
                           const SizedBox(height: 8),
-                          product.description.text.gray600.size(13).lineHeight(1.5).make(),
+                          (product.description.isNotEmpty ? product.description : (attrs['description']?.toString() ?? "No description provided.")).text.gray600.size(13).lineHeight(1.5).make(),
                           const SizedBox(height: 16),
-                          "Posted on : ${product.createdAt.split('T')[0]}".text.gray500.size(13).make(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              "Posted on : ${product.createdAt.split('T')[0]}".text.gray500.size(13).make(),
+                               if (context.read<AuthProvider>().isAuthenticated && context.read<AuthProvider>().user?.id != product.userId)
+                                TextButton.icon(
+                                  onPressed: () => _showReportModal(product),
+                                  icon: const Icon(Icons.report_problem_outlined, size: 16, color: Colors.red),
+                                  label: "Report".text.red600.size(13).semiBold.make(),
+                                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                                ),
+                            ],
+                          ),
                           const Divider(height: 48),
-                          "Amenities".text.bold.size(15).make(),
-                          const SizedBox(height: 16),
-                          _buildAmenities(attrs['amenities']),
-                          const SizedBox(height: 32),
-                          _buildMapView(product),
+                           "Amenities".text.bold.size(15).make(),
+                           const SizedBox(height: 16),
+                           _buildAmenities(attrs['amenities'] ?? attrs['features'] ?? attrs['product_features'] ?? attrs['highlights']),
                           const SizedBox(height: 32),
                           _buildSellerCard(product),
                           const SizedBox(height: 100),
@@ -263,6 +296,41 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
           Container(
             padding: const EdgeInsets.all(4),
             decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: Consumer<NotificationProvider>(
+              builder: (context, provider, child) {
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_none, color: Colors.black87, size: 22),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const NotificationScreen()),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    if (provider.unreadCount > 0)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                          constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                          child: (provider.unreadCount > 9 ? "9+" : provider.unreadCount.toString())
+                              .text.white.size(7).bold.make().centered(),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
             child: ShareButton(product: product, iconSize: 22),
           ),
           const SizedBox(width: 10),
@@ -289,30 +357,48 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             spec['label']!.text.gray500.size(14).make(),
-            spec['value']!.text.bold.size(14).make(),
+            const SizedBox(width: 16),
+            spec['value']!.text.bold.size(14).align(TextAlign.right).make().expand(),
           ],
         ),
       )).toList(),
     );
   }
 
-  Widget _buildAmenities(dynamic amenitiesData) {
-    final List<Map<String, dynamic>> allAmenities = [];
-    if (amenitiesData is List) {
-      for (var item in amenitiesData) {
-         allAmenities.add({"icon": Icons.check_circle_outline, "label": item.toString()});
-      }
-    } else if (amenitiesData is Map) {
-      amenitiesData.forEach((key, value) {
-        if (value == true || value == 1) {
-          allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
-        }
-      });
-    }
+   Widget _buildAmenities(dynamic amenitiesData) {
+     final List<Map<String, dynamic>> allAmenities = [];
+     
+     if (amenitiesData is String && amenitiesData.isNotEmpty) {
+       if (amenitiesData.contains(',')) {
+         for (var item in amenitiesData.split(',')) {
+           if (item.trim().isNotEmpty) {
+             allAmenities.add({"icon": Icons.check_circle_outline, "label": item.trim().capitalizeFirstLetter()});
+           }
+         }
+       } else if (amenitiesData.contains('|')) {
+         for (var item in amenitiesData.split('|')) {
+           if (item.trim().isNotEmpty) {
+             allAmenities.add({"icon": Icons.check_circle_outline, "label": item.trim().capitalizeFirstLetter()});
+           }
+         }
+       } else {
+         allAmenities.add({"icon": Icons.check_circle_outline, "label": amenitiesData.capitalizeFirstLetter()});
+       }
+     } else if (amenitiesData is List) {
+       for (var item in amenitiesData) {
+          allAmenities.add({"icon": Icons.check_circle_outline, "label": item.toString().capitalizeFirstLetter()});
+       }
+     } else if (amenitiesData is Map) {
+       amenitiesData.forEach((key, value) {
+         if (value == true || value == 1 || value.toString().toLowerCase() == 'yes') {
+           allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
+         }
+       });
+     }
 
-    if (allAmenities.isEmpty) {
-      return "Main city water and electricity connectivity.".text.gray500.size(13).make();
-    }
+     if (allAmenities.isEmpty) {
+       return "Safety standard features and accessories included.".text.gray500.size(13).make();
+     }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -468,18 +554,23 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
                 : const NetworkImage("https://randomuser.me/api/portraits/men/32.jpg"),
           ),
         ),
-        const SizedBox(height: 12),
-        (product.sellerName ?? "Agent").text.bold.size(16).center.make(),
+         const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            (product.sellerName ?? "Dealer").text.bold.size(18).make(),
+            if (product.sellerIsVerified) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.verified, color: Colors.blue, size: 22),
+            ]
+          ],
+        ),
         "Verified Real Estate Consultant".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            "Member Since ${product.sellerCreatedAt ?? 'Recently'}".text.gray600.size(12).make(),
-            if (product.sellerIsVerified) ...[
-              const SizedBox(width: 4),
-              const Icon(Icons.verified, color: Colors.blue, size: 16),
-            ]
+            "Member Since ${product.sellerCreatedAt != null ? DateFormat('dd MMM yyyy').format(DateTime.parse(product.sellerCreatedAt!)) : 'Recently'}".text.gray600.size(12).make(),
           ],
         ),
       ],
@@ -542,6 +633,100 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showReportModal(ProductModel product) {
+    String selectedReason = 'Spam';
+    final List<String> reasons = ['Spam', 'Fraud', 'Inappropriate', 'Misleading', 'Counterfeit Product', 'Duplicate', 'Other'];
+    final TextEditingController descriptionController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              "Report this Ad".text.xl.bold.make(),
+              const SizedBox(height: 16),
+              "Why are you reporting this?".text.gray600.make(),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: selectedReason,
+                    isExpanded: true,
+                    items: reasons.map((r) => DropdownMenuItem(
+                      value: r,
+                      child: r.text.make(),
+                    )).toList(),
+                    onChanged: (val) {
+                      if (val != null) setModalState(() => selectedReason = val);
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              "Additional Details (Optional)".text.gray600.make(),
+              const SizedBox(height: 8),
+              TextField(
+                controller: descriptionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: "Describe the issue...",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      final apiService = context.read<ProductProvider>().apiService;
+                      final response = await apiService.post('/reports', data: {
+                        'product_id': product.id,
+                        'reason': selectedReason.toLowerCase(),
+                        'description': descriptionController.text,
+                      });
+                      
+                      Navigator.pop(context);
+                      VxToast.show(context, msg: response.data['message'] ?? "Report submitted successfully");
+                    } catch (e) {
+                      VxToast.show(context, msg: "Failed to submit report. Please try again.");
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: "Submit Report".text.white.bold.make(),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
       ),
     );
   }

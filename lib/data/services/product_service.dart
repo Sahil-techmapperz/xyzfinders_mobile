@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 class ProductService {
-  final ApiService _apiService = ApiService();
+  final ApiService apiService = ApiService();
 
   Future<Map<String, dynamic>> getProducts({
     int page = 1,
@@ -74,7 +74,7 @@ class ProductService {
       if (type != null) 'type': type,
     };
 
-    final response = await _apiService.get('/products', queryParameters: queryParams);
+    final response = await apiService.get('/products', queryParameters: queryParams);
     
     final data = response.data['data'];
     List<dynamic> productsJson = [];
@@ -96,7 +96,7 @@ class ProductService {
   }
 
   Future<ProductModel> getProductById(int id) async {
-    final response = await _apiService.get('/products/$id');
+    final response = await apiService.get('/products/$id');
     return ProductModel.fromJson(response.data['data']);
   }
 
@@ -109,7 +109,7 @@ class ProductService {
     required int locationId,
     required String condition,
   }) async {
-    final response = await _apiService.post('/seller/products/create', data: {
+    final response = await apiService.post('/seller/products/create', data: {
       'title': title,
       'description': description,
       'price': price,
@@ -123,7 +123,7 @@ class ProductService {
 
   // Get ImageKit Auth Parameters
   Future<Map<String, dynamic>> getImageKitAuth() async {
-    final response = await _apiService.get('/auth/imagekit');
+    final response = await apiService.get('/auth/imagekit');
     return response.data;
   }
 
@@ -204,7 +204,7 @@ class ProductService {
         }
       }
 
-      final response = await _apiService.post('/seller/products/create', data: formData);
+      final response = await apiService.post('/seller/products/create', data: formData);
       return response.data['success'] == true;
     } catch (e) {
       debugPrint('Error creating product: $e');
@@ -213,33 +213,33 @@ class ProductService {
   }
 
   Future<List<ProductModel>> getMyProducts() async {
-    final response = await _apiService.get('/seller/products');
+    final response = await apiService.get('/seller/products');
     final List<dynamic> productsJson = response.data['data'] ?? [];
     return productsJson.map((json) => ProductModel.fromJson(json)).toList();
   }
 
   Future<ProductModel> getMyProductById(int id) async {
-    final response = await _apiService.get('/seller/products/$id');
+    final response = await apiService.get('/seller/products/$id');
     return ProductModel.fromJson(response.data['data']);
   }
 
   Future<bool> deleteProduct(int id) async {
-    final response = await _apiService.delete('/seller/products/$id');
+    final response = await apiService.delete('/seller/products/$id');
     return response.data['success'] == true;
   }
 
   Future<bool> markAsSold(int id) async {
-    final response = await _apiService.patch('/seller/products/$id', data: {'status': 'sold'});
+    final response = await apiService.patch('/seller/products/$id', data: {'status': 'sold'});
     return response.data['success'] == true;
   }
 
   Future<bool> relistProduct(int id) async {
-    final response = await _apiService.patch('/seller/products/$id', data: {'status': 'active'});
+    final response = await apiService.patch('/seller/products/$id', data: {'status': 'active'});
     return response.data['success'] == true;
   }
 
   Future<bool> deactivateProduct(int id) async {
-    final response = await _apiService.patch('/seller/products/$id', data: {'status': 'inactive'});
+    final response = await apiService.patch('/seller/products/$id', data: {'status': 'inactive'});
     return response.data['success'] == true;
   }
 
@@ -253,7 +253,7 @@ class ProductService {
     required int locationId,
     required String condition,
   }) async {
-    final response = await _apiService.patch('/seller/products/$id', data: {
+    final response = await apiService.patch('/seller/products/$id', data: {
       'title': title,
       'description': description,
       'price': price,
@@ -288,7 +288,7 @@ class ProductService {
         }
       }
 
-      final response = await _apiService.patch('/seller/products/$id', data: formData);
+      final response = await apiService.patch('/seller/products/$id', data: formData);
       return response.data['success'] == true;
     } catch (e) {
       debugPrint('Error updating product: $e');
@@ -322,7 +322,7 @@ class ProductService {
       }
 
       final formData = FormData.fromMap(payload);
-      final response = await _apiService.post('/upload/product-images', data: formData);
+      final response = await apiService.post('/upload/product-images', data: formData);
       return response.data['success'] == true;
     } catch (e) {
       debugPrint('Error uploading product images: $e');
@@ -332,7 +332,7 @@ class ProductService {
 
   Future<bool> deleteProductImage(int imageId) async {
     try {
-      final response = await _apiService.delete('/upload/product-images', queryParameters: {
+      final response = await apiService.delete('/upload/product-images', queryParameters: {
         'image_id': imageId.toString(),
       });
       return response.data['success'] == true;

@@ -12,6 +12,9 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../providers/product_provider.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../widgets/favorite_toggle_button.dart';
+import '../../../providers/notification_provider.dart';
+import '../../notifications/notification_screen.dart';
+import '../../../widgets/share_button.dart';
 
 class PetsAccessoriesDetailScreen extends StatefulWidget {
   final int productId;
@@ -91,17 +94,31 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
         }
 
         final attrs = product.productAttributes ?? {};
-        final specs = attrs['specs'] as Map<String, dynamic>? ?? {};
+        final Map<String, dynamic> specs = {};
+        if (attrs.containsKey('specs') && attrs['specs'] is Map) {
+          specs.addAll(attrs['specs'] as Map<String, dynamic>);
+        } else if (attrs.containsKey('specifications') && attrs['specifications'] is Map) {
+          specs.addAll(attrs['specifications'] as Map<String, dynamic>);
+        } else {
+          attrs.forEach((key, value) {
+            if (!['specs', 'specifications', 'amenities', 'features', 'highlights', 'images', 'location'].contains(key) && value is! Map && value is! List) {
+               specs[key] = value;
+            }
+          });
+        }
         
         final List<Map<String, String>> specsList = [];
         specs.forEach((key, value) {
-          specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+          if (value != null && value.toString().isNotEmpty) {
+            specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+          }
         });
 
         if (specsList.isEmpty) {
-          specsList.add({"label": "Type", "value": specs['pet_type'] ?? specs['type'] ?? "Pet"});
-          specsList.add({"label": "Breed", "value": specs['breed'] ?? "N/A"});
-          specsList.add({"label": "Age", "value": specs['age'] ?? "N/A"});
+          specsList.add({"label": "Type", "value": specs['pet_type'] ?? attrs['pet_type'] ?? specs['type'] ?? attrs['type'] ?? "Pet"});
+          specsList.add({"label": "Breed", "value": specs['breed'] ?? attrs['breed'] ?? "N/A"});
+          specsList.add({"label": "Age", "value": specs['age'] ?? attrs['age'] ?? "N/A"});
+          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
         }
 
         return Scaffold(
@@ -143,7 +160,7 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
                           const Divider(height: 48),
                           "Health & Habits".text.bold.size(15).make(),
                           const SizedBox(height: 16),
-                          _buildAmenities(attrs['amenities'] ?? attrs['habits']),
+                          _buildAmenities(attrs['amenities'] ?? attrs['features'] ?? attrs['additional_features'] ?? attrs['habits']),
                           const SizedBox(height: 32),
                           _buildMapView(product),
                           const SizedBox(height: 32),
@@ -156,7 +173,7 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
                 ],
               ),
               _buildBackButton(),
-              _buildFavoriteButton(product),
+              _buildActionButtons(product),
             ],
           ),
           bottomNavigationBar: _buildStickyBottomBar(product),
@@ -228,11 +245,56 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
     );
   }
 
-  Widget _buildFavoriteButton(ProductModel product) {
+  Widget _buildActionButtons(ProductModel product) {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 10,
       right: 16,
-      child: FavoriteToggleButton(product: product),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: Consumer<NotificationProvider>(
+              builder: (context, provider, child) {
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_none, color: Colors.black87, size: 22),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const NotificationScreen()),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    if (provider.unreadCount > 0)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                          constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                          child: (provider.unreadCount > 9 ? "9+" : provider.unreadCount.toString())
+                              .text.white.size(7).bold.make().centered(),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: ShareButton(product: product, iconSize: 22),
+          ),
+          const SizedBox(width: 10),
+          FavoriteToggleButton(product: product),
+        ],
+      ),
     );
   }
 
@@ -457,17 +519,22 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
           ),
         ),
         const SizedBox(height: 12),
-        (product.sellerName ?? "Owner").text.bold.size(16).center.make(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            (product.sellerName ?? "Owner").text.bold.size(18).make(),
+            if (product.sellerIsVerified) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.verified, color: Colors.blue, size: 22),
+            ]
+          ],
+        ),
         "Verified Pet Lover".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            "Member Since ${product.sellerCreatedAt ?? 'Recently'}".text.gray600.size(12).make(),
-            if (product.sellerIsVerified) ...[
-              const SizedBox(width: 4),
-              const Icon(Icons.verified, color: Colors.blue, size: 16),
-            ]
+            "Member Since ${product.sellerCreatedAt != null ? DateFormat('dd MMM yyyy').format(DateTime.parse(product.sellerCreatedAt!)) : 'Recently'}".text.gray600.size(12).make(),
           ],
         ),
       ],

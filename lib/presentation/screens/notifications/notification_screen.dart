@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../providers/notification_provider.dart';
+import 'package:xyzfinders_mobile/presentation/providers/notification_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../../data/models/notification_model.dart';
 import '../../widgets/auth/auth_modal.dart';

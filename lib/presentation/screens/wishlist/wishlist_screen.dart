@@ -162,42 +162,48 @@ class _WishlistScreenState extends State<WishlistScreen> {
         builder: (context, favProvider, child) {
           final products = _getFilteredProducts(favProvider.favoriteProducts);
 
-          return CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              _buildHeader(favProvider.favoriteProducts),
-              
-              if (favProvider.isLoading && favProvider.favoriteProducts.isEmpty)
-                const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-              else if (favProvider.favoriteProducts.isEmpty)
-                SliverFillRemaining(child: _buildEmptyState(context))
-              else if (products.isEmpty)
-                SliverFillRemaining(child: Center(child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.search_off_rounded, size: 64, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    "No matching items found".text.gray500.make(),
-                  ],
-                )))
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.65,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildModernProductCard(context, products[index], baseUrl, favProvider),
-                      childCount: products.length,
+          return RefreshIndicator(
+            onRefresh: () async {
+              await favProvider.loadFavorites();
+            },
+            color: AppTheme.primaryColor,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                _buildHeader(favProvider.favoriteProducts),
+                
+                if (favProvider.isLoading && favProvider.favoriteProducts.isEmpty)
+                  const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                else if (favProvider.favoriteProducts.isEmpty)
+                  SliverFillRemaining(child: _buildEmptyState(context))
+                else if (products.isEmpty)
+                  SliverFillRemaining(child: Center(child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.search_off_rounded, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      "No matching items found".text.gray500.make(),
+                    ],
+                  )))
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.65,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildModernProductCard(context, products[index], baseUrl, favProvider),
+                        childCount: products.length,
+                      ),
                     ),
                   ),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-            ],
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            ),
           );
         },
       ),

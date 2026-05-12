@@ -8,6 +8,7 @@ import '../../../../data/services/job_application_service.dart';
 import '../../../../data/services/image_upload_service.dart';
 import '../../../providers/auth_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'job_success_screen.dart';
 
 class JobApplyFormScreen extends StatefulWidget {
   final int jobId;
@@ -117,7 +118,12 @@ class _JobApplyFormScreenState extends State<JobApplyFormScreen> {
         setState(() => _isSubmitting = false);
         
         if (result['success']) {
-          _showSuccessDialog(result['message']);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => JobApplicationSuccessScreen(jobTitle: widget.jobTitle),
+            ),
+          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(result['message']), backgroundColor: Colors.red),
@@ -134,65 +140,8 @@ class _JobApplyFormScreenState extends State<JobApplyFormScreen> {
     }
   }
 
+  // Remove the old dialog method as it's replaced by a screen
 
-  void _showSuccessDialog(String message) {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: "Success",
-      transitionDuration: const Duration(milliseconds: 400),
-      pageBuilder: (context, anim1, anim2) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check_circle, color: Colors.green, size: 64),
-              ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack).shake(delay: 400.ms),
-              const SizedBox(height: 24),
-              "Application Sent!".text.xl2.bold.make(),
-              const SizedBox(height: 12),
-              message.text.center.gray600.size(14).make(),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close dialog
-                    Navigator.pop(context); // Go back to job details
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.secondaryColor,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: "Back to Job Details".text.bold.make(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-      transitionBuilder: (context, anim1, anim2, child) {
-        return Transform.scale(
-          scale: anim1.value,
-          child: Opacity(
-            opacity: anim1.value,
-            child: child,
-          ),
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

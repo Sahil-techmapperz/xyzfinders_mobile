@@ -18,6 +18,7 @@ import '../../../../data/services/image_upload_service.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/auth/auth_modal.dart';
+import '../../../../core/utils/date_utils.dart';
 
 class JobsListScreen extends StatefulWidget {
   final int? categoryId;
@@ -453,7 +454,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => JobsDetailScreen(
-                productId: item.id!,
+                productId: item.id,
                 title: item.title,
               ),
             ),
@@ -548,7 +549,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
                     decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 6),
-                  "39 Minutes Ago".text.size(11).color(Colors.green.shade700).make(),
+                  AppDateUtils.timeAgo(item.createdAt).text.size(11).color(Colors.green.shade700).make(),
                 ],
               ),
             ],

@@ -1,5 +1,12 @@
-import '../../chats/chat_screen.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../data/models/product_model.dart';
+import '../../../widgets/favorite_toggle_button.dart';
+import '../../../providers/notification_provider.dart';
+import '../../notifications/notification_screen.dart';
+import '../../../widgets/share_button.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -7,10 +14,12 @@ import '../../../../core/theme/app_theme.dart';
 class PetsAccessoriesDetailScreen extends StatefulWidget {
   final int productId;
   final String? title;
+  final ProductModel? product;
 
   const PetsAccessoriesDetailScreen({
     super.key,
     required this.productId,
+    this.product,
     this.title,
   });
 
@@ -85,6 +94,7 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
             ],
           ),
           _buildBackButton(),
+          _buildActionButtons(widget.product),
         ],
       ),
       bottomNavigationBar: _buildStickyBottomBar(),
@@ -275,24 +285,36 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
   }
 
   Widget _buildSellerCard() {
+    final product = widget.product;
     return Column(
       children: [
-        const Center(
+        Center(
           child: CircleAvatar(
             radius: 35,
-            backgroundImage: NetworkImage("https://randomuser.me/api/portraits/women/45.jpg"),
+            backgroundImage: product?.sellerAvatar != null 
+                ? (product!.sellerAvatar!.startsWith('http') 
+                    ? NetworkImage(product.sellerAvatar!) 
+                    : MemoryImage(base64Decode(product.sellerAvatar!)) as ImageProvider)
+                : const NetworkImage("https://randomuser.me/api/portraits/women/45.jpg"),
           ),
         ),
         const SizedBox(height: 12),
-        "The Pet Shop Kashipur".text.bold.size(16).center.make(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            (product?.sellerName ?? "The Pet Shop Kashipur").text.bold.size(18).make(),
+            if (product?.sellerIsVerified ?? true) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.verified, color: Colors.blue, size: 22),
+            ]
+          ],
+        ),
         "Authorized Dealer".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            "Active Since 2023".text.gray600.size(12).make(),
-            const SizedBox(width: 4),
-            const Icon(Icons.verified, color: Colors.blue, size: 16),
+            "Member Since ${product?.sellerCreatedAt != null ? DateFormat('dd MMM yyyy').format(DateTime.parse(product!.sellerCreatedAt!)) : '2023'}".text.gray600.size(12).make(),
           ],
         ),
       ],
@@ -334,6 +356,61 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(ProductModel? product) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 10,
+      right: 16,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: Consumer<NotificationProvider>(
+              builder: (context, provider, child) {
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_none, color: Colors.black87, size: 22),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const NotificationScreen()),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    if (provider.unreadCount > 0)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                          constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                          child: (provider.unreadCount > 9 ? "9+" : provider.unreadCount.toString())
+                              .text.white.size(7).bold.make().centered(),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+          if (product != null) ...[
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              child: ShareButton(product: product, iconSize: 22),
+            ),
+            const SizedBox(width: 10),
+            FavoriteToggleButton(product: product),
+          ],
         ],
       ),
     );

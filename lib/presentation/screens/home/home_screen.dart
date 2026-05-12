@@ -22,7 +22,7 @@ import '../categories/fashion/fashion_detail_screen.dart';
 import '../categories/furniture/furniture_detail_screen.dart';
 import '../categories/local_events/local_events_detail_screen.dart';
 import '../categories/education/education_detail_screen.dart';
-import '../categories/pets/pets_accessories_detail_screen.dart';
+import '../categories/pets_accessories/pets_accessories_detail_screen.dart';
 import '../categories/services/services_detail_screen.dart';
 import '../categories/mobiles/mobiles_detail_screen.dart';
 import '../categories/real_estate/real_estate_detail_screen.dart';

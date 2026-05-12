@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../data/models/product_model.dart';
 import '../../data/services/product_service.dart';
+import '../../core/config/api_service.dart';
 import '../../core/errors/api_exception.dart';
 
 class ProductProvider with ChangeNotifier {
@@ -24,6 +25,7 @@ class ProductProvider with ChangeNotifier {
   bool get isLoadingMore => _isLoadingMore;
   String? get error => _error;
   bool get hasMore => _hasMore;
+  ApiService get apiService => _productService.apiService;
 
   // Load demo products for testing
   void loadDemoProducts() {
@@ -130,8 +132,8 @@ class ProductProvider with ChangeNotifier {
 
       _products = result['products'] as List<ProductModel>;
       final pagination = result['pagination'];
-      _currentPage = pagination['current_page'];
-      _totalPages = pagination['total_pages'];
+      _currentPage = pagination['current_page'] ?? 1;
+      _totalPages = pagination['total_pages'] ?? 1;
       _hasMore = _currentPage < _totalPages;
 
       _isLoading = false;
@@ -180,8 +182,8 @@ class ProductProvider with ChangeNotifier {
       _products.addAll(newProducts);
 
       final pagination = result['pagination'];
-      _currentPage = pagination['current_page'];
-      _totalPages = pagination['total_pages'];
+      _currentPage = pagination['current_page'] ?? _currentPage;
+      _totalPages = pagination['total_pages'] ?? _totalPages;
       _hasMore = _currentPage < _totalPages;
 
       _isLoadingMore = false;

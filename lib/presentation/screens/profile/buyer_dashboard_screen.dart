@@ -11,6 +11,20 @@ import 'job_applications_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../chats/chat_list_screen.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
+import '../../widgets/favorite_toggle_button.dart';
+import '../categories/real_estate/real_estate_detail_screen.dart';
+import '../categories/automobiles/automobile_detail_screen.dart';
+import '../categories/electronics/electronics_detail_screen.dart';
+import '../categories/mobiles/mobiles_detail_screen.dart';
+import '../categories/beauty/beauty_detail_screen.dart';
+import '../categories/fashion/fashion_detail_screen.dart';
+import '../categories/furniture/furniture_detail_screen.dart';
+import '../categories/services/services_detail_screen.dart';
+import '../categories/pets_accessories/pets_accessories_detail_screen.dart';
+import '../categories/education/education_detail_screen.dart';
+import '../categories/local_events/local_events_detail_screen.dart';
+import '../categories/jobs/jobs_detail_screen.dart';
+import '../../../core/constants/api_constants.dart';
 
 class BuyerDashboardScreen extends StatefulWidget {
   const BuyerDashboardScreen({super.key});
@@ -70,11 +84,11 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
             _buildAppBar(user?.name ?? 'Buyer'),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_isLoading)
+                    if (_isLoading && _stats == null)
                       const Center(child: CircularProgressIndicator()).pSymmetric(v: 40)
                     else if (_error != null)
                       Center(
@@ -379,31 +393,71 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
             itemCount: _stats!.recommendedProducts.length,
             itemBuilder: (context, index) {
               final product = _stats!.recommendedProducts[index];
-              return Container(
-                width: 160,
-                margin: const EdgeInsets.only(right: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                        child: product.thumbnail != null
-                            ? CachedNetworkImage(
-                                imageUrl: product.thumbnail!,
+              return InkWell(
+                onTap: () {
+                  final catName = product.categoryName?.toLowerCase() ?? '';
+                  Widget target;
+
+                  if (catName.contains('real estate') || catName.contains('property')) {
+                    target = RealEstateDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('automobile') || catName.contains('car')) {
+                    target = AutomobileDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('electronic') || catName.contains('gadget')) {
+                    target = ElectronicsDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('mobile') || catName.contains('phone')) {
+                    target = MobilesDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('fashion')) {
+                    target = FashionDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('furniture')) {
+                    target = FurnitureDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('beauty')) {
+                    target = BeautyDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('service')) {
+                    target = ServicesDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('pet')) {
+                    target = PetsAccessoriesDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('education')) {
+                    target = EducationDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('event')) {
+                    target = LocalEventsDetailScreen(productId: product.id, title: product.title);
+                  } else if (catName.contains('job')) {
+                    target = JobsDetailScreen(productId: product.id, title: product.title);
+                  } else {
+                    target = RealEstateDetailScreen(productId: product.id, title: product.title); // Default fallback
+                  }
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => target),
+                  );
+                },
+                child: Container(
+                  width: 170, // Slightly wider
+                  margin: const EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                          child: Stack(
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: product.resolveImageUrl(ApiConstants.baseUrl.replaceAll('/api', '')) ?? '',
                                 fit: BoxFit.cover,
                                 width: double.infinity,
+                                height: double.infinity,
                                 placeholder: (context, url) => Container(
                                   color: Colors.grey.shade50,
                                   child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
@@ -412,31 +466,70 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
                                   color: Colors.grey.shade50,
                                   child: const Icon(Icons.image, color: Colors.grey),
                                 ),
-                              )
-                            : Container(
-                                color: Colors.grey.shade50,
-                                child: const Icon(Icons.image, color: Colors.grey),
                               ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          product.title.text.bold.xs.maxLines(2).ellipsis.make().h(30),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              "₹ ${product.price}".text.bold.color(AppTheme.primaryColor).sm.make(),
-                              const Icon(Icons.favorite_border, size: 14, color: Colors.grey),
+                              // Category Tag
+                              Positioned(
+                                top: 8,
+                                left: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: (product.categoryName ?? 'Product').text.white.size(8).bold.make(),
+                                ),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: FavoriteToggleButton(
+                                  product: product,
+                                  iconSize: 14,
+                                  padding: const EdgeInsets.all(6),
+                                ),
+                              ),
+                              // Verification Badge
+                              if (product.sellerIsVerified)
+                                Positioned(
+                                  bottom: 8,
+                                  left: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.blue,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.verified, color: Colors.white, size: 10),
+                                  ),
+                                ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            product.title.text.bold.xs.maxLines(1).ellipsis.make(),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on, size: 10, color: Colors.grey),
+                                const SizedBox(width: 2),
+                                (product.cityName ?? product.locationName ?? 'N/A').text.gray500.size(9).make(),
+                                const Spacer(),
+                                _formatTime(product.createdAt).text.gray400.size(8).make(),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            "₹ ${product.price}".text.bold.color(AppTheme.primaryColor).sm.make(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

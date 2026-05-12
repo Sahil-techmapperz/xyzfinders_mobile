@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../../data/services/product_service.dart';
-import '../../../providers/notification_provider.dart';
+import 'package:xyzfinders_mobile/presentation/providers/notification_provider.dart';
 import '../../notifications/notification_screen.dart';
 import 'jobs_list_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -744,7 +744,7 @@ class _FindJobsScreenState extends State<FindJobsScreen> {
                         minHeight: 16,
                       ),
                       child: Text(
-                        provider.unreadCount > 99 ? '99+' : '${provider.unreadCount}+',
+                        provider.unreadCount > 9 ? '9+' : provider.unreadCount.toString(),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 9,

@@ -15,6 +15,7 @@ class ProductModel {
   final String status;
   final bool isFeatured;
   final int viewsCount;
+  final int applicantsCount;
   final String createdAt;
   final String updatedAt;
   
@@ -56,6 +57,7 @@ class ProductModel {
     required this.status,
     required this.isFeatured,
     required this.viewsCount,
+    this.applicantsCount = 0,
     required this.createdAt,
     required this.updatedAt,
     this.productAttributes,
@@ -78,25 +80,6 @@ class ProductModel {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
-    int? parseInt(dynamic value) {
-      if (value == null) return null;
-      if (value is int) return value;
-      final parsed = int.tryParse(value.toString());
-      if (parsed == 0) return null; // Treat 0 as null for dropdown safety
-      return parsed;
-    }
-
-    double safeParseDouble(dynamic value) {
-      if (value == null) return 0.0;
-      if (value is double) return value;
-      if (value is int) return value.toDouble();
-      try {
-        return double.parse(value.toString());
-      } catch (_) {
-        return 0.0;
-      }
-    }
-
     Map<String, dynamic>? attributes;
     if (json['product_attributes'] != null) {
       if (json['product_attributes'] is Map) {
@@ -146,6 +129,7 @@ class ProductModel {
       status: (json['status'] ?? '').toString(),
       isFeatured: json['is_featured'] == 1 || json['is_featured'] == true,
       viewsCount: parseInt(json['views']) ?? 0,
+      applicantsCount: parseInt(json['applicants_count']) ?? parseInt(json['applications_count']) ?? 0,
       createdAt: (json['created_at'] ?? '').toString(),
       updatedAt: (json['updated_at'] ?? '').toString(),
       productAttributes: attributes,
@@ -186,6 +170,7 @@ class ProductModel {
       'status': status,
       'is_featured': isFeatured,
       'views': viewsCount,
+      'applicants_count': applicantsCount,
       'created_at': createdAt,
       'updated_at': updatedAt,
       'product_attributes': productAttributes,
@@ -206,6 +191,25 @@ class ProductModel {
       'images': images,
       'thumbnail': thumbnail,
     };
+  }
+
+  static int? parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    final parsed = int.tryParse(value.toString());
+    if (parsed == 0) return null;
+    return parsed;
+  }
+
+  static double safeParseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    try {
+      return double.parse(value.toString());
+    } catch (_) {
+      return 0.0;
+    }
   }
 
   bool get isActive => status == 'active';
