@@ -56,7 +56,7 @@ class JobApplicationModel {
       applicantLocation: json['applicant_location'],
       coverLetter: json['cover_letter'],
       resumeUrl: json['resume_url'],
-      companyName: json['company_name'],
+      companyName: json['company_name'] ?? json['seller_company'],
       jobType: json['job_type'],
       city: json['city_name'],
       state: json['state_name'],

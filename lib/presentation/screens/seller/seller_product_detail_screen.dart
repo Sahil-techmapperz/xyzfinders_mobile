@@ -156,13 +156,26 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                       },
                     ),
                     items: _product!.images!.map((image) {
-                       final imageUrl = '${ApiConstants.baseUrl.replaceAll('/api', '')}/api/images/product/${image['id']}?t=${DateTime.now().millisecondsSinceEpoch}';
-                       return Image.network(
-                         imageUrl,
-                         fit: BoxFit.cover,
-                         width: double.infinity,
-                         errorBuilder: (_, __, ___) => Container(color: Colors.grey[200]),
-                       );
+                      final String imageVal = (image['image']?.toString() ?? image['id']?.toString() ?? '').trim();
+                      String imageUrl;
+                      
+                      if (imageVal.toLowerCase().startsWith('http')) {
+                        imageUrl = imageVal;
+                      } else {
+                        // Relative path - assume local server
+                        final String cleanVal = imageVal.startsWith('/') ? imageVal.substring(1) : imageVal;
+                        imageUrl = '${ApiConstants.baseUrl.replaceAll('/api', '')}/api/images/product/$cleanVal?t=${DateTime.now().millisecondsSinceEpoch}';
+                      }
+                      
+                      return Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.broken_image, color: Colors.grey),
+                        ),
+                      );
                     }).toList(),
                   )
                 else

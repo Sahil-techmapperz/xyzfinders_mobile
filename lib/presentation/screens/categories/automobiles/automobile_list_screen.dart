@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/currency_utils.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../core/constants/api_constants.dart';
@@ -407,35 +408,12 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
               children: [
                 Row(
                   children: [
-                    "₹ ${car.price}".text.xl2.bold.color(AppTheme.secondaryColor).make(),
+                    CurrencyUtils.formatIndianCurrency(car.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
                   ],
                 ),
-                const SizedBox(height: 12),
-                "Category ID: ${car.categoryId}  •  ${car.condition}".text.gray600.medium.size(13).make(),
-                const SizedBox(height: 4),
                 car.title.text.semiBold.xl.black.make(),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          "Status: ".text.gray500.size(13).make(),
-                          car.status.text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          "Views: ".text.gray500.size(13).make(),
-                          "${car.viewsCount}".text.gray700.bold.size(13).maxLines(1).ellipsis.make().expand(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                const SizedBox(height: 4),
+                "Condition: ${car.condition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

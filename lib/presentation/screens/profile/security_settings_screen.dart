@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/security_provider.dart';
 import 'change_password_screen.dart';
+import '../../../core/utils/date_utils.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -22,6 +23,21 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       securityProvider.fetchSessions();
       securityProvider.fetchActivity();
     });
+  }
+
+  IconData _getDeviceIcon(String deviceName) {
+    final name = deviceName.toLowerCase();
+    if (name.contains('iphone') || 
+        name.contains('android') || 
+        name.contains('sdk_gphone') || 
+        name.contains('phone') ||
+        name.contains('mobile')) {
+      return Icons.phone_iphone_rounded;
+    }
+    if (name.contains('ipad') || name.contains('tablet')) {
+      return Icons.tablet_mac_rounded;
+    }
+    return Icons.laptop_mac_rounded;
   }
 
   @override
@@ -243,7 +259,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       return _buildSessionItem(
                         device: session['device'] ?? 'Unknown Device',
                         location: session['location'] ?? 'Unknown Location',
-                        time: session['time'] ?? 'Recently',
+                        time: AppDateUtils.formatIndianDateTime(session['time']),
                         isCurrent: session['isCurrent'] == true,
                       );
                     },
@@ -322,7 +338,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                           color: AppTheme.primaryColor,
                         ),
                         title: Text(item['event'] ?? 'Security Event', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${item['device']} • ${item['location']}\n${item['time']}'),
+                        subtitle: Text('${item['device']} • ${item['location']}\n${AppDateUtils.formatIndianDateTime(item['time'])}'),
                         trailing: Text(
                           item['status'] ?? 'Success',
                           style: TextStyle(
@@ -354,7 +370,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       child: Row(
         children: [
           Icon(
-            isCurrent ? Icons.phone_iphone_rounded : Icons.laptop_mac_rounded,
+            _getDeviceIcon(device),
             color: isCurrent ? AppTheme.primaryColor : Colors.grey,
           ),
           const SizedBox(width: 16),

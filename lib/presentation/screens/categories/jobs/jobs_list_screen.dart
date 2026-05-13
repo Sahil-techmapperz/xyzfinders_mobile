@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/currency_utils.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../core/constants/api_constants.dart';
@@ -518,7 +519,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
                 children: [
                   const Icon(Icons.payments_outlined, size: 16, color: Colors.grey),
                   const SizedBox(width: 8),
-                  "₹ ${item.price} /Monthly".text.semiBold.size(13).gray700.make(),
+                  "${CurrencyUtils.formatIndianCurrency(item.price)} /Monthly".text.semiBold.size(14).color(AppTheme.secondaryColor).make(),
                 ],
               ),
               const SizedBox(height: 12),

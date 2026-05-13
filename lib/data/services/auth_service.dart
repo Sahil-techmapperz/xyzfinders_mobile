@@ -168,13 +168,11 @@ class AuthService {
 
   // Update resume URL (buyer specific)
   Future<void> updateResumeUrl(String resumeUrl) async {
-    final formData = FormData.fromMap({
-      'resumeUrl': resumeUrl,
-    });
-
     await _apiService.put(
       ApiConstants.buyerProfile,
-      data: formData,
+      data: {
+        'resumeUrl': resumeUrl,
+      },
     );
   }
 

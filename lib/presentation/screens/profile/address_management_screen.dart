@@ -142,9 +142,7 @@ class AddressCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: () {
-          if (!address.isDefault) {
-            context.read<AddressProvider>().setDefault(address.id);
-          }
+          // Card click should not automatically change default settings
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -214,6 +212,13 @@ class AddressCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if (!address.isDefault)
+                    TextButton.icon(
+                      onPressed: () => context.read<AddressProvider>().setDefault(address.id),
+                      icon: const Icon(Icons.check_circle_outline, size: 18, color: AppTheme.primaryColor),
+                      label: const Text('Set as Default', style: TextStyle(color: AppTheme.primaryColor, fontSize: 13)),
+                    ),
+                  const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () => _showDeleteDialog(context, address),
                     icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),

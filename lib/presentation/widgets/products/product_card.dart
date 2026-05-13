@@ -8,6 +8,7 @@ import '../../providers/favorite_provider.dart';
 import '../../../data/models/product_model.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/currency_utils.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductModel product;
@@ -106,7 +107,7 @@ class ProductCard extends StatelessWidget {
           6.heightBox,
           
           HStack([
-            "₹ ${product.price.toStringAsFixed(0)}".text.bold.xl.color(AppTheme.secondaryColor).make(),
+            CurrencyUtils.formatIndianCurrency(product.price).text.bold.xl.color(AppTheme.secondaryColor).make(),
           ]),
 
           6.heightBox,

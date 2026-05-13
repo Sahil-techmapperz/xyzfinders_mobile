@@ -3,6 +3,7 @@ import 'package:velocity_x/velocity_x.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/currency_utils.dart';
 import '../categories/real_estate/real_estate_list_screen.dart';
 import '../categories/automobiles/automobile_list_screen.dart';
 import '../categories/beauty/beauty_list_screen.dart';
@@ -1246,7 +1247,7 @@ class _HomeTabState extends State<HomeTab> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              "₹ ${item.price}/-".text.lg.bold.color(AppTheme.secondaryColor).make(),
+                              "${CurrencyUtils.formatIndianCurrency(item.price)} /-".text.lg.bold.color(AppTheme.secondaryColor).make(),
                               const SizedBox(height: 2),
                               Flexible(
                                 child: item.title.text.semiBold

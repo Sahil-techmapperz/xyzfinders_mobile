@@ -45,9 +45,9 @@ class _JobApplyFormScreenState extends State<JobApplyFormScreen> {
       _fullNameController.text = user.name;
       _emailController.text = user.email;
       _phoneController.text = user.phone;
-      _resumeUrl = user.resumeUrl;
+      _resumeUrl = user.defaultResume?.url;
       if (_resumeUrl != null && _resumeUrl!.isNotEmpty) {
-        _resumeName = "My Saved Resume.pdf";
+        _resumeName = user.defaultResume?.name ?? "My Saved Resume.pdf";
       }
     }
   }

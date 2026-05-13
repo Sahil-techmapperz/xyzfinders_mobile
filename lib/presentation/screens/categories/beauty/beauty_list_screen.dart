@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/currency_utils.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../core/constants/api_constants.dart';
@@ -331,17 +332,19 @@ class _BeautyListScreenState extends State<BeautyListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                "₹ ${item.price}".text.xl2.bold.pink600.make(),
-                const SizedBox(height: 12),
-                "Category ID: ${item.categoryId}  •  ${item.condition}".text.gray600.medium.size(13).make(),
-                const SizedBox(height: 4),
+                CurrencyUtils.formatIndianCurrency(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
                 item.title.text.semiBold.xl.black.make(),
+                const SizedBox(height: 4),
+                "Condition: ${item.condition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 12),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 16),
+                    const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
-                    "Views: ${item.viewsCount}".text.bold.size(12).make(),
+                    Expanded(
+                      child: (item.cityName ?? item.locationName ?? 'N/A').toString().text.gray500.size(12).maxLines(2).ellipsis.make(),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),

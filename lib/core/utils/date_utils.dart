@@ -20,4 +20,14 @@ class AppDateUtils {
       return "";
     }
   }
+
+  static String formatIndianDateTime(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return "";
+    try {
+      final date = DateTime.parse(dateStr).toLocal();
+      return DateFormat('dd-MM-yyyy, hh:mm a').format(date);
+    } catch (e) {
+      return dateStr ?? "";
+    }
+  }
 }

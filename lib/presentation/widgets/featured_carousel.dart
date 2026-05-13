@@ -4,6 +4,8 @@ import 'package:velocity_x/velocity_x.dart';
 import '../../../data/models/product_model.dart';
 import '../../../core/constants/api_constants.dart';
 import '../screens/categories/real_estate/real_estate_detail_screen.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/currency_utils.dart';
 
 class FeaturedCarousel extends StatelessWidget {
   final List<ProductModel> products;
@@ -75,7 +77,7 @@ class FeaturedCarousel extends StatelessWidget {
                     alignment: Alignment.bottomLeft,
                     child: VStack([
                       product.title.text.white.bold.xl.make(),
-                      "₹ ${product.price.toStringAsFixed(0)}".text.color(context.theme.primaryColorLight).bold.lg.make(),
+                      CurrencyUtils.formatIndianCurrency(product.price).text.color(AppTheme.secondaryColor).bold.lg.make(),
                       if (product.location != null)
                         product.location!['name'].toString().text.white.sm.make(),
                     ]).p16(),

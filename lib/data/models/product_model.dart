@@ -144,11 +144,14 @@ class ProductModel {
       locationName: json['location_name'] ?? json['locationArea'] ?? (json['location'] is Map ? json['location']['name'] : null),
       postalCode: json['postal_code'] ?? json['pincode'],
       companyLogo: json['company_logo'],
-      user: json['user'],
-      category: json['category'],
-      location: json['location'],
+      user: json['user'] is Map ? Map<String, dynamic>.from(json['user']) : null,
+      category: json['category'] is Map ? Map<String, dynamic>.from(json['category']) : null,
+      location: json['location'] is Map ? Map<String, dynamic>.from(json['location']) : null,
       images: json['images'] != null 
-          ? List<Map<String, dynamic>>.from(json['images'] as List) 
+          ? (json['images'] as List).map((img) {
+              if (img is Map) return Map<String, dynamic>.from(img);
+              return {'image': img.toString(), 'id': img.toString()};
+            }).toList()
           : null,
       thumbnail: json['thumbnail'] as String?,
     );
@@ -243,11 +246,11 @@ class ProductModel {
       imageVal = imgData['image']?.toString() ?? imgData['id']?.toString();
     }
     
-    imageVal ??= thumbnail;
+    imageVal = (imageVal ?? thumbnail ?? '').trim();
     
-    if (imageVal == null) return null;
-    if (imageVal.startsWith('http')) return imageVal;
-    if (imageVal.startsWith('data:image')) return imageVal;
+    if (imageVal.isEmpty) return null;
+    if (imageVal.toLowerCase().startsWith('http')) return imageVal;
+    if (imageVal.toLowerCase().startsWith('data:image')) return imageVal;
     
     // Heuristic for base64
     if (imageVal.length > 500) return imageVal;
@@ -255,6 +258,7 @@ class ProductModel {
     final cleanBaseUrl = baseUrl.endsWith('/') 
         ? baseUrl.substring(0, baseUrl.length - 1) 
         : baseUrl;
-    return "$cleanBaseUrl/images/product/$imageVal";
+    final cleanVal = imageVal.startsWith('/') ? imageVal.substring(1) : imageVal;
+    return "$cleanBaseUrl/images/product/$cleanVal";
   }
 }

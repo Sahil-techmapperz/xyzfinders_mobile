@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/currency_utils.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../providers/favorite_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -391,7 +392,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
             Icon(Icons.payments_outlined, size: 16, color: hasPriceFilter ? AppTheme.primaryColor : Colors.grey),
             const SizedBox(width: 8),
             (hasPriceFilter 
-                ? "₹ ${_minPrice!.round()} - ₹ ${_maxPrice!.round()}"
+                ? "${CurrencyUtils.formatIndianCurrency(_minPrice!.round())} - ${CurrencyUtils.formatIndianCurrency(_maxPrice!.round())}"
                 : "Price Range"
             ).text.sm.bold.color(hasPriceFilter ? AppTheme.primaryColor : Colors.grey.shade600).make(),
             const Spacer(),
@@ -440,7 +441,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                     max: maxLimit,
                     activeColor: AppTheme.primaryColor,
                     inactiveColor: Colors.grey.shade200,
-                    labels: RangeLabels("₹${tempMin.round()}", "₹${tempMax.round()}"),
+                    labels: RangeLabels("${CurrencyUtils.formatIndianCurrency(tempMin.round())}", "${CurrencyUtils.formatIndianCurrency(tempMax.round())}"),
                     onChanged: (values) {
                       setModalState(() {
                         tempMin = values.start;
@@ -452,8 +453,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      "₹ ${tempMin.round()}".text.semiBold.make(),
-                      "₹ ${tempMax.round()}".text.semiBold.make(),
+                      "${CurrencyUtils.formatIndianCurrency(tempMin.round())}".text.semiBold.make(),
+                      "${CurrencyUtils.formatIndianCurrency(tempMax.round())}".text.semiBold.make(),
                     ],
                   ),
                   const SizedBox(height: 40),
@@ -565,10 +566,10 @@ class _WishlistScreenState extends State<WishlistScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        "₹ ${product.price.toStringAsFixed(0)}".text.bold.color(AppTheme.primaryColor).make(),
+                        CurrencyUtils.formatIndianCurrency(product.price).text.bold.color(AppTheme.secondaryColor).make(),
                         if (hasDiscount) ...[
                           const SizedBox(width: 4),
-                          "₹${product.originalPrice!.toStringAsFixed(0)}".text.gray400.xs.lineThrough.make(),
+                          CurrencyUtils.formatIndianCurrency(product.originalPrice!.round()).text.gray400.xs.lineThrough.make(),
                         ],
                       ],
                     ),

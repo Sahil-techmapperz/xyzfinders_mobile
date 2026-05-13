@@ -1,3 +1,37 @@
+import 'dart:convert';
+
+class ResumeModel {
+  final String id;
+  final String name;
+  final String url;
+  final bool isDefault;
+
+  ResumeModel({
+    required this.id,
+    required this.name,
+    required this.url,
+    this.isDefault = false,
+  });
+
+  factory ResumeModel.fromJson(Map<String, dynamic> json) {
+    return ResumeModel(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      url: json['url'] ?? '',
+      isDefault: json['is_default'] == true || json['is_default'] == 1,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'url': url,
+      'is_default': isDefault,
+    };
+  }
+}
+
 class UserModel {
   final int id;
   final String name;
@@ -68,6 +102,34 @@ class UserModel {
       'business_address': businessAddress,
       'resume_url': resumeUrl,
     };
+  }
+
+  List<ResumeModel> get resumes {
+    if (resumeUrl == null || resumeUrl!.isEmpty) return [];
+    
+    // Check if it's a JSON array
+    if (!resumeUrl!.trim().startsWith('[')) {
+      // Legacy format: single URL
+      return [ResumeModel(id: '1', name: 'Default CV', url: resumeUrl!, isDefault: true)];
+    }
+    
+    try {
+      final List<dynamic> decoded = json.decode(resumeUrl!);
+      return decoded.map((e) => ResumeModel.fromJson(e)).toList();
+    } catch (e) {
+      // Fallback for malformed JSON
+      return [ResumeModel(id: '1', name: 'Default CV', url: resumeUrl!, isDefault: true)];
+    }
+  }
+
+  ResumeModel? get defaultResume {
+    final list = resumes;
+    if (list.isEmpty) return null;
+    try {
+      return list.firstWhere((r) => r.isDefault);
+    } catch (_) {
+      return list.first;
+    }
   }
 
   String get currentMode => _currentMode ?? 'buyer';

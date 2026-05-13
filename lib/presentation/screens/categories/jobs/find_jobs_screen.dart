@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../../data/services/product_service.dart';
+import '../../../../core/utils/currency_utils.dart';
 import 'package:xyzfinders_mobile/presentation/providers/notification_provider.dart';
 import '../../notifications/notification_screen.dart';
 import 'jobs_list_screen.dart';
@@ -301,7 +302,7 @@ class _FindJobsScreenState extends State<FindJobsScreen> {
                   children: [
                     const Icon(Icons.currency_rupee, size: 14, color: Colors.grey),
                     const SizedBox(width: 6),
-                    "₹ ${job.price} / Monthly".text.color(Colors.grey.shade600).size(12).make(),
+                    "${CurrencyUtils.formatIndianCurrency(job.price)} / Monthly".text.color(AppTheme.secondaryColor).semiBold.size(12).make(),
                   ],
                 ),
                 const SizedBox(height: 6),

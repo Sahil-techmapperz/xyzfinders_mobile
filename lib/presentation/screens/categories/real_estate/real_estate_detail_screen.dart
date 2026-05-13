@@ -9,6 +9,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/currency_utils.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../providers/product_provider.dart';
 import '../../../../data/models/product_model.dart';
@@ -343,8 +344,8 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
   Widget _buildPriceSection(ProductModel product) {
     return Row(
       children: [
-        "₹ ${NumberFormat('#,##,###').format(product.price)}".text.xl3.bold.red600.make(),
-        "/-".text.xl2.bold.red600.make(),
+        CurrencyUtils.formatIndianCurrency(product.price).text.xl3.bold.color(AppTheme.secondaryColor).make(),
+        "/-".text.xl2.bold.color(AppTheme.secondaryColor).make(),
       ],
     );
   }

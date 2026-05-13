@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/models/user_model.dart';
@@ -407,7 +408,60 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Delete Resume
+  // Add a new resume
+  Future<bool> addResume(String name, String url) async {
+    if (_user == null) return false;
+    final resumes = List<ResumeModel>.from(_user!.resumes);
+    final isFirst = resumes.isEmpty;
+    
+    final newResume = ResumeModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name,
+      url: url,
+      isDefault: isFirst,
+    );
+    
+    resumes.add(newResume);
+    return await updateResumeUrl(json.encode(resumes.map((r) => r.toJson()).toList()));
+  }
+
+  // Remove a resume
+  Future<bool> removeResume(String id) async {
+    if (_user == null) return false;
+    final resumes = List<ResumeModel>.from(_user!.resumes);
+    final wasDefault = resumes.any((r) => r.id == id && r.isDefault);
+    resumes.removeWhere((r) => r.id == id);
+    
+    if (wasDefault && resumes.isNotEmpty) {
+      final first = resumes[0];
+      resumes[0] = ResumeModel(
+        id: first.id,
+        name: first.name,
+        url: first.url,
+        isDefault: true,
+      );
+    }
+    
+    final newVal = resumes.isEmpty ? '' : json.encode(resumes.map((r) => r.toJson()).toList());
+    return await updateResumeUrl(newVal);
+  }
+
+  // Set default resume
+  Future<bool> setDefaultResume(String id) async {
+    if (_user == null) return false;
+    final resumes = _user!.resumes.map((r) {
+      return ResumeModel(
+        id: r.id,
+        name: r.name,
+        url: r.url,
+        isDefault: r.id == id,
+      );
+    }).toList();
+    
+    return await updateResumeUrl(json.encode(resumes.map((r) => r.toJson()).toList()));
+  }
+
+  // Delete Resume (Legacy support)
   Future<bool> deleteResume() async {
     return await updateResumeUrl('');
   }

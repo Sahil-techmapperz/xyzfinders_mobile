@@ -13,6 +13,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/currency_utils.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../providers/product_provider.dart';
 import 'package:xyzfinders_mobile/presentation/providers/notification_provider.dart';
@@ -223,10 +224,11 @@ class _JobsDetailScreenState extends State<JobsDetailScreen> {
                             const SizedBox(height: 20),
                             product.title.toUpperCase().text.xl.bold.black.make(),
                             const SizedBox(height: 4),
-                            (product.sellerName ?? "Company Name").text.xl.color(Colors.blue.shade400).semiBold.make(),
+                            // Company Name Logic
+                            (attrs['companyName'] ?? attrs['company_name'] ?? attrs['company'] ?? product.sellerName ?? "Company Name").toString().text.xl.color(Colors.blue.shade400).semiBold.make(),
                             const SizedBox(height: 24),
                             
-                            _buildInfoRow(Icons.payments_outlined, "₹ ${product.price} - ${product.price + 5000}/-"),
+                            _buildInfoRow(Icons.payments_outlined, "${CurrencyUtils.formatIndianCurrency(product.price)} - ${CurrencyUtils.formatIndianCurrency(product.price + 5000)} /-"),
                             _buildInfoRow(Icons.location_on_outlined, "${product.locationName ?? product.cityName ?? 'Gurgaon, Sector 62, New Delhi'}, India"),
                             _buildInfoRow(Icons.access_time, jobType.toString()),
                             _buildInfoRow(Icons.business_center_outlined, experience.toString()),
