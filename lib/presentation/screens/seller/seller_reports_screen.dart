@@ -168,7 +168,7 @@ class _SellerReportsScreenState extends State<SellerReportsScreen> {
               Row(
                 children: [
                   "Reason: ".text.gray600.sm.make(),
-                  report.reason.text.color(AppTheme.primaryColor).sm.bold.make(),
+                  report.reason.text.color(AppTheme.secondaryColor).sm.bold.make(),
                 ],
               ),
               if (report.description != null && report.description!.isNotEmpty) ...[
@@ -227,7 +227,7 @@ class _SellerReportsScreenState extends State<SellerReportsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.admin_panel_settings_outlined, size: 64, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+                      Icon(Icons.admin_panel_settings_outlined, size: 64, color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
                       const SizedBox(height: 16),
                       "Admin Support Chat".text.xl.bold.make(),
                       "Resolve reporting issues directly with admins.".text.gray500.center.make(),
@@ -245,7 +245,7 @@ class _SellerReportsScreenState extends State<SellerReportsScreen> {
                         icon: const Icon(Icons.chat),
                         label: const Text('Open Support Chat'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: AppTheme.secondaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                         ),

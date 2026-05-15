@@ -45,7 +45,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           body: RefreshIndicator(
             onRefresh: () => authProvider.refreshUser(),
-            color: AppTheme.primaryColor,
+            color: AppTheme.secondaryColor,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Padding(
@@ -231,7 +231,7 @@ class ProfileScreen extends StatelessWidget {
                   width: 70,
                   height: 70,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.secondaryColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: authProvider.isLoading
@@ -241,7 +241,7 @@ class ProfileScreen extends StatelessWidget {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: AppTheme.primaryColor,
+                              color: AppTheme.secondaryColor,
                             ),
                           ),
                         )
@@ -257,7 +257,7 @@ class ProfileScreen extends StatelessWidget {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: AppTheme.primaryColor,
+                                  color: AppTheme.secondaryColor,
                                 ),
                               ),
                             ),
@@ -267,7 +267,7 @@ class ProfileScreen extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryColor,
+                                  color: AppTheme.secondaryColor,
                                 ),
                               ),
                             ),
@@ -283,7 +283,7 @@ class ProfileScreen extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
+                      color: AppTheme.secondaryColor,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1.5),
                     ),
@@ -312,7 +312,7 @@ class ProfileScreen extends StatelessWidget {
                   authProvider.isSellerMode ? 'Professional Seller' : 'Verified Buyer',
                   style: TextStyle(
                     fontSize: 13,
-                    color: authProvider.isSellerMode ? AppTheme.primaryColor : Colors.blue,
+                    color: authProvider.isSellerMode ? AppTheme.secondaryColor : Colors.blue,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

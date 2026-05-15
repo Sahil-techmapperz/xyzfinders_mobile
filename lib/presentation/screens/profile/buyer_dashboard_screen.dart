@@ -77,7 +77,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: RefreshIndicator(
         onRefresh: _loadDashboardData,
-        color: AppTheme.primaryColor,
+        color: AppTheme.secondaryColor,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -252,7 +252,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             "Recent Activity".text.bold.lg.make(),
-            "View Timeline".text.xs.color(AppTheme.primaryColor).make(),
+            "View Timeline".text.xs.color(AppTheme.secondaryColor).make(),
           ],
         ),
         const SizedBox(height: 16),
@@ -371,7 +371,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: AppTheme.primaryColor),
+            Icon(icon, size: 18, color: AppTheme.secondaryColor),
             const SizedBox(width: 8),
             title.text.bold.xs.make(),
           ],
@@ -524,7 +524,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            "₹ ${product.price}".text.bold.color(AppTheme.primaryColor).sm.make(),
+                            "₹ ${product.price}".text.bold.color(AppTheme.secondaryColor).sm.make(),
                           ],
                         ),
                       ),

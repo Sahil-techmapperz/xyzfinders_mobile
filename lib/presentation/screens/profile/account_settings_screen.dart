@@ -75,7 +75,7 @@ class AccountSettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, {Color color = AppTheme.primaryColor}) {
+  Widget _buildSectionHeader(String title, {Color color = AppTheme.secondaryColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Text(

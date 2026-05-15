@@ -138,7 +138,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: color ?? AppTheme.primaryColor,
+          color: color ?? AppTheme.secondaryColor,
           letterSpacing: 1.2,
         ),
       ),
@@ -212,7 +212,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       trailing: Switch.adaptive(
         value: value,
         onChanged: onChanged,
-        activeColor: AppTheme.primaryColor,
+        activeColor: AppTheme.secondaryColor,
       ),
     );
   }
@@ -335,7 +335,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         contentPadding: EdgeInsets.zero,
                         leading: Icon(
                           item['event'] == 'Login' ? Icons.login_rounded : Icons.security_rounded,
-                          color: AppTheme.primaryColor,
+                          color: AppTheme.secondaryColor,
                         ),
                         title: Text(item['event'] ?? 'Security Event', style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text('${item['device']} • ${item['location']}\n${AppDateUtils.formatIndianDateTime(item['time'])}'),
@@ -371,7 +371,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         children: [
           Icon(
             _getDeviceIcon(device),
-            color: isCurrent ? AppTheme.primaryColor : Colors.grey,
+            color: isCurrent ? AppTheme.secondaryColor : Colors.grey,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -393,12 +393,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.secondaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
                 'Current',
-                style: TextStyle(color: AppTheme.primaryColor, fontSize: 10, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppTheme.secondaryColor, fontSize: 10, fontWeight: FontWeight.bold),
               ),
             ),
         ],

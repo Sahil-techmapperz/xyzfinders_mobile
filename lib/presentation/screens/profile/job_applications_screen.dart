@@ -44,8 +44,8 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
           iconTheme: const IconThemeData(color: Colors.black87),
           centerTitle: true,
           bottom: const TabBar(
-            indicatorColor: AppTheme.primaryColor,
-            labelColor: AppTheme.primaryColor,
+            indicatorColor: AppTheme.secondaryColor,
+            labelColor: AppTheme.secondaryColor,
             unselectedLabelColor: Colors.grey,
             tabs: [
               Tab(text: 'Applications'),
@@ -67,7 +67,7 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
     return Consumer<JobApplicationProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
-          return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+          return const Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor));
         }
 
         if (provider.error != null) {
@@ -80,7 +80,7 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
 
         return RefreshIndicator(
           onRefresh: () => provider.loadApplications(),
-          color: AppTheme.primaryColor,
+          color: AppTheme.secondaryColor,
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: provider.applications.length,
@@ -121,7 +121,7 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
                   icon: const Icon(Icons.upload_file),
                   label: const Text('Upload New CV', style: TextStyle(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: AppTheme.secondaryColor,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
@@ -142,7 +142,7 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: resume.isDefault ? AppTheme.primaryColor : Colors.grey.shade200,
+          color: resume.isDefault ? AppTheme.secondaryColor : Colors.grey.shade200,
           width: resume.isDefault ? 2 : 1,
         ),
         boxShadow: [
@@ -162,10 +162,10 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.secondaryColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.description, color: AppTheme.primaryColor, size: 24),
+                  child: const Icon(Icons.description, color: AppTheme.secondaryColor, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -179,7 +179,7 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
                       if (resume.isDefault)
                         const Text(
                           'Default CV',
-                          style: TextStyle(color: AppTheme.primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: AppTheme.secondaryColor, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                     ],
                   ),
@@ -200,8 +200,8 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
                     icon: const Icon(Icons.visibility_outlined, size: 18),
                     label: const Text('View'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryColor,
-                      side: const BorderSide(color: AppTheme.primaryColor),
+                      foregroundColor: AppTheme.secondaryColor,
+                      side: const BorderSide(color: AppTheme.secondaryColor),
                     ),
                   ),
                 ),
@@ -302,7 +302,7 @@ class _JobApplicationsScreenState extends State<JobApplicationsScreen> {
                   child: const Text(
                     'View Details',
                     style: TextStyle(
-                      color: AppTheme.primaryColor,
+                      color: AppTheme.secondaryColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),

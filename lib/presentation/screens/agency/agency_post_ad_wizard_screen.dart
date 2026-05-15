@@ -85,7 +85,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
             if (attrs['doors'] != null) _doorsController.text = attrs['doors'].toString();
             
             // Beauty/Service
-            if (attrs['service_type'] != null) _serviceTypeController.text = attrs['service_type'].toString();
+            if (attrs['product_type'] != null || attrs['service_type'] != null) _productTypeController.text = (attrs['product_type'] ?? attrs['service_type']).toString();
             if (attrs['duration'] != null) _durationController.text = attrs['duration'].toString();
             if (attrs['availability'] != null) _serviceAvailabilityController.text = attrs['availability'].toString();
             if (attrs['experience'] != null) _serviceExperienceController.text = attrs['experience'].toString();
@@ -273,7 +273,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
       });
     } else if (name.contains('beauty') || name.contains('spa') || name.contains('salon')) {
       data.addAll({
-        'service_type': _serviceTypeController.text,
+        'product_type': _productTypeController.text,
         'duration': _durationController.text,
         'gender_preference': _selectedGenderPreference,
       });
@@ -446,7 +446,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
   }
 
   // Beauty Details Fields
-  final _serviceTypeController = TextEditingController();
+  final _productTypeController = TextEditingController();
   final _durationController = TextEditingController();
   String _selectedGenderPreference = 'Unisex';
 
@@ -1204,12 +1204,12 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
               child: const Icon(Icons.list, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 12),
-            "Service Details".text.xl2.bold.make(),
+            "Product Details".text.xl2.bold.make(),
           ],
         ),
         const SizedBox(height: 24),
         
-        _buildField("Service Type*", "e.g., Facial, Haircut, Manicure", _serviceTypeController),
+        _buildField("Product Type*", "e.g., Facial, Haircut, Manicure", _productTypeController),
         const SizedBox(height: 20),
 
         Row(

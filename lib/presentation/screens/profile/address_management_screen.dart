@@ -65,13 +65,25 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
               address: _editingAddress, 
               onSuccess: () => setState(() { _isAddingNew = false; _editingAddress = null; })
             )
-          : const AddressList(),
-      floatingActionButton: _isAddingNew ? null : FloatingActionButton.extended(
-        onPressed: () => _toggleForm(),
-        backgroundColor: AppTheme.primaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Address', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _toggleForm(),
+                    icon: const Icon(Icons.add, color: Colors.white, size: 20),
+                    label: const Text('Add Address', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      minimumSize: const Size(double.infinity, 54),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                const Expanded(child: AddressList()),
+              ],
+            ),
     );
   }
 }
@@ -129,7 +141,7 @@ class AddressCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: address.isDefault ? AppTheme.primaryColor : Colors.grey.shade200,
+          color: address.isDefault ? AppTheme.secondaryColor : Colors.grey.shade200,
           width: address.isDefault ? 2 : 1,
         ),
         boxShadow: [
@@ -155,12 +167,12 @@ class AddressCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: (address.isDefault ? AppTheme.primaryColor : Colors.grey.shade100).withOpacity(0.1),
+                      color: (address.isDefault ? AppTheme.secondaryColor : Colors.grey.shade100).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       address.name.toLowerCase() == 'home' ? Icons.home_outlined : Icons.work_outline,
-                      color: address.isDefault ? AppTheme.primaryColor : Colors.grey.shade600,
+                      color: address.isDefault ? AppTheme.secondaryColor : Colors.grey.shade600,
                       size: 20,
                     ),
                   ),
@@ -174,7 +186,7 @@ class AddressCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor,
+                        color: AppTheme.secondaryColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
@@ -215,8 +227,8 @@ class AddressCard extends StatelessWidget {
                   if (!address.isDefault)
                     TextButton.icon(
                       onPressed: () => context.read<AddressProvider>().setDefault(address.id),
-                      icon: const Icon(Icons.check_circle_outline, size: 18, color: AppTheme.primaryColor),
-                      label: const Text('Set as Default', style: TextStyle(color: AppTheme.primaryColor, fontSize: 13)),
+                      icon: const Icon(Icons.check_circle_outline, size: 18, color: AppTheme.secondaryColor),
+                      label: const Text('Set as Default', style: TextStyle(color: AppTheme.secondaryColor, fontSize: 13)),
                     ),
                   const SizedBox(width: 8),
                   TextButton.icon(
@@ -460,7 +472,7 @@ class _AddressFormState extends State<AddressForm> {
               title: const Text('Set as Default Address', style: TextStyle(fontWeight: FontWeight.bold)),
               subtitle: const Text('Use this address for all future orders'),
               value: _isDefault,
-              activeColor: AppTheme.primaryColor,
+              activeColor: AppTheme.secondaryColor,
               onChanged: (v) => setState(() => _isDefault = v),
             ),
             
@@ -471,7 +483,7 @@ class _AddressFormState extends State<AddressForm> {
               child: ElevatedButton(
                 onPressed: isLoading ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: AppTheme.secondaryColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
@@ -499,7 +511,7 @@ class _AddressFormState extends State<AddressForm> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 1.5)),
     );
   }
 

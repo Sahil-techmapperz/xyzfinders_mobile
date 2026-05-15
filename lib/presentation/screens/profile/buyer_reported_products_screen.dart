@@ -122,7 +122,7 @@ class _BuyerReportedProductsScreenState
                   ? _buildEmpty()
                   : RefreshIndicator(
                       onRefresh: _fetchReports,
-                      color: AppTheme.primaryColor,
+                      color: AppTheme.secondaryColor,
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
                         itemCount: _reports.length,
@@ -157,7 +157,7 @@ class _BuyerReportedProductsScreenState
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: AppTheme.secondaryColor,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -291,7 +291,7 @@ class _BuyerReportedProductsScreenState
                   const Icon(Icons.label_outline, size: 14, color: Colors.grey),
                   const SizedBox(width: 6),
                   'Reason: '.text.gray500.sm.make(),
-                  report.reason.text.color(AppTheme.primaryColor).sm.bold.make(),
+                  report.reason.text.color(AppTheme.secondaryColor).sm.bold.make(),
                 ],
               ),
 
@@ -449,7 +449,7 @@ class _BuyerReportedProductsScreenState
                       icon: const Icon(Icons.support_agent_rounded),
                       label: const Text('Open Support Chat'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
+                        backgroundColor: AppTheme.secondaryColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(

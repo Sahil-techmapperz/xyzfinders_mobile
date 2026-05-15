@@ -122,12 +122,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           width: 100,
                           height: 100,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            color: AppTheme.secondaryColor.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: authProvider.isLoading
                               ? const Center(
-                                  child: CircularProgressIndicator(color: AppTheme.primaryColor),
+                                  child: CircularProgressIndicator(color: AppTheme.secondaryColor),
                                 )
                               : ClipOval(
                                   child: CachedNetworkImage(
@@ -136,7 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         : '${ApiConstants.baseUrl}${ApiConstants.userImage(user!.id)}?t=${authProvider.lastUpdateTimestamp}',
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => const Center(
-                                      child: CircularProgressIndicator(color: AppTheme.primaryColor),
+                                      child: CircularProgressIndicator(color: AppTheme.secondaryColor),
                                     ),
                                     errorWidget: (context, url, error) => Center(
                                       child: Text(
@@ -144,7 +144,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         style: const TextStyle(
                                           fontSize: 40,
                                           fontWeight: FontWeight.bold,
-                                          color: AppTheme.primaryColor,
+                                          color: AppTheme.secondaryColor,
                                         ),
                                       ),
                                     ),
@@ -159,7 +159,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor,
+                                color: AppTheme.secondaryColor,
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white, width: 2),
                                 boxShadow: [
@@ -235,7 +235,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
+                        backgroundColor: AppTheme.secondaryColor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -290,7 +290,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+        borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 2),
       ),
     );
   }

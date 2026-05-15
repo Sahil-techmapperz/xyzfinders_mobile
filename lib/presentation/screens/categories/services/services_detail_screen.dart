@@ -116,7 +116,7 @@ class _ServicesDetailScreenState extends State<ServicesDetailScreen> {
         });
 
         if (specsList.isEmpty) {
-          specsList.add({"label": "Service Type", "value": specs['type'] ?? attrs['type'] ?? specs['service_type'] ?? attrs['service_type'] ?? "Professional"});
+          specsList.add({"label": "Product Type", "value": specs['type'] ?? attrs['type'] ?? specs['service_type'] ?? attrs['service_type'] ?? "Professional"});
           specsList.add({"label": "Experience", "value": specs['experience'] ?? attrs['experience'] ?? "Varies"});
           specsList.add({"label": "Availability", "value": specs['availability'] ?? attrs['availability'] ?? "Full-time"});
         }

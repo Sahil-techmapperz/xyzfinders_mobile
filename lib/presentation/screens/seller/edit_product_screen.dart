@@ -578,7 +578,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
         ? const Center(child: CircularProgressIndicator())
         : Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: Theme.of(context).colorScheme.copyWith(primary: AppTheme.primaryColor),
+              colorScheme: Theme.of(context).colorScheme.copyWith(primary: AppTheme.secondaryColor),
             ),
             child: Stepper(
           type: StepperType.horizontal,
@@ -604,7 +604,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     child: ElevatedButton(
                       onPressed: details.onStepContinue,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
+                        backgroundColor: AppTheme.secondaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 4,
@@ -983,9 +983,9 @@ class _EditProductScreenState extends State<EditProductScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryColor : Colors.white,
+              color: isSelected ? AppTheme.secondaryColor : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey.shade200),
+              border: Border.all(color: isSelected ? AppTheme.secondaryColor : Colors.grey.shade200),
             ),
             child: Text(option, style: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
           ),

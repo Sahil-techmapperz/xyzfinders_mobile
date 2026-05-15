@@ -137,7 +137,7 @@ class _StoreListScreenState extends State<StoreListScreen> {
         );
       }
     } else {
-      imageWidget = const Icon(Icons.store, color: AppTheme.primaryColor);
+      imageWidget = const Icon(Icons.store, color: AppTheme.secondaryColor);
     }
 
     return Card(
@@ -201,7 +201,7 @@ class _StoreListScreenState extends State<StoreListScreen> {
                         ],
                       ),
                     const SizedBox(height: 8),
-                    "${seller.adCount} Active Listings".text.xs.color(AppTheme.primaryColor).semiBold.make(),
+                    "${seller.adCount} Active Listings".text.xs.color(AppTheme.secondaryColor).semiBold.make(),
                   ],
                 ),
               ),

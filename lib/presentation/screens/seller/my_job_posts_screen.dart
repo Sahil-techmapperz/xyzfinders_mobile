@@ -67,9 +67,9 @@ class _MyJobPostsScreenState extends State<MyJobPostsScreen> {
                       child: Column(
                         children: [
                           const TabBar(
-                            labelColor: AppTheme.primaryColor,
+                            labelColor: AppTheme.secondaryColor,
                             unselectedLabelColor: Colors.grey,
-                            indicatorColor: AppTheme.primaryColor,
+                            indicatorColor: AppTheme.secondaryColor,
                             tabs: [
                               Tab(text: "Jobs"),
                               Tab(text: "All Applicants"),
@@ -106,7 +106,7 @@ class _MyJobPostsScreenState extends State<MyJobPostsScreen> {
           child: ListTile(
             contentPadding: const EdgeInsets.all(16),
             title: job.title.text.bold.lg.make(),
-            subtitle: "$applicantCount Applicants".text.color(AppTheme.primaryColor).bold.make().pOnly(top: 8),
+            subtitle: "$applicantCount Applicants".text.color(AppTheme.secondaryColor).bold.make().pOnly(top: 8),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               Navigator.push(
@@ -155,10 +155,10 @@ class _MyJobPostsScreenState extends State<MyJobPostsScreen> {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.1),
                     child: (applicant.applicantName?.isNotEmpty == true 
                       ? applicant.applicantName![0] 
-                      : "?").text.color(AppTheme.primaryColor).bold.make(),
+                      : "?").text.color(AppTheme.secondaryColor).bold.make(),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -302,8 +302,8 @@ class _JobApplicantsScreenState extends State<JobApplicantsScreen> {
           );
         },
         leading: CircleAvatar(
-          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-          child: (applicant.applicantName?.isNotEmpty == true ? applicant.applicantName![0] : "?").text.color(AppTheme.primaryColor).bold.make(),
+          backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.1),
+          child: (applicant.applicantName?.isNotEmpty == true ? applicant.applicantName![0] : "?").text.color(AppTheme.secondaryColor).bold.make(),
         ),
         title: (applicant.applicantName ?? "Anonymous").text.bold.make(),
         subtitle: Column(
@@ -387,8 +387,8 @@ class _JobApplicationDetailScreenState extends State<JobApplicationDetailScreen>
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  child: (app.applicantName?.isNotEmpty == true ? app.applicantName![0] : "?").text.xl2.color(AppTheme.primaryColor).bold.make(),
+                  backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                  child: (app.applicantName?.isNotEmpty == true ? app.applicantName![0] : "?").text.xl2.color(AppTheme.secondaryColor).bold.make(),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -396,7 +396,7 @@ class _JobApplicationDetailScreenState extends State<JobApplicationDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       (app.applicantName ?? "Anonymous").text.xl.bold.make(),
-                      app.jobTitle.text.color(AppTheme.primaryColor).bold.make(),
+                      app.jobTitle.text.color(AppTheme.secondaryColor).bold.make(),
                     ],
                   ),
                 ),

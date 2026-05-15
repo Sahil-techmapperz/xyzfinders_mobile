@@ -402,12 +402,12 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
       _addIfNotEmpty(items, 'Phone', attrs['phone']);
     } else if (cat.contains('beauty') || cat.contains('wellness') || cat.contains('salon') || cat.contains('spa')) {
       _addIfNotEmpty(items, 'Category', attrs['beautyType']);
-      _addIfNotEmpty(items, 'Service Type', attrs['serviceType']);
+      _addIfNotEmpty(items, 'Product Type', attrs['productType'] ?? attrs['serviceType']);
       _addIfNotEmpty(items, 'Duration', attrs['duration']);
       _addIfNotEmpty(items, 'Gender Preference', attrs['genderPreference']);
       _addIfNotEmpty(items, 'Phone', attrs['phone']);
     } else if (cat.contains('service')) {
-      _addIfNotEmpty(items, 'Service Type', attrs['serviceSubtype'] ?? attrs['serviceType']);
+      _addIfNotEmpty(items, 'Product Type', attrs['productType'] ?? attrs['serviceSubtype'] ?? attrs['serviceType']);
       _addIfNotEmpty(items, 'Experience', attrs['experience']);
       _addIfNotEmpty(items, 'Availability', attrs['availability']);
       _addIfNotEmpty(items, 'Phone', attrs['phone']);

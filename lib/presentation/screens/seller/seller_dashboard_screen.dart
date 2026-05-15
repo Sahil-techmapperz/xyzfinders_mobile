@@ -60,7 +60,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: RefreshIndicator(
         onRefresh: _loadDashboardData,
-        color: AppTheme.primaryColor,
+        color: AppTheme.secondaryColor,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -109,7 +109,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       expandedHeight: 120,
       floating: false,
       pinned: false,
-      backgroundColor: AppTheme.primaryColor,
+      backgroundColor: AppTheme.secondaryColor,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -126,7 +126,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppTheme.primaryColor, Color(0xFF6366F1)],
+                  colors: [AppTheme.secondaryColor, Color(0xFF6366F1)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -214,7 +214,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
               _buildActionItem(
                 'Post Ad', 
                 Icons.add_circle_outline, 
-                AppTheme.primaryColor,
+                AppTheme.secondaryColor,
                 () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PostAdCategoryScreen())),
               ),
               _buildActionItem(
@@ -336,7 +336,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       width: 12,
       height: height,
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: height / 100),
+        color: AppTheme.secondaryColor.withValues(alpha: height / 100),
         borderRadius: BorderRadius.circular(6),
       ),
     );
@@ -354,7 +354,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             "Latest Listings".text.bold.lg.color(const Color(0xFF1E293B)).make(),
             TextButton(
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyProductsScreen())),
-              child: "See All".text.color(AppTheme.primaryColor).bold.sm.make(),
+              child: "See All".text.color(AppTheme.secondaryColor).bold.sm.make(),
             ),
           ],
         ),
@@ -415,7 +415,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                 ],
               ),
             ),
-            "₹ ${product.price}".text.bold.color(AppTheme.primaryColor).make(),
+            "₹ ${product.price}".text.bold.color(AppTheme.secondaryColor).make(),
           ],
         ),
       ),

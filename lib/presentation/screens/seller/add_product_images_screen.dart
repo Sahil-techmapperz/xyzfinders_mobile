@@ -142,13 +142,13 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: _isDragging ? AppTheme.primaryColor : Colors.grey[300]!,
+                    color: _isDragging ? AppTheme.secondaryColor : Colors.grey[300]!,
                     width: _isDragging ? 3 : 2,
                     strokeAlign: BorderSide.strokeAlignInside,
                     style: BorderStyle.none 
                   ),
                   borderRadius: BorderRadius.circular(20),
-                  color: _isDragging ? AppTheme.primaryColor.withOpacity(0.1) : Colors.white,
+                  color: _isDragging ? AppTheme.secondaryColor.withOpacity(0.1) : Colors.white,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -163,7 +163,7 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                     Icon(
                       _isDragging ? Icons.file_upload : Icons.add_photo_alternate_outlined,
                       size: 48,
-                      color: _isDragging ? AppTheme.primaryColor : Colors.grey[400],
+                      color: _isDragging ? AppTheme.secondaryColor : Colors.grey[400],
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -173,7 +173,7 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: _isDragging ? AppTheme.primaryColor : Colors.grey[700],
+                        color: _isDragging ? AppTheme.secondaryColor : Colors.grey[700],
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -290,7 +290,7 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.primaryColor,
+                                        color: AppTheme.secondaryColor,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: const Text(
@@ -358,10 +358,10 @@ class _AddProductImagesScreenState extends State<AddProductImagesScreen> {
                     : _uploadImages,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: AppTheme.secondaryColor,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   elevation: 5,
-                  shadowColor: AppTheme.primaryColor.withOpacity(0.4),
+                  shadowColor: AppTheme.secondaryColor.withOpacity(0.4),
                 ),
                 child: _isUploading
                     ? const SizedBox(

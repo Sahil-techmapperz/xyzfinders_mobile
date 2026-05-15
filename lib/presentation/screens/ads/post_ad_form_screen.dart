@@ -24,7 +24,9 @@ class PostAdFormScreen extends StatefulWidget {
 
 class _PostAdFormScreenState extends State<PostAdFormScreen> {
   int _currentStep = 0;
-  final _formKey = GlobalKey<FormState>();
+  final _formKeyBasic = GlobalKey<FormState>();
+  final _formKeyDetails = GlobalKey<FormState>();
+  final _formKeyLocation = GlobalKey<FormState>();
   
   // Generic Controllers
   final _titleController = TextEditingController();
@@ -86,7 +88,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
   final _batchSizeController = TextEditingController();
 
   // Beauty Specific Controllers
-  final _serviceTypeController = TextEditingController();
+  final _productTypeController = TextEditingController();
 
   // Pets Specific Controllers
   final _breedController = TextEditingController();
@@ -255,7 +257,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     _instituteController.dispose();
     _durationController.dispose();
     _batchSizeController.dispose();
-    _serviceTypeController.dispose();
+    _productTypeController.dispose();
     _breedController.dispose();
     _eventDateController.dispose();
     _eventTimeController.dispose();
@@ -454,7 +456,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       };
     } else if (cat.contains('beauty') || cat.contains('wellness')) {
       data = {
-        'serviceType': _serviceTypeController.text,
+        'productType': _productTypeController.text,
         'duration': _durationController.text,
         'genderPreference': _gender,
       };
@@ -507,12 +509,27 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       ),
       body: Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(primary: AppTheme.primaryColor),
+          colorScheme: Theme.of(context).colorScheme.copyWith(primary: AppTheme.secondaryColor),
         ),
         child: Stepper(
           type: StepperType.horizontal,
           currentStep: _currentStep,
           onStepContinue: () {
+            if (_currentStep == 0) {
+              if (!_formKeyBasic.currentState!.validate()) return;
+            } else if (_currentStep == 1) {
+              if (!_formKeyDetails.currentState!.validate()) return;
+            } else if (_currentStep == 2) {
+              if (_images.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please upload at least one image'), backgroundColor: Colors.red),
+                );
+                return;
+              }
+            } else if (_currentStep == 3) {
+              if (!_formKeyLocation.currentState!.validate()) return;
+            }
+
             if (_currentStep < 4) {
               setState(() => _currentStep++);
             } else {
@@ -533,11 +550,11 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                     child: ElevatedButton(
                       onPressed: details.onStepContinue,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
+                        backgroundColor: AppTheme.secondaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 4,
-                        shadowColor: AppTheme.primaryColor.withOpacity(0.3),
+                        shadowColor: AppTheme.secondaryColor.withOpacity(0.3),
                       ),
                       child: _isSubmitting && _currentStep == 4 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(_currentStep == 4 ? 'Publish Ad' : 'Next Step', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
@@ -598,26 +615,60 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
   }
 
   Widget _buildBasicStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel('Listing Title*'),
-        _buildTextField(_titleController, 'e.g. Title of your ad'),
-        const SizedBox(height: 20),
-        _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : 'Price (₹)*'),
-        _buildTextField(_priceController, 'e.g. 5000', keyboardType: TextInputType.number),
-        const SizedBox(height: 20),
-        _buildLabel('Contact Number*'),
-        _buildTextField(_phoneController, 'e.g. 9876543210', keyboardType: TextInputType.phone),
-        const SizedBox(height: 20),
-        _buildLabel('Description*'),
-        _buildTextField(_descriptionController, 'Provide details about your listing...', maxLines: 4),
-      ],
+    return Form(
+      key: _formKeyBasic,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildLabel('Listing Title*'),
+          _buildTextField(
+            _titleController, 
+            'e.g. Title of your ad',
+            validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a title' : null,
+          ),
+          const SizedBox(height: 20),
+          _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : 'Price (₹)*'),
+          _buildTextField(
+            _priceController, 
+            'e.g. 5000', 
+            keyboardType: TextInputType.number,
+            validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a price' : null,
+          ),
+          const SizedBox(height: 20),
+          _buildLabel('Contact Number*'),
+          _buildTextField(
+            _phoneController, 
+            'e.g. 9876543210', 
+            keyboardType: TextInputType.phone,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Please enter contact number';
+              if (v.trim().length < 10) return 'Enter a valid 10-digit number';
+              return null;
+            },
+          ),
+          const SizedBox(height: 20),
+          _buildLabel('Description*'),
+          _buildTextField(
+            _descriptionController, 
+            'Provide details about your listing...', 
+            maxLines: 4,
+            validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a description' : null,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildSpecsStep() {
     final cat = widget.category.toLowerCase();
+
+    return Form(
+      key: _formKeyDetails,
+      child: _buildCategoryFields(cat),
+    );
+  }
+
+  Widget _buildCategoryFields(String cat) {
 
     if (cat.contains('property') || cat.contains('real estate')) {
       return Column(
@@ -636,7 +687,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bedrooms*'), _buildTextField(_bedroomsController, 'e.g., 3', keyboardType: TextInputType.number)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bedrooms*'), _buildTextField(_bedroomsController, 'e.g., 3', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bathrooms (Opt)'), _buildTextField(_bathroomsController, 'e.g., 2', keyboardType: TextInputType.number)])),
               const SizedBox(width: 12),
@@ -646,7 +697,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Area (sq ft)*'), _buildTextField(_areaController, 'e.g., 1200', keyboardType: TextInputType.number)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Area (sq ft)*'), _buildTextField(_areaController, 'e.g., 1200', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Kitchen (Opt)'), _buildTextField(_kitchenController, 'e.g., Modular')])),
               const SizedBox(width: 12),
@@ -679,9 +730,9 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primaryColor : Colors.white,
+                    color: isSelected ? AppTheme.secondaryColor : Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey.shade200),
+                    border: Border.all(color: isSelected ? AppTheme.secondaryColor : Colors.grey.shade200),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -705,9 +756,9 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         children: [
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Sony, Nikon, Dell')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Sony, Nikon, Dell', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., WH-1000XM5, D5600')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., WH-1000XM5, D5600', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
             ],
           ),
           const SizedBox(height: 24),
@@ -740,17 +791,17 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         children: [
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Honda, Maruti, Hyundai')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Honda, Maruti, Hyundai', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., City, Swift, Creta')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., City, Swift, Creta', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
             ],
           ),
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Year*'), _buildTextField(_yearController, 'e.g., 2020', keyboardType: TextInputType.number)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Year*'), _buildTextField(_yearController, 'e.g., 2020', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('KM Driven*'), _buildTextField(_kmDrivenController, 'e.g., 25000', keyboardType: TextInputType.number)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('KM Driven*'), _buildTextField(_kmDrivenController, 'e.g., 25000', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
             ],
           ),
           const SizedBox(height: 20),
@@ -813,9 +864,9 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         children: [
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Apple, Samsung, OnePlus')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Apple, Samsung, OnePlus', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., iPhone 14 Pro, Galaxy S23')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., iPhone 14 Pro, Galaxy S23', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
             ],
           ),
           const SizedBox(height: 20),
@@ -860,7 +911,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('Material*'),
-          _buildTextField(_materialController, 'e.g., Teak Wood, Sheesham, Steel'),
+          _buildTextField(_materialController, 'e.g., Teak Wood, Sheesham, Steel', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -915,10 +966,10 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           
           if (_petCategory == 'Accessory' || _petCategory == 'Food') ...[
             _buildLabel('Brand*'),
-            _buildTextField(_brandController, 'e.g., Royal Canin, Pedigree, Whiskas'),
+            _buildTextField(_brandController, 'e.g., Royal Canin, Pedigree, Whiskas', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
             const SizedBox(height: 20),
             _buildLabel('Model / Type*'),
-            _buildTextField(_modelController, 'e.g., Puppy Food, Adult Toy'),
+            _buildTextField(_modelController, 'e.g., Puppy Food, Adult Toy', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -932,7 +983,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             _buildSelectionGroup(['New', 'Used'], _condition, (val) => setState(() => _condition = val)),
           ] else ...[
             _buildLabel('Breed / Type*'),
-            _buildTextField(_breedController, 'e.g., Labrador, Siamese, Goldfish'),
+            _buildTextField(_breedController, 'e.g., Labrador, Siamese, Goldfish', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -992,7 +1043,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                         }
                       },
                       child: IgnorePointer(
-                        child: _buildTextField(_eventDateController, 'dd-mm-yyyy', suffixIcon: Icons.calendar_today_outlined),
+                        child: _buildTextField(_eventDateController, 'dd-mm-yyyy', suffixIcon: Icons.calendar_today_outlined, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
                       ),
                     ),
                   ],
@@ -1012,7 +1063,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                         }
                       },
                       child: IgnorePointer(
-                        child: _buildTextField(_eventTimeController, '--:--', suffixIcon: Icons.access_time_outlined),
+                        child: _buildTextField(_eventTimeController, '--:--', suffixIcon: Icons.access_time_outlined, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
                       ),
                     ),
                   ],
@@ -1022,7 +1073,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           ),
           const SizedBox(height: 20),
           _buildLabel('Venue Name / Address*'),
-          _buildTextField(_venueController, 'e.g., City Convention Center, Bandra'),
+          _buildTextField(_venueController, 'e.g., City Convention Center, Bandra', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
           const SizedBox(height: 20),
           _buildLabel('Organizer (Optional)'),
           _buildTextField(_organizerController, 'e.g., Global Events Ltd.'),
@@ -1038,8 +1089,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Service Type*'),
-          _buildTextField(_serviceTypeController, 'e.g., Facial, Haircut, Manicure'),
+          _buildLabel('Product Type*'),
+          _buildTextField(_productTypeController, 'e.g., Facial, Haircut, Manicure', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -1057,7 +1108,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('Subject / Course Name*'),
-          _buildTextField(_subjectController, 'e.g., Mathematics, ReactJS, IELTS'),
+          _buildTextField(_subjectController, 'e.g., Mathematics, ReactJS, IELTS', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -1088,7 +1139,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('Availability*'),
-          _buildTextField(_availabilityController, 'e.g., Mon-Fri 9AM-6PM, Weekends'),
+          _buildTextField(_availabilityController, 'e.g., Mon-Fri 9AM-6PM, Weekends', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
           const SizedBox(height: 20),
           _buildLabel('Experience (Optional)'),
           _buildTextField(_experienceController, 'e.g., 5 years, Certified Professional'),
@@ -1101,7 +1152,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('Company Name*'),
-          _buildTextField(_companyController, 'e.g., Tech Solutions Pvt. Ltd.'),
+          _buildTextField(_companyController, 'e.g., Tech Solutions Pvt. Ltd.', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -1109,8 +1160,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Experience Level (Opt)'),
-                    _buildTextField(_experienceController, 'e.g., Fresher, 1-3 years'),
+                    _buildLabel('Experience Level*'),
+                    _buildTextField(_experienceController, 'e.g., Fresher, 1-3 years', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
                   ],
                 ),
               ),
@@ -1133,7 +1184,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Gender Preference (Opt)'),
+                    _buildLabel('Gender Preference*'),
                     _buildDropdown(['Any', 'Male', 'Female'], _genderPref, (val) => setState(() => _genderPref = val!)),
                   ],
                 ),
@@ -1143,8 +1194,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Qualification (Optional)'),
-                    _buildTextField(_qualificationController, 'e.g., Any Graduate, B.Tech, MBA'),
+                    _buildLabel('Qualification*'),
+                    _buildTextField(_qualificationController, 'e.g., Any Graduate, B.Tech, MBA', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
                   ],
                 ),
               ),
@@ -1158,10 +1209,10 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildLabel('Brand / Type*'),
-        _buildTextField(_brandController, 'e.g. Item Brand'),
+        _buildTextField(_brandController, 'e.g. Item Brand', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
         const SizedBox(height: 20),
         _buildLabel('Model / Style*'),
-        _buildTextField(_modelController, 'e.g. Model Name'),
+        _buildTextField(_modelController, 'e.g. Model Name', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
         const SizedBox(height: 20),
         _buildLabel('Condition*'),
         _buildSelectionGroup(['New', 'Like New', 'Used', 'Fair'], _condition, (val) => setState(() => _condition = val)),
@@ -1200,7 +1251,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_a_photo_outlined, color: AppTheme.primaryColor),
+                      Icon(Icons.add_a_photo_outlined, color: AppTheme.secondaryColor),
                       SizedBox(height: 4),
                       Text('Add Photo', style: TextStyle(fontSize: 10, color: Colors.grey)),
                     ],
@@ -1241,121 +1292,149 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     List<String> dropdownItems = ['- Or enter manually below -'];
     dropdownItems.addAll(addresses.map((a) => '${a.name} (${a.cityName ?? a.areaName})'));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF7ED),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFEDD5)),
+    return Form(
+      key: _formKeyLocation,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFFEDD5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select from Saved Addresses', style: TextStyle(fontSize: 12, color: Colors.brown, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                if (addressProvider.isLoading)
+                  const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent, valueColor: AlwaysStoppedAnimation(Colors.brown))
+                else
+                  _buildDropdown(dropdownItems, _selectedSavedAddress, (val) {
+                    if (val != null) {
+                      setState(() {
+                        _selectedSavedAddress = val;
+                        if (val != '- Or enter manually below -') {
+                          final selectedAddress = addresses.firstWhere((a) => '${a.name} (${a.cityName ?? a.areaName})' == val);
+                          _stateController.text = selectedAddress.stateName ?? '';
+                          _cityController.text = selectedAddress.cityName ?? '';
+                          _selectedStateId = selectedAddress.stateId;
+                          _selectedCityId = selectedAddress.cityId;
+                          
+                          // Sync with objects if lists are already loaded
+                          if (_states.isNotEmpty && _selectedStateId != null) {
+                            _selectedState = _states.firstWhereOrNull((s) => s.id == _selectedStateId);
+                          }
+                          
+                          _locationAreaController.text = selectedAddress.areaName ?? '';
+                          _pincodeController.text = selectedAddress.pincode ?? '';
+                          _landmarkController.text = selectedAddress.fullAddress ?? '';
+  
+                          // If state is selected, fetch cities to sync city object later
+                          if (_selectedStateId != null) {
+                            _fetchCities(_selectedStateId!).then((_) {
+                              if (_cities.isNotEmpty && _selectedCityId != null) {
+                                setState(() {
+                                  _selectedCity = _cities.firstWhereOrNull((c) => c.id == _selectedCityId);
+                                });
+                              }
+                            });
+                          }
+                        }
+                      });
+                    }
+                  }),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 24),
+          Row(
             children: [
-              const Text('Select from Saved Addresses', style: TextStyle(fontSize: 12, color: Colors.brown, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              if (addressProvider.isLoading)
-                const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent, valueColor: AlwaysStoppedAnimation(Colors.brown))
-              else
-                _buildDropdown(dropdownItems, _selectedSavedAddress, (val) {
-                  if (val != null) {
+              Expanded(
+                child: SearchableLocationPicker<StateModel>(
+                  label: 'State *',
+                  hint: 'Select State',
+                  icon: Icons.map_outlined,
+                  items: _states,
+                  selectedItem: _selectedState,
+                  itemLabel: (s) => s.name,
+                  isLoading: _isLoadingStates && _states.isEmpty,
+                  onChanged: (s) {
                     setState(() {
-                      _selectedSavedAddress = val;
-                      if (val != '- Or enter manually below -') {
-                        final selectedAddress = addresses.firstWhere((a) => '${a.name} (${a.cityName ?? a.areaName})' == val);
-                        _stateController.text = selectedAddress.stateName ?? '';
-                        _cityController.text = selectedAddress.cityName ?? '';
-                        _selectedStateId = selectedAddress.stateId;
-                        _selectedCityId = selectedAddress.cityId;
-                        
-                        // Sync with objects if lists are already loaded
-                        if (_states.isNotEmpty && _selectedStateId != null) {
-                          _selectedState = _states.firstWhereOrNull((s) => s.id == _selectedStateId);
-                        }
-                        
-                        _locationAreaController.text = selectedAddress.areaName ?? '';
-                        _pincodeController.text = selectedAddress.pincode ?? '';
-                        _landmarkController.text = selectedAddress.fullAddress ?? '';
-
-                        // If state is selected, fetch cities to sync city object later
-                        if (_selectedStateId != null) {
-                          _fetchCities(_selectedStateId!).then((_) {
-                            if (_cities.isNotEmpty && _selectedCityId != null) {
-                              setState(() {
-                                _selectedCity = _cities.firstWhereOrNull((c) => c.id == _selectedCityId);
-                              });
-                            }
-                          });
-                        }
-                      }
+                      _selectedState = s;
+                      _selectedStateId = s?.id;
+                      _selectedCity = null;
+                      _selectedCityId = null;
+                      _cityController.clear();
+                      _stateController.text = s?.name ?? '';
+                      if (s != null) _fetchCities(s.id);
                     });
-                  }
-                }),
+                  },
+                  validator: (v) => v == null ? 'Required' : null,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: SearchableLocationPicker<CityModel>(
+                  label: 'City *',
+                  hint: 'Select City',
+                  icon: Icons.location_city_outlined,
+                  items: _cities,
+                  selectedItem: _selectedCity,
+                  itemLabel: (c) => c.name,
+                  isLoading: _isLoadingCities && _selectedState != null && _cities.isEmpty,
+                  onChanged: (c) {
+                    setState(() {
+                      _selectedCity = c;
+                      _selectedCityId = c?.id;
+                      _cityController.text = c?.name ?? '';
+                    });
+                  },
+                  validator: (v) => v == null ? 'Required' : null,
+                ),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-              child: SearchableLocationPicker<StateModel>(
-                label: 'State *',
-                hint: 'Select State',
-                icon: Icons.map_outlined,
-                items: _states,
-                selectedItem: _selectedState,
-                itemLabel: (s) => s.name,
-                isLoading: _isLoadingStates && _states.isEmpty,
-                onChanged: (s) {
-                  setState(() {
-                    _selectedState = s;
-                    _selectedStateId = s?.id;
-                    _selectedCity = null;
-                    _selectedCityId = null;
-                    _cityController.clear();
-                    _stateController.text = s?.name ?? '';
-                    if (s != null) _fetchCities(s.id);
-                  });
-                },
-                validator: (v) => v == null ? 'Required' : null,
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, 
+                  children: [
+                    _buildLabel('Area / Location *'), 
+                    _buildTextField(
+                      _locationAreaController, 
+                      'e.g. Malad West',
+                      validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: SearchableLocationPicker<CityModel>(
-                label: 'City *',
-                hint: 'Select City',
-                icon: Icons.location_city_outlined,
-                items: _cities,
-                selectedItem: _selectedCity,
-                itemLabel: (c) => c.name,
-                isLoading: _isLoadingCities && _selectedState != null && _cities.isEmpty,
-                onChanged: (c) {
-                  setState(() {
-                    _selectedCity = c;
-                    _selectedCityId = c?.id;
-                    _cityController.text = c?.name ?? '';
-                  });
-                },
-                validator: (v) => v == null ? 'Required' : null,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, 
+                  children: [
+                    _buildLabel('Pin Code *'), 
+                    _buildTextField(
+                      _pincodeController, 
+                      'e.g. 400001', 
+                      keyboardType: TextInputType.number,
+                      validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Area / Location *'), _buildTextField(_locationAreaController, 'e.g. Malad West')])),
-            const SizedBox(width: 16),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Pin Code *'), _buildTextField(_pincodeController, 'e.g. 400001', keyboardType: TextInputType.number)])),
-          ],
-        ),
-        const SizedBox(height: 20),
-        _buildLabel('Landmark (Optional)'),
-        _buildTextField(_landmarkController, 'e.g. Near HDFC Bank'),
-      ],
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildLabel('Landmark (Optional)'),
+          _buildTextField(_landmarkController, 'e.g. Near HDFC Bank'),
+        ],
+      ),
     );
   }
 
@@ -1387,7 +1466,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
               ...specData.entries.where((e) => e.value.toString().isNotEmpty && e.key != 'amenities').map((e) => Column(
                 key: ValueKey('summary_${e.key}'),
                 children: [
-                  _buildSummaryRow(e.key.toUpperCase(), e.value.toString()),
+                  _buildSummaryRow(_formatKey(e.key), e.value.toString()),
                   const Divider(height: 24),
                 ],
               )).toList(),
@@ -1445,13 +1524,14 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType? keyboardType, int maxLines = 1, IconData? suffixIcon, bool readOnly = false, VoidCallback? onTap}) {
-    return TextField(
+  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType? keyboardType, int maxLines = 1, IconData? suffixIcon, bool readOnly = false, VoidCallback? onTap, String? Function(String?)? validator}) {
+    return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
       readOnly: readOnly,
       onTap: onTap,
+      validator: validator,
       style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
@@ -1462,7 +1542,9 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1.5)),
       ),
     );
   }
@@ -1504,9 +1586,9 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryColor : Colors.white,
+              color: isSelected ? AppTheme.secondaryColor : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey.shade200),
+              border: Border.all(color: isSelected ? AppTheme.secondaryColor : Colors.grey.shade200),
             ),
             child: Text(
               opt,
@@ -1520,6 +1602,15 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         );
       }).toList(),
     );
+  }
+  String _formatKey(String key) {
+    if (key == 'productType') return 'PRODUCT TYPE';
+    if (key == 'jobType') return 'WORK MODE';
+    if (key == 'teachingMode') return 'MODE OF TEACHING';
+    
+    // Convert camelCase to Space Separated and UpperCase
+    String result = key.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}');
+    return result.toUpperCase().trim();
   }
 }
 

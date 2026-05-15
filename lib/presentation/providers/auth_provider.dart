@@ -196,7 +196,8 @@ class AuthProvider with ChangeNotifier {
         location: location,
         address: address,
       );
-      _user = updatedUser;
+      final currentModeBefore = currentMode;
+      _user = updatedUser.copyWith(currentMode: currentModeBefore);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -375,7 +376,9 @@ class AuthProvider with ChangeNotifier {
     if (_user == null) return;
     
     try {
+      final currentModeBefore = currentMode;
       _user = await _authService.getCurrentUser();
+      _user = _user?.copyWith(currentMode: currentModeBefore);
       notifyListeners();
     } catch (e) {
       // Silently fail, user data will update on next login

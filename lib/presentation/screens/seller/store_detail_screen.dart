@@ -107,7 +107,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
           final base64String = bannerUrl.split(',').last;
           bannerWidget = Image.memory(base64Decode(base64String), fit: BoxFit.cover);
         } catch (e) {
-          bannerWidget = Container(color: AppTheme.primaryColor.withOpacity(0.1));
+          bannerWidget = Container(color: AppTheme.secondaryColor.withOpacity(0.1));
         }
       } else if (bannerUrl.startsWith('http')) {
         bannerWidget = CachedNetworkImage(imageUrl: bannerUrl, fit: BoxFit.cover);
@@ -115,7 +115,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
         bannerWidget = CachedNetworkImage(imageUrl: '$baseUrl$bannerUrl', fit: BoxFit.cover);
       }
     } else {
-      bannerWidget = Container(color: AppTheme.primaryColor.withOpacity(0.1));
+      bannerWidget = Container(color: AppTheme.secondaryColor.withOpacity(0.1));
     }
 
     return SliverAppBar(
@@ -145,7 +145,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
           final base64String = avatarUrl.split(',').last;
           avatarWidget = Image.memory(base64Decode(base64String), fit: BoxFit.cover);
         } catch (e) {
-          avatarWidget = const Icon(Icons.store, size: 40, color: AppTheme.primaryColor);
+          avatarWidget = const Icon(Icons.store, size: 40, color: AppTheme.secondaryColor);
         }
       } else if (avatarUrl.startsWith('http')) {
         avatarWidget = CachedNetworkImage(imageUrl: avatarUrl, fit: BoxFit.cover);
@@ -153,7 +153,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
         avatarWidget = CachedNetworkImage(imageUrl: '$baseUrl$avatarUrl', fit: BoxFit.cover);
       }
     } else {
-      avatarWidget = const Icon(Icons.store, size: 40, color: AppTheme.primaryColor);
+      avatarWidget = const Icon(Icons.store, size: 40, color: AppTheme.secondaryColor);
     }
 
     return Container(
@@ -303,7 +303,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 children: [
                   product.title.text.semiBold.maxLines(1).ellipsis.make(),
                   const SizedBox(height: 4),
-                  "₹${product.price}".text.bold.color(AppTheme.primaryColor).make(),
+                  "₹${product.price}".text.bold.color(AppTheme.secondaryColor).make(),
                 ],
               ),
             ),

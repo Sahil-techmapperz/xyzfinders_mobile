@@ -192,7 +192,7 @@ class _ReportChatScreenState extends State<ReportChatScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isMe ? AppTheme.primaryColor : Colors.grey.shade100,
+          color: isMe ? AppTheme.secondaryColor : Colors.grey.shade100,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -206,7 +206,7 @@ class _ReportChatScreenState extends State<ReportChatScreen> {
             if (!isMe)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: msg.senderName.text.bold.xs.color(AppTheme.primaryColor).make(),
+                child: msg.senderName.text.bold.xs.color(AppTheme.secondaryColor).make(),
               ),
             msg.message.text.color(isMe ? Colors.white : Colors.black87).make(),
           ],
@@ -252,7 +252,7 @@ class _ReportChatScreenState extends State<ReportChatScreen> {
             _isSending
                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                 : CircleAvatar(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: AppTheme.secondaryColor,
                     child: IconButton(
                       icon: const Icon(Icons.send, color: Colors.white, size: 20),
                       onPressed: _sendMessage,

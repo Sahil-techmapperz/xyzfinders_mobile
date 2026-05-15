@@ -245,7 +245,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          Expanded(child: _buildStatCard('Total', _totalAds, Icons.inventory_2, AppTheme.primaryColor)),
+                          Expanded(child: _buildStatCard('Total', _totalAds, Icons.inventory_2, AppTheme.secondaryColor)),
                           const SizedBox(width: 12),
                           Expanded(child: _buildStatCard('Active', _activeAds, Icons.check_circle, Colors.green)),
                           const SizedBox(width: 12),
@@ -325,7 +325,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                                       return Theme(
                                         data: Theme.of(context).copyWith(
                                           colorScheme: const ColorScheme.light(
-                                            primary: AppTheme.primaryColor,
+                                            primary: AppTheme.secondaryColor,
                                           ),
                                         ),
                                         child: child!,
@@ -341,7 +341,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(horizontal: 12),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  side: BorderSide(color: _selectedDateRange == null ? Colors.grey[300]! : AppTheme.primaryColor),
+                                  side: BorderSide(color: _selectedDateRange == null ? Colors.grey[300]! : AppTheme.secondaryColor),
                                 ),
                               ),
                               if (_selectedDateRange != null) ...[
@@ -456,8 +456,8 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
         onTap: () => setState(() => _selectedFilter = label),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : Colors.white,
-            border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey[300]!),
+            color: isSelected ? AppTheme.secondaryColor : Colors.white,
+            border: Border.all(color: isSelected ? AppTheme.secondaryColor : Colors.grey[300]!),
           ),
           alignment: Alignment.center,
           child: Text(

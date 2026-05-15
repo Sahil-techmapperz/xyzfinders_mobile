@@ -35,7 +35,7 @@ class LanguageSelectionScreen extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isSelected ? AppTheme.primaryColor : Colors.grey.shade200,
+                    color: isSelected ? AppTheme.secondaryColor : Colors.grey.shade200,
                     width: isSelected ? 2 : 1,
                   ),
                   boxShadow: [
@@ -51,12 +51,12 @@ class LanguageSelectionScreen extends StatelessWidget {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey.shade50,
+                      color: isSelected ? AppTheme.secondaryColor.withOpacity(0.1) : Colors.grey.shade50,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.language,
-                      color: isSelected ? AppTheme.primaryColor : Colors.grey,
+                      color: isSelected ? AppTheme.secondaryColor : Colors.grey,
                       size: 20,
                     ),
                   ),
@@ -65,11 +65,11 @@ class LanguageSelectionScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? AppTheme.primaryColor : const Color(0xFF1E293B),
+                      color: isSelected ? AppTheme.secondaryColor : const Color(0xFF1E293B),
                     ),
                   ),
                   trailing: isSelected
-                      ? const Icon(Icons.check_circle, color: AppTheme.primaryColor)
+                      ? const Icon(Icons.check_circle, color: AppTheme.secondaryColor)
                       : null,
                   onTap: () async {
                     await provider.setLanguage(language['name']!, language['code']!);

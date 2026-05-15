@@ -150,7 +150,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                         return Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.05),
+                            color: AppTheme.secondaryColor.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -160,7 +160,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                               ElevatedButton(
                                 onPressed: () => AuthModal.show(context),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.primaryColor,
+                                  backgroundColor: AppTheme.secondaryColor,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),

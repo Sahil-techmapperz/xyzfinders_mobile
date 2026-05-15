@@ -645,7 +645,8 @@ class _HomeTabState extends State<HomeTab> {
       case 'learning & education': return Icons.school_rounded;
       case 'local events': return Icons.event_available_rounded;
       case 'mobiles': return Icons.phone_iphone_rounded;
-      case 'pets & animals accessories': return Icons.pets_rounded;
+      case 'pets & animals accessories':
+      case 'pet & animal accessories': return Icons.pets_rounded;
       case 'real estate': return Icons.business_rounded;
       case 'services': return Icons.handyman_rounded;
       default: return Icons.category;
@@ -663,7 +664,8 @@ class _HomeTabState extends State<HomeTab> {
       case 'learning & education': return Colors.indigo;
       case 'local events': return Colors.orange;
       case 'mobiles': return Colors.teal;
-      case 'pets & animals accessories': return Colors.amber;
+      case 'pets & animals accessories':
+      case 'pet & animal accessories': return Colors.amber;
       case 'real estate': return Colors.green;
       case 'services': return Colors.blueAccent;
       default: return AppTheme.primaryColor;
@@ -811,7 +813,7 @@ class _HomeTabState extends State<HomeTab> {
                 Icon(_getCategoryIcon(cat.name), size: 30, color: _getCategoryColor(cat.name)),
               const SizedBox(height: 6),
               Text(
-                cat.name,
+                cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : cat.name,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

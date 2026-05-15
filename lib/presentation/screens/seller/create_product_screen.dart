@@ -406,18 +406,18 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             Container(
                padding: const EdgeInsets.all(16),
                decoration: BoxDecoration(
-                 color: AppTheme.primaryColor.withOpacity(0.05),
+                 color: AppTheme.secondaryColor.withOpacity(0.05),
                  borderRadius: BorderRadius.circular(16),
-                 border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1)),
+                 border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.1)),
                ),
                child: Row(
                  children: [
-                   const Icon(Icons.info_outline, color: AppTheme.primaryColor),
+                   const Icon(Icons.info_outline, color: AppTheme.secondaryColor),
                    const SizedBox(width: 12),
                    const Expanded(
                      child: Text(
                        'You can upload photos in the next step.',
-                       style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w500),
+                       style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.w500),
                      ),
                    ),
                  ],
