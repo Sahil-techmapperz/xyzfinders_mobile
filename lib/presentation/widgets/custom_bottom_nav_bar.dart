@@ -38,7 +38,7 @@ class CustomBottomNavBar extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () {}, // Consume taps on blank space
         child: Container(
-          height: 65,
+          height: 46,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -59,6 +59,9 @@ class CustomBottomNavBar extends StatelessWidget {
     final isSelected = selectedIndex == index;
     return InkWell(
       onTap: () => onItemSelected(index),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -144,6 +147,11 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
   }
 
   void _toggle() {
+    final auth = context.read<AuthProvider>();
+    if (auth.isSellerMode) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const PostAdCategoryScreen()));
+      return;
+    }
     if (_isOpen) {
       _close();
     } else {
@@ -259,15 +267,6 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
         },
       ),
       _SpeedDialItem(
-        icon: Icons.forum_outlined,
-        label: 'Chats',
-        color: Colors.deepPurple,
-        onTap: () {
-          _close();
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
-        },
-      ),
-      _SpeedDialItem(
         icon: Icons.store_rounded,
         label: 'Stores',
         color: Colors.teal,
@@ -354,7 +353,7 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
               } else if (count == 3) {
                 const positions = [
                   Offset(-100, -70),   // Left
-                  Offset(0, -140),     // Top Center
+                  Offset(0, -120),     // Top Center
                   Offset(100, -70),    // Right
                 ];
                 dx = positions[i].dx;

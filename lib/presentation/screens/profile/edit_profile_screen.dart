@@ -132,7 +132,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               : ClipOval(
                                   child: CachedNetworkImage(
                                     imageUrl: (user?.avatar != null && user!.avatar!.startsWith('http'))
-                                        ? user!.avatar!
+                                        ? '${user!.avatar!}?t=${authProvider.lastUpdateTimestamp}'
                                         : '${ApiConstants.baseUrl}${ApiConstants.userImage(user!.id)}?t=${authProvider.lastUpdateTimestamp}',
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => const Center(

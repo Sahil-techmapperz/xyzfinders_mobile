@@ -336,7 +336,7 @@ class _ServicesListScreenState extends State<ServicesListScreen> {
                 ),
                 item.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 4),
-                "Condition: ${item.condition}".text.gray600.medium.size(13).make(),
+                "Condition: ${item.formattedCondition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

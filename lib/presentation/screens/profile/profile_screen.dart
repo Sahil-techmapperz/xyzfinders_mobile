@@ -248,7 +248,7 @@ class ProfileScreen extends StatelessWidget {
                       : ClipOval(
                           child: CachedNetworkImage(
                             imageUrl: (user?.avatar != null && user!.avatar!.startsWith('http'))
-                                ? user!.avatar!
+                                ? '${user!.avatar!}?t=${authProvider.lastUpdateTimestamp}'
                                 : '${ApiConstants.baseUrl}${ApiConstants.userImage(user!.id)}?t=${authProvider.lastUpdateTimestamp}',
                             fit: BoxFit.cover,
                             placeholder: (context, url) => const Center(
@@ -575,7 +575,7 @@ class ProfileScreen extends StatelessWidget {
           builder: (context, langProvider, _) => _buildListTile(
             icon: Icons.translate, 
             title: l10n.translate('languages'), 
-            trailingText: '${langProvider.currentLanguage} >',
+            trailingText: langProvider.currentLanguage,
             onTap: () {
               Navigator.push(
                 context,
@@ -669,10 +669,11 @@ class ProfileScreen extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (trailingText != null)
-             Text(trailingText, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))
-          else
-             const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          if (trailingText != null) ...[
+            Text(trailingText, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            const SizedBox(width: 8),
+          ],
+          const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
         ],
       ),
       onTap: onTap ?? () {},

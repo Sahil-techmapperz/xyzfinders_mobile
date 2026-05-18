@@ -335,7 +335,7 @@ class _BeautyListScreenState extends State<BeautyListScreen> {
                 CurrencyUtils.formatIndianCurrency(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
                 item.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 4),
-                "Condition: ${item.condition}".text.gray600.medium.size(13).make(),
+                "Condition: ${item.formattedCondition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

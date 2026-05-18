@@ -261,4 +261,15 @@ class ProductModel {
     final cleanVal = imageVal.startsWith('/') ? imageVal.substring(1) : imageVal;
     return "$cleanBaseUrl/images/product/$cleanVal";
   }
+
+  String get formattedCondition {
+    if (condition.isEmpty) return '';
+    // Replace underscores with spaces, then capitalize each word
+    final clean = condition.replaceAll('_', ' ').trim();
+    if (clean.isEmpty) return '';
+    return clean.split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+  }
 }

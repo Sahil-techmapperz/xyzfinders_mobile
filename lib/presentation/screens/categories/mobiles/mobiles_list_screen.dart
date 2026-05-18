@@ -196,7 +196,7 @@ class _MobilesListScreenState extends State<MobilesListScreen> {
                   const SizedBox(height: 8),
                   item.title.text.lg.bold.make(),
                   const SizedBox(height: 4),
-                  "Condition: ${item.condition}".text.gray500.size(12).semiBold.make(),
+                  "Condition: ${item.formattedCondition}".text.gray500.size(12).semiBold.make(),
                   const SizedBox(height: 12),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,

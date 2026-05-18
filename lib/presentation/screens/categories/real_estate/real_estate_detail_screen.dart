@@ -119,7 +119,7 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
         addSpec("Bedrooms", ["bedrooms", "bedroom", "bhk"]);
         addSpec("Bathrooms", ["bathrooms", "bathroom", "washrooms"]);
         addSpec("Furnishing", ["furnishing", "furnished"]);
-        specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+        specsList.add({"label": "Condition", "value": product.formattedCondition});
 
         // Add other dynamic specs that aren't already included
         specs.forEach((key, value) {

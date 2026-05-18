@@ -121,7 +121,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         addSpec("Model", ["model"]);
         addSpec("Storage", ["storage", "internal_storage", "rom"]);
         addSpec("RAM", ["ram", "memory"]);
-        specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+        specsList.add({"label": "Condition", "value": product.formattedCondition});
 
         // Add other dynamic specs that aren't already included
         specs.forEach((key, value) {

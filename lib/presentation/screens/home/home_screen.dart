@@ -804,13 +804,13 @@ class _HomeTabState extends State<HomeTab> {
               if (cat.iconUrl != null && cat.iconUrl!.isNotEmpty)
                 CachedNetworkImage(
                   imageUrl: cat.iconUrl!.startsWith('http') ? cat.iconUrl! : '$baseUrl${cat.iconUrl}',
-                  height: 30,
-                  width: 30,
+                  height: 38,
+                  width: 38,
                   fit: BoxFit.contain,
-                  errorWidget: (_, __, ___) => Icon(_getCategoryIcon(cat.name), size: 30, color: _getCategoryColor(cat.name)),
+                  errorWidget: (_, __, ___) => Icon(_getCategoryIcon(cat.name), size: 38, color: _getCategoryColor(cat.name)),
                 )
               else
-                Icon(_getCategoryIcon(cat.name), size: 30, color: _getCategoryColor(cat.name)),
+                Icon(_getCategoryIcon(cat.name), size: 38, color: _getCategoryColor(cat.name)),
               const SizedBox(height: 6),
               Text(
                 cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : cat.name,

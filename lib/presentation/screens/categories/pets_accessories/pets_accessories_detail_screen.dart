@@ -119,7 +119,7 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
           specsList.add({"label": "Type", "value": specs['pet_type'] ?? attrs['pet_type'] ?? specs['type'] ?? attrs['type'] ?? "Pet"});
           specsList.add({"label": "Breed", "value": specs['breed'] ?? attrs['breed'] ?? "N/A"});
           specsList.add({"label": "Age", "value": specs['age'] ?? attrs['age'] ?? "N/A"});
-          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+          specsList.add({"label": "Condition", "value": product.formattedCondition});
         }
 
         return Scaffold(

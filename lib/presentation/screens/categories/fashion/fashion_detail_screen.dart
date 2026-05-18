@@ -118,7 +118,7 @@ class _FashionDetailScreenState extends State<FashionDetailScreen> {
         if (specsList.isEmpty) {
           specsList.add({"label": "Size", "value": specs['size'] ?? attrs['size'] ?? "Universal"});
           specsList.add({"label": "Material", "value": specs['material'] ?? attrs['material'] ?? "Cotton"});
-          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+          specsList.add({"label": "Condition", "value": product.formattedCondition});
         }
 
         return Scaffold(

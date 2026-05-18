@@ -118,7 +118,7 @@ class _ElectronicsDetailScreenState extends State<ElectronicsDetailScreen> {
         if (specsList.isEmpty) {
           specsList.add({"label": "Brand", "value": specs['brand'] ?? attrs['brand'] ?? "Generic"});
           specsList.add({"label": "Model", "value": specs['model'] ?? attrs['model'] ?? "N/A"});
-          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+          specsList.add({"label": "Condition", "value": product.formattedCondition});
         }
 
         return Scaffold(

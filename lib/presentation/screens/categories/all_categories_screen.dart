@@ -213,15 +213,15 @@ class AllCategoriesScreen extends StatelessWidget {
                       imageUrl: cat.iconUrl?.startsWith('http') == true 
                           ? cat.iconUrl! 
                           : '$baseUrl${cat.iconUrl}',
-                      height: 32,
-                      width: 32,
+                      height: 38,
+                      width: 38,
                       fit: BoxFit.contain,
-                      errorWidget: (context, url, error) => Icon(_getCategoryIcon(cat.name), size: 32, color: _getCategoryColor(cat.name)),
+                      errorWidget: (context, url, error) => Icon(_getCategoryIcon(cat.name), size: 38, color: _getCategoryColor(cat.name)),
                     )
                   else
                     Icon(
                       _getCategoryIcon(cat.name),
-                      size: 32,
+                      size: 38,
                       color: _getCategoryColor(cat.name),
                     ),
                   const SizedBox(height: 8),

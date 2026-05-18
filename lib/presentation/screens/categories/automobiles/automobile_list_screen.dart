@@ -413,7 +413,7 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
                 ),
                 car.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 4),
-                "Condition: ${car.condition}".text.gray600.medium.size(13).make(),
+                "Condition: ${car.formattedCondition}".text.gray600.medium.size(13).make(),
                 const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

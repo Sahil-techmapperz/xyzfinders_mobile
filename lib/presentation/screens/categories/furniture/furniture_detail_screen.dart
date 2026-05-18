@@ -118,7 +118,7 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
         if (specsList.isEmpty) {
           specsList.add({"label": "Material", "value": specs['material'] ?? attrs['material'] ?? "Wood"});
           specsList.add({"label": "Type", "value": specs['type'] ?? attrs['type'] ?? "Standard"});
-          specsList.add({"label": "Condition", "value": product.condition.capitalizeFirstLetter()});
+          specsList.add({"label": "Condition", "value": product.formattedCondition});
         }
 
         return Scaffold(

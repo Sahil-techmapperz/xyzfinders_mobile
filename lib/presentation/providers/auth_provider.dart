@@ -223,6 +223,7 @@ class AuthProvider with ChangeNotifier {
     try {
       await _authService.uploadProfileImage(file);
       _lastUpdateTimestamp = DateTime.now().millisecondsSinceEpoch;
+      await refreshUser(); // Refresh the user object to load the new ImageKit avatar URL
       _isLoading = false;
       notifyListeners();
       return true;
