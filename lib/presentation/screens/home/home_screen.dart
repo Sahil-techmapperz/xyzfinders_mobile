@@ -532,13 +532,13 @@ class _HomeTabState extends State<HomeTab> {
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(4), // square corners
+                border: Border.all(color: Colors.grey.shade400, width: 1.5), // distinct solid border on all 4 sides
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),
