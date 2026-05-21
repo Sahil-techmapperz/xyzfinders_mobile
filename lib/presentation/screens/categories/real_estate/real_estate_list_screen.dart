@@ -22,10 +22,10 @@ class RealEstateListScreen extends StatefulWidget {
 
 class _RealEstateListScreenState extends State<RealEstateListScreen> {
   bool _showVerifiedOnly = false;
-  String _selectedPropertyType = "Residential";
+  String _selectedPropertyType = "All";
   String _selectedFurnishing = "All";
-  int _selectedBedrooms = 3;
-  int _selectedBathrooms = 2;
+  int _selectedBedrooms = 0;
+  int _selectedBathrooms = 0;
 
   final ProductService _productService = ProductService();
   List<ProductModel> _products = [];
@@ -55,7 +55,7 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
         categoryId: widget.categoryId,
         verifiedOnly: _showVerifiedOnly,
         type: _selectedPropertyType == "All" ? null : _selectedPropertyType,
-        bedroom: _selectedBedrooms.toString(),
+        bedroom: _selectedBedrooms > 0 ? _selectedBedrooms.toString() : null,
         search: _searchController.text.isNotEmpty ? _searchController.text : null,
         // Add more as needed
       );
@@ -78,10 +78,10 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
   void _resetFilters() {
     setState(() {
       _showVerifiedOnly = false;
-      _selectedPropertyType = "Residential";
+      _selectedPropertyType = "All";
       _selectedFurnishing = "All";
-      _selectedBedrooms = 3;
-      _selectedBathrooms = 2;
+      _selectedBedrooms = 0;
+      _selectedBathrooms = 0;
       _searchController.clear();
     });
     _fetchProducts();
@@ -232,6 +232,8 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
                       _sectionTitle("Property Type"),
                       Row(
                         children: [
+                          _buildSelectableTile("All", _selectedPropertyType == "All", (val) => setModalState(() => _selectedPropertyType = val)),
+                          const SizedBox(width: 15),
                           _buildSelectableTile("Residential", _selectedPropertyType == "Residential", (val) => setModalState(() => _selectedPropertyType = val)),
                           const SizedBox(width: 15),
                           _buildSelectableTile("Commercial", _selectedPropertyType == "Commercial", (val) => setModalState(() => _selectedPropertyType = val)),
@@ -346,27 +348,45 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: List.generate(count, (index) {
-          int val = index + 1;
-          bool isSelected = selected == val;
-          String label = isBathroom && val == count ? "$val+" : "$val";
-          return InkWell(
-            onTap: () => onTap(val),
+        children: [
+          InkWell(
+            onTap: () => onTap(0),
             child: Container(
-              width: 40,
+              width: 50,
               height: 40,
               margin: const EdgeInsets.only(right: 10),
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.secondaryColor.withOpacity(0.1) : Colors.white,
+                color: selected == 0 ? AppTheme.secondaryColor.withOpacity(0.1) : Colors.white,
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: isSelected ? AppTheme.secondaryColor : Colors.grey.shade200),
+                border: Border.all(color: selected == 0 ? AppTheme.secondaryColor : Colors.grey.shade200),
               ),
               child: Center(
-                child: label.text.bold.size(12).color(isSelected ? AppTheme.secondaryColor : Colors.black87).make(),
+                child: "Any".text.bold.size(12).color(selected == 0 ? AppTheme.secondaryColor : Colors.black87).make(),
               ),
             ),
-          );
-        }),
+          ),
+          ...List.generate(count, (index) {
+            int val = index + 1;
+            bool isSelected = selected == val;
+            String label = isBathroom && val == count ? "$val+" : "$val";
+            return InkWell(
+              onTap: () => onTap(val),
+              child: Container(
+                width: 40,
+                height: 40,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.secondaryColor.withOpacity(0.1) : Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: isSelected ? AppTheme.secondaryColor : Colors.grey.shade200),
+                ),
+                child: Center(
+                  child: label.text.bold.size(12).color(isSelected ? AppTheme.secondaryColor : Colors.black87).make(),
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
