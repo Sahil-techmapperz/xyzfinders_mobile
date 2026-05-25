@@ -994,7 +994,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
           children: [
             Expanded(child: _buildField("Brand*", "e.g., Sony, Nikon, Dell", _elecBrandController)),
             const SizedBox(width: 16),
-            Expanded(child: _buildField("Model*", "e.g., WH-1000XM5, D5600", _elecModelController)),
+            Expanded(child: _buildField("Model (Optional)", "e.g., WH-1000XM5, D5600", _elecModelController)),
           ],
         ),
         const SizedBox(height: 20),
@@ -1042,48 +1042,91 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
         ),
         const SizedBox(height: 24),
         
-        _buildLabel("Property Type*"),
-        _buildSelectionRow(['Apartment', 'House', 'Villa', 'Plot'], _selectedPropType, (v) => setState(() => _selectedPropType = v)),
-        const SizedBox(height: 20),
-
-        Row(
-          children: [
-            Expanded(child: _buildField("Room Type", "e.g., Master Bedroom", _propRoomTypeController)),
-            const SizedBox(width: 16),
-            Expanded(child: _buildField("Security Deposit", "e.g., 50000", _propDepositController)),
-          ],
+        Card(
+          elevation: 0,
+          color: Colors.grey.shade50,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLabel("Property Type*"),
+                _buildSelectionRow(['Apartment', 'House', 'Villa', 'Plot'], _selectedPropType, (v) => setState(() => _selectedPropType = v)),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(child: _buildField("Room Type", "e.g., Master Bedroom", _propRoomTypeController)),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildField("Security Deposit", "e.g., 50000", _propDepositController)),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: 20),
-
-        Row(
-          children: [
-            Expanded(child: _buildField("Bedrooms*", "e.g., 3", _propBedroomsController)),
-            const SizedBox(width: 8),
-            Expanded(child: _buildField("Bathrooms (Optional)", "e.g., 2", _propBathroomsController)),
-            const SizedBox(width: 8),
-            Expanded(child: _buildField("Balcony (Optional)", "e.g., 1", _propBalconyController)),
-          ],
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          color: Colors.grey.shade50,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: _buildField("Bedrooms*", "e.g., 3", _propBedroomsController)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildField("Bathrooms (Optional)", "e.g., 2", _propBathroomsController)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildField("Balcony (Optional)", "e.g., 1", _propBalconyController)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(child: _buildField("Area (sq ft)*", "e.g., 1200", _propAreaController)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildField("Kitchen (Optional)", "e.g., Modular", _propKitchenController)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildField("Attached Bath", "e.g., Yes", _propAttachedBathController)),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: 20),
-
-        Row(
-          children: [
-            Expanded(child: _buildField("Area (sq ft)*", "e.g., 1200", _propAreaController)),
-            const SizedBox(width: 8),
-            Expanded(child: _buildField("Kitchen (Optional)", "e.g., Modular", _propKitchenController)),
-            const SizedBox(width: 8),
-            Expanded(child: _buildField("Attached Bath", "e.g., Yes", _propAttachedBathController)),
-          ],
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          color: Colors.grey.shade50,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLabel("Furnished Status (Optional)"),
+                _buildSelectionRow(['Fully Furnished', 'Semi Furnished', 'Unfurnished'], _selectedFurnishStatus, (v) => setState(() => _selectedFurnishStatus = v)),
+                const SizedBox(height: 20),
+                _buildLabel("Tenant Preference"),
+                _buildSelectionRow(['Family', 'Bachelor', 'Company', 'Any'], _selectedTenantPref, (v) => setState(() => _selectedTenantPref = v)),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: 20),
-
-        _buildLabel("Furnished Status (Optional)"),
-        _buildSelectionRow(['Fully Furnished', 'Semi Furnished', 'Unfurnished'], _selectedFurnishStatus, (v) => setState(() => _selectedFurnishStatus = v)),
-        const SizedBox(height: 20),
-
-        _buildLabel("Tenant Preference"),
-        _buildSelectionRow(['Family', 'Bachelor', 'Company', 'Any'], _selectedTenantPref, (v) => setState(() => _selectedTenantPref = v)),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
         _buildLabel("Amenities"),
         Wrap(
@@ -1146,7 +1189,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
           children: [
             Expanded(child: _buildField("Brand*", "e.g., Apple, Samsung, OnePlus", _mobBrandController)),
             const SizedBox(width: 16),
-            Expanded(child: _buildField("Model*", "e.g., iPhone 14 Pro, Galaxy S23", _mobModelController)),
+            Expanded(child: _buildField("Model (Optional)", "e.g., iPhone 14 Pro, Galaxy S23", _mobModelController)),
           ],
         ),
         const SizedBox(height: 20),
@@ -1275,7 +1318,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
           children: [
             Expanded(child: _buildField("Brand*", "e.g., Honda, Maruti, Hyundai", _brandController)),
             const SizedBox(width: 16),
-            Expanded(child: _buildField("Model*", "e.g., City, Swift, Creta", _modelController)),
+            Expanded(child: _buildField("Model (Optional)", "e.g., City, Swift, Creta", _modelController)),
           ],
         ),
         const SizedBox(height: 20),
@@ -1468,6 +1511,42 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
               _buildTip("Include interior, dashboard, and engine photos"),
               _buildTip("Show any damages or scratches clearly"),
               _buildTip("First image will be the primary display"),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Video Upload Placeholder
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.videocam_outlined, color: AppTheme.secondaryColor, size: 32),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Video Upload', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    SizedBox(height: 4),
+                    Text('Coming soon! You will be able to upload a short video tour of your item/property.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text('Beta', style: TextStyle(color: AppTheme.secondaryColor, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
             ],
           ),
         ),
@@ -1722,7 +1801,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
           ),
           const SizedBox(height: 24),
           
-          _buildLabel("Price (₹)*"),
+          _buildLabel(widget.category.name.toLowerCase().contains('education') || widget.category.name.toLowerCase().contains('learning') ? "Price (₹) (Optional)" : "Price (₹)*"),
           TextFormField(
             controller: _priceController,
             keyboardType: TextInputType.number,
@@ -1733,7 +1812,10 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
             ),
-            validator: (v) => v!.isEmpty ? 'Required' : null,
+            validator: (v) {
+              if (widget.category.name.toLowerCase().contains('education') || widget.category.name.toLowerCase().contains('learning')) return null;
+              return v!.isEmpty ? 'Required' : null;
+            },
           ),
           const SizedBox(height: 24),
 

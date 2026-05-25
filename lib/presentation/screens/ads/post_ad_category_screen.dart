@@ -214,7 +214,7 @@ class _PostAdCategoryScreenState extends State<PostAdCategoryScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PostAdFormScreen(category: cat.name),
+            builder: (context) => PostAdFormScreen(category: cat.name, categoryId: cat.id),
           ),
         );
       },

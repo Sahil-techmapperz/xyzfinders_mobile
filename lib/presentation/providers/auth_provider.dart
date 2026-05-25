@@ -2,9 +2,11 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/auth_service.dart';
 import '../../core/errors/api_exception.dart';
+import '../../core/constants/app_constants.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -307,6 +309,10 @@ class AuthProvider with ChangeNotifier {
 
   // Check authentication status on app start
   Future<void> checkAuthStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isAgency = prefs.getBool(AppConstants.isAgencyKey) ?? false;
+    if (isAgency) return; // Let AgencyProvider handle it
+
     final isLoggedIn = await _authService.isLoggedIn();
     if (isLoggedIn) {
       await getCurrentUser();

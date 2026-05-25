@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/agency_models.dart';
 import '../../data/services/agency_service.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/config/api_service.dart';
 import '../../core/errors/api_exception.dart';
 
 class AgencyProvider with ChangeNotifier {
@@ -386,6 +387,7 @@ class AgencyProvider with ChangeNotifier {
     // Clear agency session flag
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.isAgencyKey);
+    await ApiService().clearUserData();
     notifyListeners();
   }
 

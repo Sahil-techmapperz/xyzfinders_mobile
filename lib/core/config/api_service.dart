@@ -315,7 +315,10 @@ class ApiService {
   
   Future<void> clearUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await prefs.remove(AppConstants.userIdKey);
+    await prefs.remove(AppConstants.userEmailKey);
+    await prefs.remove(AppConstants.userRoleKey);
+    await prefs.remove(AppConstants.isLoggedInKey);
     await clearAuthToken();
   }
   

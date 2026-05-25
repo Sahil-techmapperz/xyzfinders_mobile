@@ -148,7 +148,7 @@ class _BeautyListScreenState extends State<BeautyListScreen> {
           children: [
             CategorySearchHeader(
               prefixIcon: Icons.search_rounded,
-              hintText: "Search in Beauty...",
+              hintText: "Search in Beauty & Wellness...",
               onBack: () => Navigator.pop(context),
               controller: _searchController,
               onSubmitted: (val) => _fetchProducts(),

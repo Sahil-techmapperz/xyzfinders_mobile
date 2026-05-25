@@ -12,17 +12,14 @@ class ChangePasswordScreen extends StatefulWidget {
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
-  bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
 
   @override
   void dispose() {
-    _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -32,7 +29,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final success = await authProvider.changePassword(
-        currentPassword: _currentPasswordController.text,
+        currentPassword: "",
         newPassword: _newPasswordController.text,
       );
 
@@ -80,21 +77,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 const SizedBox(height: 32),
                 
-                _buildInputLabel('Current Password'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _currentPasswordController,
-                  obscureText: _obscureCurrent,
-                  decoration: _buildInputDecoration(
-                    icon: Icons.lock_outline, 
-                    hint: 'Enter current password',
-                    isObscured: _obscureCurrent,
-                    onToggleVisibility: () => setState(() => _obscureCurrent = !_obscureCurrent),
-                  ),
-                  validator: (value) => value == null || value.isEmpty ? 'Required' : null,
-                ),
-                const SizedBox(height: 24),
-
                 _buildInputLabel('New Password'),
                 const SizedBox(height: 8),
                 TextFormField(

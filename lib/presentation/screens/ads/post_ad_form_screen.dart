@@ -16,7 +16,8 @@ import '../../widgets/common/searchable_location_picker.dart';
 
 class PostAdFormScreen extends StatefulWidget {
   final String category;
-  const PostAdFormScreen({super.key, required this.category});
+  final int? categoryId;
+  const PostAdFormScreen({super.key, required this.category, this.categoryId});
 
   @override
   State<PostAdFormScreen> createState() => _PostAdFormScreenState();
@@ -310,6 +311,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       'phone': _phoneController.text,
       'description': _descriptionController.text,
       'category': widget.category,
+      if (widget.categoryId != null) 'category_id': widget.categoryId,
       ..._getCategorySpecificData(),
       'state': _stateController.text,
       'city': _cityController.text,
@@ -627,12 +629,15 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a title' : null,
           ),
           const SizedBox(height: 20),
-          _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : 'Price (₹)*'),
+          _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : (widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning') ? 'Price (₹) (Optional)' : 'Price (₹)*')),
           _buildTextField(
             _priceController, 
             'e.g. 5000', 
             keyboardType: TextInputType.number,
-            validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a price' : null,
+            validator: (v) {
+              if (widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning')) return null;
+              return v == null || v.trim().isEmpty ? 'Please enter a price' : null;
+            },
           ),
           const SizedBox(height: 20),
           _buildLabel('Contact Number*'),
@@ -674,43 +679,91 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Property Type*'),
-          _buildSelectionGroup(['Apartment', 'House', 'Villa', 'Plot'], _propertyType, (val) => setState(() => _propertyType = val)),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Room Type'), _buildTextField(_roomTypeController, 'e.g., Master Bedroom')])),
-              const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Security Deposit'), _buildTextField(_securityDepositController, 'e.g., 50000', keyboardType: TextInputType.number)])),
-            ],
+          Card(
+            elevation: 0,
+            color: Colors.grey.shade50,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel('Property Type*'),
+                  _buildSelectionGroup(['Apartment', 'House', 'Villa', 'Plot'], _propertyType, (val) => setState(() => _propertyType = val)),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Room Type'), _buildTextField(_roomTypeController, 'e.g., Master Bedroom')])),
+                      const SizedBox(width: 16),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Security Deposit'), _buildTextField(_securityDepositController, 'e.g., 50000', keyboardType: TextInputType.number)])),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bedrooms*'), _buildTextField(_bedroomsController, 'e.g., 3', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bathrooms (Opt)'), _buildTextField(_bathroomsController, 'e.g., 2', keyboardType: TextInputType.number)])),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Balcony (Opt)'), _buildTextField(_balconyController, 'e.g., 1', keyboardType: TextInputType.number)])),
-            ],
+          const SizedBox(height: 16),
+          Card(
+            elevation: 0,
+            color: Colors.grey.shade50,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bedrooms*'), _buildTextField(_bedroomsController, 'e.g., 3', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bathrooms (Opt)'), _buildTextField(_bathroomsController, 'e.g., 2', keyboardType: TextInputType.number)])),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Balcony (Opt)'), _buildTextField(_balconyController, 'e.g., 1', keyboardType: TextInputType.number)])),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Area (sq ft)*'), _buildTextField(_areaController, 'e.g., 1200', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Kitchen (Opt)'), _buildTextField(_kitchenController, 'e.g., Modular')])),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Attached Bath'), _buildTextField(_attachedBathController, 'e.g., Yes')])),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Area (sq ft)*'), _buildTextField(_areaController, 'e.g., 1200', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Kitchen (Opt)'), _buildTextField(_kitchenController, 'e.g., Modular')])),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Attached Bath'), _buildTextField(_attachedBathController, 'e.g., Yes')])),
-            ],
+          const SizedBox(height: 16),
+          Card(
+            elevation: 0,
+            color: Colors.grey.shade50,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel('Furnished Status (Optional)'),
+                  _buildSelectionGroup(['Fully Furnished', 'Semi Furnished', 'Unfurnished'], _furnishedStatus, (val) => setState(() => _furnishedStatus = val)),
+                  const SizedBox(height: 24),
+                  _buildLabel('Tenant Preference'),
+                  _buildSelectionGroup(['Family', 'Bachelor', 'Company', 'Any'], _tenantPreference, (val) => setState(() => _tenantPreference = val)),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 24),
-          _buildLabel('Furnished Status (Optional)'),
-          _buildSelectionGroup(['Fully Furnished', 'Semi Furnished', 'Unfurnished'], _furnishedStatus, (val) => setState(() => _furnishedStatus = val)),
-          const SizedBox(height: 24),
-          _buildLabel('Tenant Preference'),
-          _buildSelectionGroup(['Family', 'Bachelor', 'Company', 'Any'], _tenantPreference, (val) => setState(() => _tenantPreference = val)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _buildLabel('Amenities'),
           Wrap(
             spacing: 10,
@@ -758,7 +811,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Sony, Nikon, Dell', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., WH-1000XM5, D5600', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model (Optional)'), _buildTextField(_modelController, 'e.g., WH-1000XM5, D5600')])),
             ],
           ),
           const SizedBox(height: 24),
@@ -793,7 +846,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Honda, Maruti, Hyundai', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., City, Swift, Creta', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model (Optional)'), _buildTextField(_modelController, 'e.g., City, Swift, Creta')])),
             ],
           ),
           const SizedBox(height: 20),
@@ -866,7 +919,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Apple, Samsung, OnePlus', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., iPhone 14 Pro, Galaxy S23', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model (Optional)'), _buildTextField(_modelController, 'e.g., iPhone 14 Pro, Galaxy S23')])),
             ],
           ),
           const SizedBox(height: 20),
@@ -968,8 +1021,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             _buildLabel('Brand*'),
             _buildTextField(_brandController, 'e.g., Royal Canin, Pedigree, Whiskas', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
             const SizedBox(height: 20),
-            _buildLabel('Model / Type*'),
-            _buildTextField(_modelController, 'e.g., Puppy Food, Adult Toy', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+            _buildLabel('Model / Type (Optional)'),
+            _buildTextField(_modelController, 'e.g., Puppy Food, Adult Toy'),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -1029,7 +1082,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Event Date*'),
+                    _buildLabel('Event Date (Optional)'),
                     InkWell(
                       onTap: () async {
                         final date = await showDatePicker(
@@ -1043,7 +1096,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                         }
                       },
                       child: IgnorePointer(
-                        child: _buildTextField(_eventDateController, 'dd-mm-yyyy', suffixIcon: Icons.calendar_today_outlined, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+                        child: _buildTextField(_eventDateController, 'dd-mm-yyyy', suffixIcon: Icons.calendar_today_outlined),
                       ),
                     ),
                   ],
@@ -1054,7 +1107,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Event Time*'),
+                    _buildLabel('Event Time (Optional)'),
                     InkWell(
                       onTap: () async {
                         final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
@@ -1063,7 +1116,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                         }
                       },
                       child: IgnorePointer(
-                        child: _buildTextField(_eventTimeController, '--:--', suffixIcon: Icons.access_time_outlined, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+                        child: _buildTextField(_eventTimeController, '--:--', suffixIcon: Icons.access_time_outlined),
                       ),
                     ),
                   ],
@@ -1107,8 +1160,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Subject / Course Name*'),
-          _buildTextField(_subjectController, 'e.g., Mathematics, ReactJS, IELTS', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+          _buildLabel('Subject / Course Name (Optional)'),
+          _buildTextField(_subjectController, 'e.g., Mathematics, ReactJS, IELTS'),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -1211,8 +1264,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         _buildLabel('Brand / Type*'),
         _buildTextField(_brandController, 'e.g. Item Brand', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
         const SizedBox(height: 20),
-        _buildLabel('Model / Style*'),
-        _buildTextField(_modelController, 'e.g. Model Name', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+        _buildLabel('Model / Style (Optional)'),
+        _buildTextField(_modelController, 'e.g. Model Name'),
         const SizedBox(height: 20),
         _buildLabel('Condition*'),
         _buildSelectionGroup(['New', 'Like New', 'Used', 'Fair'], _condition, (val) => setState(() => _condition = val)),
@@ -1229,6 +1282,43 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           style: TextStyle(color: Colors.grey, fontSize: 14),
         ),
         const SizedBox(height: 20),
+        
+        // Video Upload Placeholder
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.videocam_outlined, color: AppTheme.secondaryColor, size: 32),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Video Upload', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    SizedBox(height: 4),
+                    Text('Coming soon! You will be able to upload a short video tour of your item/property.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text('Beta', style: TextStyle(color: AppTheme.secondaryColor, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

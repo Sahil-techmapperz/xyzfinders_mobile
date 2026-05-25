@@ -118,7 +118,7 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
         });
 
         if (specsList.isEmpty) {
-          specsList.add({"label": "Category", "value": product.categoryName ?? "Beauty"});
+          specsList.add({"label": "Category", "value": product.categoryName ?? "Beauty & Wellness"});
           specsList.add({"label": "Condition", "value": product.formattedCondition});
         }
 

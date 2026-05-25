@@ -24,6 +24,7 @@ import 'buyer_reported_products_screen.dart';
 import '../seller/my_job_posts_screen.dart';
 import '../../providers/language_provider.dart';
 import '../../../core/localization/app_localization.dart';
+import '../home/home_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -357,10 +358,18 @@ class ProfileScreen extends StatelessWidget {
         child: InkWell(
           onTap: () async {
             final success = await authProvider.toggleMode();
-            if (!success && context.mounted) {
-               ScaffoldMessenger.of(context).showSnackBar(
-                 SnackBar(content: Text(authProvider.error ?? 'Failed to switch mode')),
-               );
+            if (context.mounted) {
+              if (success) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false,
+                );
+              } else {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   SnackBar(content: Text(authProvider.error ?? 'Failed to switch mode')),
+                 );
+              }
             }
           },
           borderRadius: BorderRadius.circular(16),

@@ -746,7 +746,7 @@ class _HomeTabState extends State<HomeTab> {
                   if (!auth.isSellerMode) {
                     auth.toggleMode();
                   }
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PostAdFormScreen(category: 'Jobs')));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => PostAdFormScreen(category: 'Jobs', categoryId: cat.id)));
                 } else {
                   AuthModal.show(context);
                 }
@@ -791,33 +791,39 @@ class _HomeTabState extends State<HomeTab> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: Colors.grey.shade100),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5, offset: const Offset(0, 2)),
+              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (cat.iconUrl != null && cat.iconUrl!.isNotEmpty)
-                CachedNetworkImage(
-                  imageUrl: cat.iconUrl!.startsWith('http') ? cat.iconUrl! : '$baseUrl${cat.iconUrl}',
-                  height: 38,
-                  width: 38,
-                  fit: BoxFit.contain,
-                  errorWidget: (_, __, ___) => Icon(_getCategoryIcon(cat.name), size: 38, color: _getCategoryColor(cat.name)),
-                )
-              else
-                Icon(_getCategoryIcon(cat.name), size: 38, color: _getCategoryColor(cat.name)),
-              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _getCategoryColor(cat.name).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: (cat.iconUrl != null && cat.iconUrl!.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: cat.iconUrl!.startsWith('http') ? cat.iconUrl! : '$baseUrl${cat.iconUrl}',
+                        height: 32,
+                        width: 32,
+                        fit: BoxFit.contain,
+                        errorWidget: (_, __, ___) => Icon(_getCategoryIcon(cat.name), size: 32, color: _getCategoryColor(cat.name)),
+                      )
+                    : Icon(_getCategoryIcon(cat.name), size: 32, color: _getCategoryColor(cat.name)),
+              ),
+              const SizedBox(height: 10),
               Text(
                 cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : cat.name,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black87),
               ),
             ],
           ),
@@ -1018,7 +1024,7 @@ class _HomeTabState extends State<HomeTab> {
           ),
           const SizedBox(width: 15),
           _buildPromoCard(
-            title: "Beauty & Personal Care",
+            title: "Beauty & Wellness",
             subtitle: "Best products for your glow.",
             tag: "BEAUTY",
             imageUrl:
