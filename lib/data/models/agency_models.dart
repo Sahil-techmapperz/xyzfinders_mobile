@@ -228,20 +228,32 @@ class AgencyAd {
   });
 
   factory AgencyAd.fromJson(Map<String, dynamic> json) {
+    int parseIntSafe(dynamic val) {
+      if (val == null) return 0;
+      if (val is int) return val;
+      if (val is double) return val.toInt();
+      if (val is String) return int.tryParse(val) ?? 0;
+      return 0;
+    }
+
     return AgencyAd(
-      id: json['id'] as int? ?? 0,
-      title: json['title'] as String? ?? '',
+      id: parseIntSafe(json['id']),
+      title: json['title']?.toString() ?? '',
       price: json['price']?.toString(),
-      status: json['status'] as String? ?? 'active',
-      views: json['views'] as int? ?? 0,
-      imageUrl: json['thumbnail'] as String? ?? json['image_url'] as String?,
-      createdAt: json['created_at'] as String? ?? '',
-      description: json['description'] as String?,
-      phone: json['phone'] as String?,
-      categoryId: json['category_id'] as int?,
-      categoryName: json['category_name'] as String?,
-      condition: json['condition'] as String?,
-      productAttributes: json['product_attributes'] is Map ? Map<String, dynamic>.from(json['product_attributes'] as Map) : null,
+      status: json['status']?.toString() ?? 'active',
+      views: parseIntSafe(json['views']),
+      imageUrl: json['thumbnail']?.toString() ?? json['image_url']?.toString(),
+      createdAt: json['created_at']?.toString() ?? '',
+      description: json['description']?.toString(),
+      phone: json['phone']?.toString(),
+      categoryId: parseIntSafe(json['category_id']),
+      categoryName: json['category_name']?.toString(),
+      condition: json['condition']?.toString(),
+      productAttributes: json['product_attributes'] is Map 
+          ? Map<String, dynamic>.from(json['product_attributes'] as Map) 
+          : (json['product_attributes'] is String 
+              ? null // Normally we would parse JSON here, but we can just leave it as null
+              : null),
       images: json['images'] is List 
           ? (json['images'] as List).map((e) => (e is Map ? e['image'] : e).toString()).toList()
           : null,

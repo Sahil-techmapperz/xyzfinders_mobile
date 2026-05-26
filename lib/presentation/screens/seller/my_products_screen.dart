@@ -192,6 +192,20 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
     }
   }
 
+  Future<void> _renewProduct(int productId) async {
+    try {
+      await _productService.renewProduct(productId);
+      if (mounted) {
+        ToastUtils.showSuccess('Ad renewed successfully');
+        _fetchMyProducts();
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastUtils.showError('Failed to renew ad: $e');
+      }
+    }
+  }
+
   String _formatDate(String dateStr) {
     try {
       final dt = DateTime.parse(dateStr).toLocal();
@@ -531,7 +545,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      product.categoryName ?? 'Other',
+                      product.categoryName == 'Beauty' ? 'Beauty & Wellness' : (product.categoryName == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : (product.categoryName ?? 'Other')),
                       style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     ),
                     // Location
@@ -654,6 +668,8 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                     _activateProduct(product.id);
                   } else if (value == 'deactivate') {
                     _deactivateProduct(product.id);
+                  } else if (value == 'renew') {
+                    _renewProduct(product.id);
                   } else if (value == 'delete') {
                     _deleteProduct(product.id);
                   }
@@ -684,7 +700,12 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                         ],
                       ),
                     ),
-                  if (product.isActive)
+                  if (!product.isActive && !product.isSold)
+                    const PopupMenuItem(
+                      value: 'renew', 
+                      child: Text('Renew Ad', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold))
+                    )
+                  else if (product.isActive)
                     const PopupMenuItem(
                       value: 'deactivate', 
                       child: Text('Deactivate', style: TextStyle(color: Colors.black))

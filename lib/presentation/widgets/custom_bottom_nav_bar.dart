@@ -29,6 +29,7 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
+      height: 55,
       notchMargin: 10,
       shape: const CircularNotchedRectangle(),
       color: AppTheme.secondaryColor,

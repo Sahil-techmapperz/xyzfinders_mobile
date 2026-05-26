@@ -701,7 +701,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLabel("Event Date*"),
+                  _buildLabel("Event Date (Optional)"),
                   TextFormField(
                     controller: _eventDateController,
                     readOnly: true,
@@ -723,7 +723,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLabel("Event Time*"),
+                  _buildLabel("Event Time (Optional)"),
                   TextFormField(
                     controller: _eventTimeController,
                     readOnly: true,
@@ -994,7 +994,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
           children: [
             Expanded(child: _buildField("Brand*", "e.g., Sony, Nikon, Dell", _elecBrandController)),
             const SizedBox(width: 16),
-            Expanded(child: _buildField("Model*", "e.g., WH-1000XM5, D5600", _elecModelController)),
+            Expanded(child: _buildField("Model (Optional)", "e.g., WH-1000XM5, D5600", _elecModelController)),
           ],
         ),
         const SizedBox(height: 20),
@@ -1146,7 +1146,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
           children: [
             Expanded(child: _buildField("Brand*", "e.g., Apple, Samsung, OnePlus", _mobBrandController)),
             const SizedBox(width: 16),
-            Expanded(child: _buildField("Model*", "e.g., iPhone 14 Pro, Galaxy S23", _mobModelController)),
+            Expanded(child: _buildField("Model (Optional)", "e.g., iPhone 14 Pro, Galaxy S23", _mobModelController)),
           ],
         ),
         const SizedBox(height: 20),
@@ -1275,7 +1275,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
           children: [
             Expanded(child: _buildField("Brand*", "e.g., Honda, Maruti, Hyundai", _brandController)),
             const SizedBox(width: 16),
-            Expanded(child: _buildField("Model*", "e.g., City, Swift, Creta", _modelController)),
+            Expanded(child: _buildField("Model (Optional)", "e.g., City, Swift, Creta", _modelController)),
           ],
         ),
         const SizedBox(height: 20),
@@ -1703,6 +1703,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
   }
 
   Widget _buildBasicStep() {
+    final name = widget.category.name.toLowerCase();
     return Form(
       key: _formKeyBasic,
       child: Column(
@@ -1722,7 +1723,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
           ),
           const SizedBox(height: 24),
           
-          _buildLabel("Price (₹)*"),
+          _buildLabel(name.contains('job') ? "Salary (Monthly)*" : (name.contains('education') || name.contains('course') || name.contains('study') || name.contains('teach') || name.contains('learning') ? "Price (₹) (Optional)" : "Price (₹)*")),
           TextFormField(
             controller: _priceController,
             keyboardType: TextInputType.number,
@@ -1733,7 +1734,10 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
             ),
-            validator: (v) => v!.isEmpty ? 'Required' : null,
+            validator: (v) {
+              if (name.contains('education') || name.contains('course') || name.contains('study') || name.contains('teach') || name.contains('learning')) return null;
+              return v!.isEmpty ? 'Required' : null;
+            },
           ),
           const SizedBox(height: 24),
 

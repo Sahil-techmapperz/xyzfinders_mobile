@@ -254,7 +254,7 @@ class _PostAdCategoryScreenState extends State<PostAdCategoryScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
-                cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : cat.name,
+                cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : (cat.name == 'Beauty' ? 'Beauty & Wellness' : cat.name),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
                 textAlign: TextAlign.center,
                 maxLines: 2,

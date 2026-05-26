@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
+import 'job_inquiry_sheet.dart';
 
 class JobSelectionSheet extends StatelessWidget {
   final VoidCallback onGetHired;
@@ -52,7 +53,7 @@ class JobSelectionSheet extends StatelessWidget {
           ),
           const Divider(height: 30),
           _buildOption(
-            title: "Get Hire",
+            title: "Hire Talent",
             subtitle: "Find the right person for the job",
             icon: Icons.work_outline,
             onTap: () {
@@ -68,6 +69,16 @@ class JobSelectionSheet extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               onFindJobs();
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildOption(
+            title: "Job Inquiries",
+            subtitle: "Submit your details for future opportunities",
+            icon: Icons.assignment_ind_outlined,
+            onTap: () {
+              Navigator.pop(context);
+              JobInquirySheet.show(context);
             },
           ),
           const SizedBox(height: 20),

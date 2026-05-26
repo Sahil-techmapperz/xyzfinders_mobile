@@ -240,6 +240,29 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Forgot Password
+  Future<void> forgotPassword({required String email}) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _authService.forgotPassword(email: email);
+      _isLoading = false;
+      notifyListeners();
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      throw e;
+    } catch (e) {
+      _error = 'Failed to send forgot password email';
+      _isLoading = false;
+      notifyListeners();
+      throw Exception(_error);
+    }
+  }
+
   // Change Password
   Future<bool> changePassword({
     required String currentPassword,

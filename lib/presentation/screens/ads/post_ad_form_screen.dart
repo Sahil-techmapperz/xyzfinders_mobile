@@ -627,12 +627,15 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a title' : null,
           ),
           const SizedBox(height: 20),
-          _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : 'Price (₹)*'),
+          _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : (widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning') ? 'Price (₹) (Optional)' : 'Price (₹)*')),
           _buildTextField(
             _priceController, 
             'e.g. 5000', 
             keyboardType: TextInputType.number,
-            validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a price' : null,
+            validator: (v) {
+              if (widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning')) return null;
+              return v == null || v.trim().isEmpty ? 'Please enter a price' : null;
+            },
           ),
           const SizedBox(height: 20),
           _buildLabel('Contact Number*'),
@@ -758,7 +761,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Sony, Nikon, Dell', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., WH-1000XM5, D5600', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model (Optional)'), _buildTextField(_modelController, 'e.g., WH-1000XM5, D5600')])),
             ],
           ),
           const SizedBox(height: 24),
@@ -793,7 +796,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Honda, Maruti, Hyundai', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., City, Swift, Creta', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model (Optional)'), _buildTextField(_modelController, 'e.g., City, Swift, Creta')])),
             ],
           ),
           const SizedBox(height: 20),
@@ -866,7 +869,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Apple, Samsung, OnePlus', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model*'), _buildTextField(_modelController, 'e.g., iPhone 14 Pro, Galaxy S23', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model (Optional)'), _buildTextField(_modelController, 'e.g., iPhone 14 Pro, Galaxy S23')])),
             ],
           ),
           const SizedBox(height: 20),
@@ -968,8 +971,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             _buildLabel('Brand*'),
             _buildTextField(_brandController, 'e.g., Royal Canin, Pedigree, Whiskas', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
             const SizedBox(height: 20),
-            _buildLabel('Model / Type*'),
-            _buildTextField(_modelController, 'e.g., Puppy Food, Adult Toy', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+            _buildLabel('Model / Type (Optional)'),
+            _buildTextField(_modelController, 'e.g., Puppy Food, Adult Toy'),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -1029,7 +1032,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Event Date*'),
+                    _buildLabel('Event Date (Optional)'),
                     InkWell(
                       onTap: () async {
                         final date = await showDatePicker(
@@ -1043,7 +1046,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                         }
                       },
                       child: IgnorePointer(
-                        child: _buildTextField(_eventDateController, 'dd-mm-yyyy', suffixIcon: Icons.calendar_today_outlined, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+                        child: _buildTextField(_eventDateController, 'dd-mm-yyyy', suffixIcon: Icons.calendar_today_outlined),
                       ),
                     ),
                   ],
@@ -1054,7 +1057,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Event Time*'),
+                    _buildLabel('Event Time (Optional)'),
                     InkWell(
                       onTap: () async {
                         final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
@@ -1063,7 +1066,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
                         }
                       },
                       child: IgnorePointer(
-                        child: _buildTextField(_eventTimeController, '--:--', suffixIcon: Icons.access_time_outlined, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+                        child: _buildTextField(_eventTimeController, '--:--', suffixIcon: Icons.access_time_outlined),
                       ),
                     ),
                   ],
@@ -1107,8 +1110,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Subject / Course Name*'),
-          _buildTextField(_subjectController, 'e.g., Mathematics, ReactJS, IELTS', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+          _buildLabel('Subject / Course Name (Optional)'),
+          _buildTextField(_subjectController, 'e.g., Mathematics, ReactJS, IELTS'),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -1211,8 +1214,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         _buildLabel('Brand / Type*'),
         _buildTextField(_brandController, 'e.g. Item Brand', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
         const SizedBox(height: 20),
-        _buildLabel('Model / Style*'),
-        _buildTextField(_modelController, 'e.g. Model Name', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+        _buildLabel('Model / Style (Optional)'),
+        _buildTextField(_modelController, 'e.g. Model Name'),
         const SizedBox(height: 20),
         _buildLabel('Condition*'),
         _buildSelectionGroup(['New', 'Like New', 'Used', 'Fair'], _condition, (val) => setState(() => _condition = val)),

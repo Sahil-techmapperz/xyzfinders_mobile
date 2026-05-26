@@ -228,7 +228,7 @@ class AllCategoriesScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: Text(
-                      cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : cat.name,
+                      cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : (cat.name == 'Beauty' ? 'Beauty & Wellness' : cat.name),
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

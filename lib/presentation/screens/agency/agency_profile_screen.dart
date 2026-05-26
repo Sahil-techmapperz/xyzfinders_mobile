@@ -29,11 +29,9 @@ class _AgencyProfileScreenState extends State<AgencyProfileScreen> {
   final _phoneController = TextEditingController();
   final _locationController = TextEditingController();
 
-  final _currentPwdController = TextEditingController();
   final _newPwdController = TextEditingController();
   final _confirmPwdController = TextEditingController();
 
-  bool _showCurrentPwd = false;
   bool _showNewPwd = false;
   bool _showConfirmPwd = false;
 
@@ -52,7 +50,6 @@ class _AgencyProfileScreenState extends State<AgencyProfileScreen> {
     _agencyNameController.dispose();
     _phoneController.dispose();
     _locationController.dispose();
-    _currentPwdController.dispose();
     _newPwdController.dispose();
     _confirmPwdController.dispose();
     super.dispose();
@@ -134,11 +131,10 @@ class _AgencyProfileScreenState extends State<AgencyProfileScreen> {
     setState(() => _isChangingPwd = true);
     try {
       await AgencyService().changePassword(
-        currentPassword: _currentPwdController.text,
+        currentPassword: '',
         newPassword: _newPwdController.text,
       );
       setState(() => _isChangingPwd = false);
-      _currentPwdController.clear();
       _newPwdController.clear();
       _confirmPwdController.clear();
       _showSuccess('Password changed successfully');
@@ -248,13 +244,6 @@ class _AgencyProfileScreenState extends State<AgencyProfileScreen> {
                       key: _pwdFormKey,
                       child: Column(
                         children: [
-                          _buildPasswordField(
-                            'Current Password',
-                            _currentPwdController,
-                            _showCurrentPwd,
-                            () => setState(() => _showCurrentPwd = !_showCurrentPwd),
-                          ),
-                          const SizedBox(height: 14),
                           _buildPasswordField(
                             'New Password (min. 8 chars)',
                             _newPwdController,

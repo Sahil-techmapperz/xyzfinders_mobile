@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/toast_utils.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -26,13 +28,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     
     setState(() => _isLoading = true);
     
-    // Simulate API call delay since we don't have the auth provider hooked up for reset yet
-    await Future.delayed(const Duration(seconds: 2));
-    
-    if (mounted) {
-      setState(() => _isLoading = false);
-      ToastUtils.showSuccess('We will send you a reset password link!');
-      Navigator.pop(context);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.forgotPassword(email: _emailController.text.trim());
+      
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ToastUtils.showSuccess('We will send you a reset password link if the email exists!');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ToastUtils.showError(e.toString().replaceAll('Exception: ', ''));
+      }
     }
   }
 

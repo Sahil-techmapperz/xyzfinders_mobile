@@ -10,6 +10,7 @@ import '../../main.dart';
 import '../../presentation/screens/home/home_screen.dart';
 
 import '../../presentation/providers/auth_provider.dart';
+import '../../presentation/providers/agency_provider.dart';
 import 'package:provider/provider.dart';
 
 class ApiService {
@@ -55,21 +56,26 @@ class ApiService {
             if (currentToken != null) {
               await clearAuthToken(); // Immediately clear to prevent loops
               
-              // Access AuthProvider through navigatorKey's context to reset state reactively
+              // Access AuthProvider and AgencyProvider through navigatorKey's context
               if (MyApp.navigatorKey.currentContext != null) {
                 try {
                   // Use listen: false because we are in an interceptor
                   final authProvider = Provider.of<AuthProvider>(MyApp.navigatorKey.currentContext!, listen: false);
+                  final agencyProvider = Provider.of<AgencyProvider>(MyApp.navigatorKey.currentContext!, listen: false);
                   
                   if (authProvider.isAuthenticated) {
                     await authProvider.logout();
-                    
-                    // Redirect to home
-                    MyApp.navigatorKey.currentState!.pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      (route) => false,
-                    );
                   }
+                  
+                  if (agencyProvider.isAuthenticated) {
+                    agencyProvider.logout();
+                  }
+                  
+                  // Unconditionally redirect to home on 401 if context is available
+                  MyApp.navigatorKey.currentState!.pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                    (route) => false,
+                  );
                 } catch (e) {
                   debugPrint('[AUTH ERROR] Failed to logout via provider: $e');
                   // Fallback to direct clearing if provider fails

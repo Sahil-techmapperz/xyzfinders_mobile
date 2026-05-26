@@ -243,6 +243,11 @@ class ProductService {
     return response.data['success'] == true;
   }
 
+  Future<bool> renewProduct(int id) async {
+    final response = await apiService.post('/products/renew', data: {'id': id});
+    return response.data['success'] == true;
+  }
+
   Future<ProductModel> updateProduct({
     required int id,
     required String title,

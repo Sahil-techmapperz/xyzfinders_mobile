@@ -813,7 +813,7 @@ class _HomeTabState extends State<HomeTab> {
                 Icon(_getCategoryIcon(cat.name), size: 38, color: _getCategoryColor(cat.name)),
               const SizedBox(height: 6),
               Text(
-                cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : cat.name,
+                cat.name == 'Beauty' ? 'Beauty & Wellness' : (cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : cat.name),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -885,8 +885,8 @@ class _HomeTabState extends State<HomeTab> {
                         child: const Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.store_rounded, size: 32, color: AppTheme.secondaryColor),
-                            SizedBox(height: 8),
+                            Image(image: AssetImage('assets/images/listed_stores.png'), width: 38, height: 38, fit: BoxFit.contain),
+                            SizedBox(height: 6),
                             Text('Listed Stores', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           ],
                         ),
@@ -923,8 +923,8 @@ class _HomeTabState extends State<HomeTab> {
                         child: const Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.add_business_rounded, size: 32, color: AppTheme.secondaryColor),
-                            SizedBox(height: 8),
+                            Image(image: AssetImage('assets/images/store_setup.png'), width: 38, height: 38, fit: BoxFit.contain),
+                            SizedBox(height: 6),
                             Text('Store Setup', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           ],
                         ),
@@ -1018,7 +1018,7 @@ class _HomeTabState extends State<HomeTab> {
           ),
           const SizedBox(width: 15),
           _buildPromoCard(
-            title: "Beauty & Personal Care",
+            title: "Beauty & Wellness",
             subtitle: "Best products for your glow.",
             tag: "BEAUTY",
             imageUrl:

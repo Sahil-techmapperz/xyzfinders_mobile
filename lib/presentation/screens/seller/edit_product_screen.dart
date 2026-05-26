@@ -670,13 +670,17 @@ class _EditProductScreenState extends State<EditProductScreen> {
   }
 
   Widget _buildBasicStep() {
+    final cat = (_currentProduct.categoryName ?? '').toLowerCase();
+    final isJob = cat.contains('job');
+    final isEducation = cat.contains('education') || cat.contains('learning');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildLabel('Listing Title*'),
         _buildTextField(_titleController, 'e.g. Title of your ad'),
         const SizedBox(height: 20),
-        _buildLabel('Price (₹)*'),
+        _buildLabel(isJob ? 'Salary (Monthly)*' : (isEducation ? 'Price (₹) (Optional)' : 'Price (₹)*')),
         _buildTextField(_priceController, 'e.g. 5000', keyboardType: TextInputType.number),
         const SizedBox(height: 20),
         _buildLabel('Contact Number*'),
@@ -722,9 +726,9 @@ class _EditProductScreenState extends State<EditProductScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Subject'), _buildTextField(_subjectController, 'e.g., Mathematics')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Subject / Course Name (Optional)'), _buildTextField(_subjectController, 'e.g., Mathematics')])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Level'), _buildTextField(_levelController, 'e.g., Primary, High School')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Level (Optional)'), _buildTextField(_levelController, 'e.g., Primary, High School')])),
             ],
           ),
           const SizedBox(height: 20),
