@@ -64,6 +64,7 @@ import '../../widgets/common/job_selection_sheet.dart';
 import '../categories/jobs/find_jobs_screen.dart';
 import '../ads/post_ad_form_screen.dart';
 import '../../widgets/auth/auth_modal.dart';
+import '../../widgets/ads/banner_ad_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -412,6 +413,9 @@ class _HomeTabState extends State<HomeTab> {
   
           // 5. Promo Banners
           SliverToBoxAdapter(child: _buildPromoBanners()),
+  
+          // 6. Banner Ad
+          const SliverToBoxAdapter(child: BannerAdWidget()),
   
           // 5. Popular Sections (Horizontal Lists)
           SliverList(

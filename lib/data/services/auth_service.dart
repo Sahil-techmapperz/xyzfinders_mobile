@@ -106,11 +106,12 @@ class AuthService {
   }
 
   // Google Login
-  Future<Map<String, dynamic>> googleLogin(String accessToken) async {
+  Future<Map<String, dynamic>> googleLogin({String? accessToken, String? idToken}) async {
     final response = await _apiService.post(
       '/auth/google/callback', // Adjust endpoint according to your backend config
       data: {
-        'access_token': accessToken,
+        if (accessToken != null) 'access_token': accessToken,
+        if (idToken != null) 'id_token': idToken,
       },
     );
 
@@ -124,6 +125,41 @@ class AuthService {
     final token = data['token'] as String;
 
     // Save token and user data
+    await _apiService.setAuthToken(token);
+    await _apiService.saveUserData(
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    );
+
+    return {
+      'user': user,
+      'token': token,
+    };
+  }
+
+  // Apple Login
+  Future<Map<String, dynamic>> appleLogin({
+    required String idToken,
+    String? userJson,
+  }) async {
+    final response = await _apiService.post(
+      '/auth/apple/mobile',
+      data: {
+        'id_token': idToken,
+        if (userJson != null) 'user': userJson,
+      },
+    );
+
+    final responseData = response.data;
+    if (responseData is! Map || responseData['data'] is! Map) {
+      throw ApiException(message: 'Unexpected response format from server');
+    }
+
+    final data = responseData['data'];
+    final user = UserModel.fromJson(data['user']);
+    final token = data['token'] as String;
+
     await _apiService.setAuthToken(token);
     await _apiService.saveUserData(
       userId: user.id,

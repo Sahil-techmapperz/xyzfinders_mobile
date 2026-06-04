@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/auth_service.dart';
 import '../../core/errors/api_exception.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -106,12 +107,15 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: Platform.isIOS ? '630795865988-36cm6b1plso307th6l235744vqlvd0eb.apps.googleusercontent.com' : null,
         scopes: ['email', 'profile'],
-        serverClientId: '817332061056-31hf6099bslbt4r0j8rnrm3l5m43fejn.apps.googleusercontent.com',
+        serverClientId: '630795865988-uff05ra880vp3s66cpmsj31satg1i15t.apps.googleusercontent.com',
       );
 
       print("DEBUG: GoogleSignIn starting...");
-      await googleSignIn.signOut(); // Force clear previous session so popup always shows
+      if (await googleSignIn.isSignedIn()) {
+        await googleSignIn.signOut(); // Force clear previous session so popup always shows
+      }
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       print("DEBUG: GoogleSignIn returned: ${googleUser?.email}");
       
@@ -125,12 +129,16 @@ class AuthProvider with ChangeNotifier {
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final String? accessToken = googleAuth.accessToken;
+      final String? idToken = googleAuth.idToken;
 
-      if (accessToken == null) {
-        throw Exception('Failed to retrieve access token from Google');
+      if (accessToken == null && idToken == null) {
+        throw Exception('Failed to retrieve tokens from Google');
       }
 
-      final result = await _authService.googleLogin(accessToken);
+      final result = await _authService.googleLogin(
+        accessToken: accessToken,
+        idToken: idToken,
+      );
       print("DEBUG: Backend returned successfully: $result");
       
       _user = result['user'] as UserModel;
@@ -146,6 +154,59 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _error = 'Failed to sign in with Google: $e';
       print("DEBUG: Google Login Exception: $_error");
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Apple Login
+  Future<bool> signInWithApple() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw Exception('Failed to retrieve identity token from Apple');
+      }
+
+      String? userJson;
+      if (credential.givenName != null || credential.familyName != null) {
+        userJson = jsonEncode({
+          'name': {
+            'firstName': credential.givenName ?? '',
+            'lastName': credential.familyName ?? '',
+          }
+        });
+      }
+
+      final result = await _authService.appleLogin(
+        idToken: idToken,
+        userJson: userJson,
+      );
+
+      _user = result['user'] as UserModel;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+      
+    } on ApiException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Failed to sign in with Apple: $e';
+      print("DEBUG: Apple Login Exception: $_error");
       _isLoading = false;
       notifyListeners();
       return false;

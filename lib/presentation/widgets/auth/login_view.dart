@@ -5,6 +5,8 @@ import '../../providers/security_provider.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../screens/auth/forgot_password_screen.dart';
+import 'dart:io' show Platform;
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class LoginView extends StatefulWidget {
   final VoidCallback? onToggleView;
@@ -125,6 +127,20 @@ class _LoginViewState extends State<LoginView> {
     
     if (success && mounted) {
       ToastUtils.showSuccess('Successfully signed in with Google');
+      if (widget.onSuccess != null) {
+        widget.onSuccess!();
+      }
+    } else if (mounted && authProvider.error != null) {
+      ToastUtils.showError(authProvider.error!);
+    }
+  }
+
+  Future<void> _appleLogin() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.signInWithApple();
+    
+    if (success && mounted) {
+      ToastUtils.showSuccess('Successfully signed in with Apple');
       if (widget.onSuccess != null) {
         widget.onSuccess!();
       }
@@ -327,6 +343,20 @@ class _LoginViewState extends State<LoginView> {
             ),
           ),
           
+          if (Platform.isIOS) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: SignInWithAppleButton(
+                onPressed: _appleLogin,
+                style: SignInWithAppleButtonStyle.black,
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
+                height: 56,
+              ),
+            ),
+          ],
+
           const SizedBox(height: 16),
 
           // Biometric Login Button (only if enabled)
