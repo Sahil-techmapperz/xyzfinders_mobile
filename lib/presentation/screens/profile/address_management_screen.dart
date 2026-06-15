@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../providers/address_provider.dart';
 import '../../../data/models/address_model.dart';
 import '../../widgets/common/searchable_location_picker.dart';
+import '../../widgets/common/google_location_picker.dart';
 
 class AddressManagementScreen extends StatefulWidget {
   const AddressManagementScreen({super.key});
@@ -287,6 +288,8 @@ class _AddressFormState extends State<AddressForm> {
   List<CityModel> _cities = [];
   StateModel? _selectedState;
   CityModel? _selectedCity;
+  String _stateName = '';
+  String _cityName = '';
   bool _isLoadingLocations = false;
   bool _isDefault = false;
 
@@ -297,6 +300,8 @@ class _AddressFormState extends State<AddressForm> {
     _areaController = TextEditingController(text: widget.address?.areaName ?? '');
     _pincodeController = TextEditingController(text: widget.address?.pincode ?? '');
     _fullAddressController = TextEditingController(text: widget.address?.fullAddress ?? '');
+    _stateName = widget.address?.stateName ?? '';
+    _cityName = widget.address?.cityName ?? '';
     _isDefault = widget.address?.isDefault ?? false;
     _loadStates();
   }
@@ -374,28 +379,44 @@ class _AddressFormState extends State<AddressForm> {
             ),
             const SizedBox(height: 20),
             
+            GoogleLocationPicker(
+              label: 'Search Location *',
+              hint: 'Search city, area, pincode...',
+              icon: Icons.search,
+              initialLocation: widget.address != null ? LocationResult(
+                state: widget.address!.stateName ?? '',
+                city: widget.address!.cityName ?? '',
+                pincode: widget.address!.pincode ?? '',
+                area: widget.address!.areaName ?? '',
+                fullAddress: '${widget.address!.areaName ?? ''}, ${widget.address!.cityName ?? ''}, ${widget.address!.stateName ?? ''}',
+              ) : null,
+              onChanged: (result) {
+                if (result != null) {
+                  setState(() {
+                    _stateName = result.state;
+                    _cityName = result.city;
+                    _areaController.text = result.area;
+                    _pincodeController.text = result.pincode;
+                  });
+                }
+              },
+              validator: (v) => _cityName.isEmpty ? 'Please search and select a location' : null,
+            ),
+            const SizedBox(height: 20),
+
             Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SearchableLocationPicker<StateModel>(
-                        label: 'State *',
-                        hint: 'Select State',
-                        icon: Icons.map_outlined,
-                        items: _states,
-                        selectedItem: _selectedState,
-                        itemLabel: (s) => s.name,
-                        isLoading: _isLoadingLocations && _states.isEmpty,
-                        onChanged: (s) {
-                          setState(() {
-                            _selectedState = s;
-                            _selectedCity = null;
-                            if (s != null) _loadCities(s.id);
-                          });
-                        },
-                        validator: (v) => v == null ? 'Required' : null,
+                      _buildLabel('State *'),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        initialValue: _stateName,
+                        key: ValueKey('state_$_stateName'),
+                        readOnly: true,
+                        decoration: _buildInputDecoration(Icons.map_outlined, 'State').copyWith(fillColor: Colors.grey.shade50, filled: true),
                       ),
                     ],
                   ),
@@ -405,16 +426,13 @@ class _AddressFormState extends State<AddressForm> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SearchableLocationPicker<CityModel>(
-                        label: 'City *',
-                        hint: 'Select City',
-                        icon: Icons.location_city_outlined,
-                        items: _cities,
-                        selectedItem: _selectedCity,
-                        itemLabel: (c) => c.name,
-                        isLoading: _isLoadingLocations && _selectedState != null && _cities.isEmpty,
-                        onChanged: (c) => setState(() => _selectedCity = c),
-                        validator: (v) => v == null ? 'Required' : null,
+                      _buildLabel('City *'),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        initialValue: _cityName,
+                        key: ValueKey('city_$_cityName'),
+                        readOnly: true,
+                        decoration: _buildInputDecoration(Icons.location_city_outlined, 'City').copyWith(fillColor: Colors.grey.shade50, filled: true),
                       ),
                     ],
                   ),
@@ -517,11 +535,15 @@ class _AddressFormState extends State<AddressForm> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_cityName.isEmpty || _stateName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a valid location from search'), backgroundColor: Colors.red));
+      return;
+    }
 
     final data = {
       'name': _nameController.text,
-      'state_id': _selectedState?.id,
-      'city_id': _selectedCity?.id,
+      'state_name': _stateName,
+      'city_name': _cityName,
       'area_name': _areaController.text,
       'pincode': _pincodeController.text,
       'full_address': _fullAddressController.text,

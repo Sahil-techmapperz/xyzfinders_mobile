@@ -12,6 +12,7 @@ import '../../providers/auth_provider.dart';
 import '../../../data/models/address_model.dart';
 import '../home/home_screen.dart';
 import '../../widgets/common/searchable_location_picker.dart';
+import '../../widgets/common/google_location_picker.dart';
 
 
 class PostAdFormScreen extends StatefulWidget {
@@ -295,7 +296,12 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
   bool _isSubmitting = false;
 
   void _submitForm() async {
-    if (_images.isEmpty) {
+    bool isExemptCategory = widget.category.toLowerCase().contains('job') || 
+                            widget.category.toLowerCase().contains('education') || 
+                            widget.category.toLowerCase().contains('learning') || 
+                            widget.category.toLowerCase().contains('service');
+
+    if (_images.isEmpty && !isExemptCategory) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please upload at least one image'), backgroundColor: Colors.red),
       );
@@ -520,7 +526,11 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             } else if (_currentStep == 1) {
               if (!_formKeyDetails.currentState!.validate()) return;
             } else if (_currentStep == 2) {
-              if (_images.isEmpty) {
+              bool isExemptCategory = widget.category.toLowerCase().contains('job') || 
+                                      widget.category.toLowerCase().contains('education') || 
+                                      widget.category.toLowerCase().contains('learning') || 
+                                      widget.category.toLowerCase().contains('service');
+              if (_images.isEmpty && !isExemptCategory) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Please upload at least one image'), backgroundColor: Colors.red),
                 );
@@ -985,8 +995,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             _buildLabel('Condition*'),
             _buildSelectionGroup(['New', 'Used'], _condition, (val) => setState(() => _condition = val)),
           ] else ...[
-            _buildLabel('Breed / Type*'),
-            _buildTextField(_breedController, 'e.g., Labrador, Siamese, Goldfish', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+            _buildLabel('Breed / Type (Optional)'),
+            _buildTextField(_breedController, 'e.g., Labrador, Siamese, Goldfish'),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -1353,49 +1363,43 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          GoogleLocationPicker(
+            label: 'Search Location *',
+            hint: 'Search city, area, pincode...',
+            icon: Icons.search,
+            initialLocation: null,
+            onChanged: (result) {
+              if (result != null) {
+                setState(() {
+                  _stateController.text = result.state;
+                  _cityController.text = result.city;
+                  _locationAreaController.text = result.area;
+                  _pincodeController.text = result.pincode;
+                });
+              }
+            },
+            validator: (v) => _cityController.text.isEmpty ? 'Please search and select a location' : null,
+          ),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
-                child: SearchableLocationPicker<StateModel>(
-                  label: 'State *',
-                  hint: 'Select State',
-                  icon: Icons.map_outlined,
-                  items: _states,
-                  selectedItem: _selectedState,
-                  itemLabel: (s) => s.name,
-                  isLoading: _isLoadingStates && _states.isEmpty,
-                  onChanged: (s) {
-                    setState(() {
-                      _selectedState = s;
-                      _selectedStateId = s?.id;
-                      _selectedCity = null;
-                      _selectedCityId = null;
-                      _cityController.clear();
-                      _stateController.text = s?.name ?? '';
-                      if (s != null) _fetchCities(s.id);
-                    });
-                  },
-                  validator: (v) => v == null ? 'Required' : null,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('State *'),
+                    _buildTextField(_stateController, 'State', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null, readOnly: true),
+                  ],
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: SearchableLocationPicker<CityModel>(
-                  label: 'City *',
-                  hint: 'Select City',
-                  icon: Icons.location_city_outlined,
-                  items: _cities,
-                  selectedItem: _selectedCity,
-                  itemLabel: (c) => c.name,
-                  isLoading: _isLoadingCities && _selectedState != null && _cities.isEmpty,
-                  onChanged: (c) {
-                    setState(() {
-                      _selectedCity = c;
-                      _selectedCityId = c?.id;
-                      _cityController.text = c?.name ?? '';
-                    });
-                  },
-                  validator: (v) => v == null ? 'Required' : null,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('City *'),
+                    _buildTextField(_cityController, 'City', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null, readOnly: true),
+                  ],
                 ),
               ),
             ],
