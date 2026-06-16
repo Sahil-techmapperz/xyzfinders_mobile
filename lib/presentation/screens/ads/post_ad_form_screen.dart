@@ -1152,7 +1152,37 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('Availability*'),
-          _buildTextField(_availabilityController, 'e.g., Mon-Fri 9AM-6PM, Weekends', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+          InkWell(
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF004D40))), child: child!),
+              );
+              if (date != null && mounted) {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                  builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF004D40))), child: child!),
+                );
+                if (time != null && mounted) {
+                  setState(() {
+                    _availabilityController.text = "${date.day}-${date.month}-${date.year} at ${time.format(context)}";
+                  });
+                }
+              }
+            },
+            child: IgnorePointer(
+              child: _buildTextField(
+                _availabilityController, 
+                'Select Date and Time', 
+                suffixIcon: Icons.calendar_month,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+              ),
+            ),
+          ),
           const SizedBox(height: 20),
           _buildLabel('Experience (Optional)'),
           _buildTextField(_experienceController, 'e.g., 5 years, Certified Professional'),

@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:dio/dio.dart' as dio;
 import 'package:image_picker/image_picker.dart';
 import '../../providers/agency_provider.dart';
+import '../../../data/services/category_service.dart';
+import '../../../data/models/category_model.dart';
 import 'agency_login_screen.dart';
 import 'agency_registration_success_screen.dart';
 import '../../../core/theme/app_theme.dart';
@@ -31,6 +32,34 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
   File? _tradeLicense;
   File? _govtId;
   final _picker = ImagePicker();
+  
+  final CategoryService _categoryService = CategoryService();
+  List<CategoryModel> _categories = [];
+  bool _isLoadingCategories = true;
+  final List<int> _selectedCategoryIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final categories = await _categoryService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+          _isLoadingCategories = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching categories: $e');
+      if (mounted) {
+        setState(() => _isLoadingCategories = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -76,6 +105,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
       'govt_id_number': _govtIdNumberController.text,
       'trade_license': _tradeLicense!,
       'govt_id': _govtId!,
+      'categories': _selectedCategoryIds,
     };
 
     final success = await provider.register(registrationData);
@@ -189,6 +219,71 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
                   icon: Icons.badge_outlined,
                   validator: (v) => v!.isEmpty ? "Enter ID number" : null,
                 ),
+                const SizedBox(height: 32),
+
+                // Category Selection
+                "Categories you deal in".text.lg.bold.make().pOnly(bottom: 8),
+                "Select multiple if applicable. Leave empty for General Store.".text.xs.gray500.make().pOnly(bottom: 16),
+                _isLoadingCategories
+                    ? const SizedBox(
+                        height: 100,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: _categories.map((category) {
+                            final isSelected = _selectedCategoryIds.contains(category.id);
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedCategoryIds.remove(category.id);
+                                  } else {
+                                    _selectedCategoryIds.add(category.id);
+                                  }
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppTheme.secondaryColor : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected ? AppTheme.secondaryColor : Colors.grey.shade300,
+                                    width: 1,
+                                  ),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: AppTheme.secondaryColor.withOpacity(0.3),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          )
+                                        ]
+                                      : null,
+                                ),
+                                child: Text(
+                                  category.name,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.white : Colors.black87,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
                 const SizedBox(height: 32),
 
                 // Document Upload Section

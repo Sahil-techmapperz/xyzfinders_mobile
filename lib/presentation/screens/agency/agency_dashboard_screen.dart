@@ -92,7 +92,7 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen> {
       expandedHeight: 120,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF111827),
+      backgroundColor: AppTheme.primaryColor,
       elevation: 0,
       leading: Builder(
         builder: (context) => IconButton(
@@ -399,11 +399,11 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen> {
     final logoUrl = profile?.logoUrl;
 
     return Drawer(
-      backgroundColor: const Color(0xFF111827),
+      backgroundColor: Colors.white,
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            decoration: const BoxDecoration(color: Color(0xFF1F2937)),
+            decoration: const BoxDecoration(color: AppTheme.primaryColor),
             currentAccountPicture: CircleAvatar(
               backgroundColor: AppTheme.secondaryColor,
               backgroundImage: (logoUrl != null && logoUrl.isNotEmpty)
@@ -425,7 +425,7 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen> {
           _buildDrawerItem(Icons.settings_outlined, 'Settings', () => _navTo(context, const AgencyProfileScreen())),
           _buildDrawerItem(Icons.headset_mic_outlined, 'Support', () => _navTo(context, const AgencySupportScreen())),
           const Spacer(),
-          const Divider(color: Colors.white24),
+          const Divider(color: Colors.black12),
           _buildDrawerItem(Icons.logout_rounded, 'Logout', () {
             context.read<AgencyProvider>().logout();
             context.read<AuthProvider>().logout();
@@ -440,7 +440,7 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen> {
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap, {Color color = Colors.white}) {
+  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap, {Color color = const Color(0xFF1E293B)}) {
     return ListTile(
       leading: Icon(icon, color: color.withOpacity(0.7)),
       title: title.text.color(color).make(),

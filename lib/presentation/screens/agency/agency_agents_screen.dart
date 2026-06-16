@@ -31,7 +31,7 @@ class _AgencyAgentsScreenState extends State<AgencyAgentsScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: "Team Management".text.bold.make(),
-        backgroundColor: const Color(0xFF111827),
+        backgroundColor: AppTheme.primaryColor,
       ),
       floatingActionButton: isOwner ? FloatingActionButton(
         onPressed: () => _showAddAgentDialog(context),

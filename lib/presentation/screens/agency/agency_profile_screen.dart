@@ -164,7 +164,7 @@ class _AgencyProfileScreenState extends State<AgencyProfileScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: 'Agency Settings'.text.bold.make(),
-        backgroundColor: const Color(0xFF111827),
+        backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -277,7 +277,7 @@ class _AgencyProfileScreenState extends State<AgencyProfileScreen> {
                                   : const Icon(Icons.lock_reset, size: 18),
                               label: Text(_isChangingPwd ? 'Updating...' : 'Update Password'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF111827),
+                                backgroundColor: AppTheme.primaryColor,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

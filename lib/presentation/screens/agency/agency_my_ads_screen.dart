@@ -37,7 +37,7 @@ class _AgencyMyAdsScreenState extends State<AgencyMyAdsScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: "My Listings".text.bold.make(),
-        backgroundColor: const Color(0xFF111827),
+        backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -224,7 +224,7 @@ class _AgencyMyAdsScreenState extends State<AgencyMyAdsScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF004D40))),
+        builder: (context) => const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
       );
 
       final provider = context.read<AgencyProvider>();

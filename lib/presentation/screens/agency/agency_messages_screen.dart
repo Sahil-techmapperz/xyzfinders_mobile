@@ -32,7 +32,7 @@ class _AgencyMessagesScreenState extends State<AgencyMessagesScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: "Agency Messages".text.bold.make(),
-        backgroundColor: const Color(0xFF111827),
+        backgroundColor: AppTheme.primaryColor,
       ),
       body: provider.isLoadingConversations && conversations.isEmpty
           ? const Center(child: CircularProgressIndicator(color: AppTheme.secondaryColor))

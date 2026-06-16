@@ -30,7 +30,7 @@ class _AgencySupportScreenState extends State<AgencySupportScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: "Agency Support".text.bold.make(),
-        backgroundColor: const Color(0xFF111827),
+        backgroundColor: AppTheme.primaryColor,
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateTicketDialog(context),

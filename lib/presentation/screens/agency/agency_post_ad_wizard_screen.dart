@@ -228,7 +228,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF004D40))),
+      builder: (context) => const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
     );
 
     final success = widget.ad != null
@@ -239,7 +239,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
     Navigator.pop(context);
 
     if (success) {
-      VxToast.show(context, msg: widget.ad != null ? "Ad Updated Successfully!" : "Ad Published Successfully!", bgColor: const Color(0xFF004D40), textColor: Colors.white);
+      VxToast.show(context, msg: widget.ad != null ? "Ad Updated Successfully!" : "Ad Published Successfully!", bgColor: AppTheme.primaryColor, textColor: Colors.white);
       Navigator.pop(context); // Close wizard
     } else {
       VxToast.show(context, msg: provider.error ?? "Failed to ${widget.ad != null ? 'update' : 'publish'} ad", bgColor: Colors.red);
@@ -427,9 +427,9 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isActive 
-                      ? const Color(0xFF004D40) // Dark teal
+                      ? AppTheme.primaryColor // Dark teal
                       : isCompleted 
-                          ? const Color(0xFF004D40).withOpacity(0.6)
+                          ? AppTheme.primaryColor.withOpacity(0.6)
                           : Colors.grey.shade400,
                 ),
                 child: Center(
@@ -555,7 +555,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2030),
-      builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF004D40))), child: child!),
+      builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: AppTheme.primaryColor)), child: child!),
     );
     if (picked != null) {
       setState(() => _eventDateController.text = "${picked.day}-${picked.month}-${picked.year}");
@@ -566,7 +566,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
-      builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: const Color(0xFF004D40))), child: child!),
+      builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: AppTheme.primaryColor)), child: child!),
     );
     if (picked != null) {
       setState(() => _eventTimeController.text = picked.format(context));
@@ -669,7 +669,50 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
         ),
         const SizedBox(height: 24),
         
-        _buildField("Availability*", "e.g., Mon-Fri 9AM-6PM, Weekends", _serviceAvailabilityController),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildLabel("Availability*"),
+            InkWell(
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: AppTheme.primaryColor)), child: child!),
+                );
+                if (date != null && mounted) {
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.now(),
+                    builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: AppTheme.primaryColor)), child: child!),
+                  );
+                  if (time != null && mounted) {
+                    setState(() {
+                      _serviceAvailabilityController.text = "${date.day}-${date.month}-${date.year} at ${time.format(context)}";
+                    });
+                  }
+                }
+              },
+              child: IgnorePointer(
+                child: TextFormField(
+                  controller: _serviceAvailabilityController,
+                  decoration: InputDecoration(
+                    hintText: "Select Date and Time",
+                    hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                    fillColor: Colors.white,
+                    filled: true,
+                    suffixIcon: const Icon(Icons.calendar_month, color: Colors.grey, size: 20),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 20),
 
         _buildField("Experience (Optional)", "e.g., 5 years, Certified Professional", _serviceExperienceController),
@@ -1107,13 +1150,13 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: isSelected ? const Color(0xFF004D40) : Colors.grey.shade200, width: isSelected ? 1.5 : 1),
+                  border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey.shade200, width: isSelected ? 1.5 : 1),
                 ),
                 child: Row(
                   children: [
-                    Icon(amenity['icon'], size: 18, color: isSelected ? const Color(0xFF004D40) : Colors.black87),
+                    Icon(amenity['icon'], size: 18, color: isSelected ? AppTheme.primaryColor : Colors.black87),
                     const SizedBox(width: 8),
-                    amenity['name'].toString().text.xs.color(isSelected ? const Color(0xFF004D40) : Colors.black87).make(),
+                    amenity['name'].toString().text.xs.color(isSelected ? AppTheme.primaryColor : Colors.black87).make(),
                   ],
                 ),
               ),
@@ -1392,10 +1435,10 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: isSelected ? const Color(0xFF004D40) : Colors.grey.shade200, width: isSelected ? 2 : 1),
-                boxShadow: isSelected ? [BoxShadow(color: const Color(0xFF004D40).withOpacity(0.1), blurRadius: 4)] : null,
+                border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey.shade200, width: isSelected ? 2 : 1),
+                boxShadow: isSelected ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.1), blurRadius: 4)] : null,
               ),
-              child: opt.text.color(isSelected ? const Color(0xFF004D40) : Colors.black87).bold.make(),
+              child: opt.text.color(isSelected ? AppTheme.primaryColor : Colors.black87).bold.make(),
             ),
           );
         }).toList(),
@@ -1603,7 +1646,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.business, color: Color(0xFF004D40), size: 20),
+                  const Icon(Icons.business, color: AppTheme.primaryColor, size: 20),
                   const SizedBox(width: 8),
                   "Agency Address".text.bold.make(),
                 ],
@@ -1618,8 +1661,8 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
                 icon: const Icon(Icons.edit, size: 16),
                 label: "Change Address in Profile".text.make(),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF004D40),
-                  side: const BorderSide(color: Color(0xFF004D40)),
+                  foregroundColor: AppTheme.primaryColor,
+                  side: const BorderSide(color: AppTheme.primaryColor),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
@@ -1641,7 +1684,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
         Center(
           child: Column(
             children: [
-              const Icon(Icons.check_circle_outline, size: 80, color: Color(0xFF004D40)),
+              const Icon(Icons.check_circle_outline, size: 80, color: AppTheme.primaryColor),
               const SizedBox(height: 16),
               "Ready to Publish!".text.xl3.bold.make(),
               const SizedBox(height: 8),
@@ -1810,10 +1853,10 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
                   child: OutlinedButton(
                     onPressed: () => setState(() => _currentStep--),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF004D40), width: 1.5),
+                      side: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: "Previous".text.bold.lg.color(const Color(0xFF004D40)).make(),
+                    child: "Previous".text.bold.lg.color(AppTheme.primaryColor).make(),
                   ),
                 ),
               ),
@@ -1825,7 +1868,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
                 child: ElevatedButton(
                   onPressed: _nextStep,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF004D40),
+                    backgroundColor: AppTheme.primaryColor,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),

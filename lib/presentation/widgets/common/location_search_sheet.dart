@@ -5,6 +5,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../providers/address_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/auth_modal.dart';
+import 'package:dio/dio.dart';
+import 'google_location_picker.dart' show googleMapsApiKey;
 
 class LocationSearchSheet extends StatefulWidget {
   final List<dynamic> locations;
@@ -27,6 +29,9 @@ class LocationSearchSheet extends StatefulWidget {
 class _LocationSearchSheetState extends State<LocationSearchSheet> {
   late List<dynamic> _filteredLocations;
   final TextEditingController _searchController = TextEditingController();
+  final Dio _dio = Dio();
+  List<dynamic> _googleSuggestions = [];
+  bool _isLoadingPlaces = false;
 
   @override
   void initState() {
@@ -50,7 +55,10 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
 
   void _filterLocations(String query) {
     if (query.isEmpty) {
-      setState(() => _filteredLocations = widget.locations);
+      setState(() {
+        _filteredLocations = widget.locations;
+        _googleSuggestions = [];
+      });
       return;
     }
     final lowerQuery = query.toLowerCase();
@@ -61,6 +69,35 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
         return name.contains(lowerQuery) || state.contains(lowerQuery);
       }).toList();
     });
+  }
+
+  void _searchGooglePlaces(String query) async {
+    setState(() => _isLoadingPlaces = true);
+    try {
+      final response = await _dio.get(
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json',
+        queryParameters: {
+          'input': query,
+          'key': googleMapsApiKey,
+          'components': 'country:in',
+          'types': '(regions)',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          setState(() {
+            _googleSuggestions = response.data['predictions'];
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching Google places: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingPlaces = false);
+      }
+    }
   }
 
   @override
@@ -103,19 +140,31 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
             // Search Input
             TextField(
               controller: _searchController,
-              onChanged: _filterLocations,
+              onChanged: (val) {
+                 _filterLocations(val);
+                 Future.delayed(const Duration(milliseconds: 500), () {
+                   if (_searchController.text == val && val.isNotEmpty) {
+                     _searchGooglePlaces(val);
+                   }
+                 });
+              },
               decoration: InputDecoration(
                 hintText: "Search state, city, pincode...",
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: query.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _filterLocations('');
-                        },
+                suffixIcon: _isLoadingPlaces 
+                    ? const Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                       )
-                    : null,
+                    : query.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              _filterLocations('');
+                            },
+                          )
+                        : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -251,9 +300,27 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                         trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
                       );
                     }).toList(),
+
+                    if (_googleSuggestions.isNotEmpty) ...[
+                      const Divider(),
+                      "Google Suggestions".text.semiBold.gray600.make().pOnly(left: 16, bottom: 8, top: 8),
+                      ..._googleSuggestions.map((suggestion) {
+                        final mainText = suggestion['structured_formatting']?['main_text'] ?? suggestion['description'];
+                        final secondaryText = suggestion['structured_formatting']?['secondary_text'] ?? '';
+                        return ListTile(
+                          leading: const Icon(Icons.location_on, color: Colors.grey),
+                          title: Text(mainText, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: secondaryText.isNotEmpty ? Text(secondaryText, style: const TextStyle(fontSize: 12)) : null,
+                          onTap: () {
+                            widget.onSelect(null, suggestion['description']);
+                            Navigator.pop(context);
+                          },
+                        );
+                      }).toList(),
+                    ],
                   ],
 
-                  if (query.isNotEmpty && _filteredLocations.isEmpty && !isCustomQuery)
+                  if (query.isNotEmpty && _filteredLocations.isEmpty && _googleSuggestions.isEmpty && !isCustomQuery && !_isLoadingPlaces)
                     "No locations found".text.color(Colors.grey).make().centered().p20(),
                 ],
               ),

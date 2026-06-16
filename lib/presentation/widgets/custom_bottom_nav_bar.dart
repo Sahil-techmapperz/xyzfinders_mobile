@@ -29,8 +29,8 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
-      height: 55,
-      notchMargin: 10,
+      height: 44,
+      notchMargin: 6,
       shape: const CircularNotchedRectangle(),
       color: AppTheme.secondaryColor,
       elevation: 0,
@@ -39,7 +39,7 @@ class CustomBottomNavBar extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () {}, // Consume taps on blank space
         child: Container(
-          height: 46,
+          height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,

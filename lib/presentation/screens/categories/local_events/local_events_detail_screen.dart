@@ -111,12 +111,46 @@ class _LocalEventsDetailScreenState extends State<LocalEventsDetailScreen> {
         final List<Map<String, String>> specsList = [];
         specs.forEach((key, value) {
           if (value != null && value.toString().isNotEmpty) {
-            specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+            String valStr = value.toString();
+            if (key.toLowerCase().contains('date') && valStr.contains('-')) {
+              try {
+                final parts = valStr.split('-');
+                if (parts.length == 3) {
+                  int year = parts[2].length == 4 ? int.parse(parts[2]) : int.parse(parts[0]);
+                  int month = int.parse(parts[1]);
+                  int day = parts[2].length == 4 ? int.parse(parts[0]) : int.parse(parts[2]);
+                  valStr = DateFormat('dd MMM yyyy').format(DateTime(year, month, day));
+                }
+              } catch (e) {}
+            }
+            specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": valStr});
           }
         });
 
         if (specsList.isEmpty) {
-          specsList.add({"label": "Event Date", "value": specs['date'] ?? attrs['date'] ?? specs['event_date'] ?? attrs['event_date'] ?? "TBA"});
+          String rawDate = specs['date']?.toString() ?? attrs['date']?.toString() ?? specs['event_date']?.toString() ?? attrs['event_date']?.toString() ?? "";
+          String formattedDate = "TBA";
+          if (rawDate.isNotEmpty) {
+            try {
+              if (rawDate.contains('-')) {
+                final parts = rawDate.split('-');
+                if (parts.length == 3) {
+                  int year = parts[2].length == 4 ? int.parse(parts[2]) : int.parse(parts[0]);
+                  int month = int.parse(parts[1]);
+                  int day = parts[2].length == 4 ? int.parse(parts[0]) : int.parse(parts[2]);
+                  formattedDate = DateFormat('dd MMM yyyy').format(DateTime(year, month, day));
+                } else {
+                  formattedDate = rawDate;
+                }
+              } else {
+                formattedDate = rawDate;
+              }
+            } catch (e) {
+              formattedDate = rawDate;
+            }
+          }
+          
+          specsList.add({"label": "Event Date", "value": formattedDate});
           specsList.add({"label": "Venue", "value": specs['venue'] ?? attrs['venue'] ?? "TBA"});
           specsList.add({"label": "Organizer", "value": specs['organizer'] ?? attrs['organizer'] ?? "Multiple"});
         }

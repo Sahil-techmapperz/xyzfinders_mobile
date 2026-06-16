@@ -39,7 +39,7 @@ class _AgencyLeadsScreenState extends State<AgencyLeadsScreen> with SingleTicker
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: "Lead Pipeline".text.bold.make(),
-        backgroundColor: const Color(0xFF111827),
+        backgroundColor: AppTheme.primaryColor,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppTheme.secondaryColor,

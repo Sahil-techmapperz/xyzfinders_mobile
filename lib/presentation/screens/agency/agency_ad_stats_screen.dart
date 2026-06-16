@@ -43,11 +43,11 @@ class _AgencyAdStatsScreenState extends State<AgencyAdStatsScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: "Ad Performance".text.bold.make(),
-        backgroundColor: const Color(0xFF111827),
+        backgroundColor: AppTheme.primaryColor,
         elevation: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF004D40)))
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -184,13 +184,13 @@ class _AgencyAdStatsScreenState extends State<AgencyAdStatsScreen> {
             LineChartBarData(
               spots: _stats!.chartData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.views.toDouble())).toList(),
               isCurved: true,
-              color: const Color(0xFF004D40),
+              color: AppTheme.primaryColor,
               barWidth: 4,
               isStrokeCapRound: true,
               dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
-                color: const Color(0xFF004D40).withOpacity(0.1),
+                color: AppTheme.primaryColor.withOpacity(0.1),
               ),
             ),
           ],
@@ -207,7 +207,7 @@ class _AgencyAdStatsScreenState extends State<AgencyAdStatsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             "Recent Inquiries".text.xl.bold.color(const Color(0xFF1E293B)).make(),
-            "View All".text.color(const Color(0xFF004D40)).bold.make(),
+            "View All".text.color(AppTheme.primaryColor).bold.make(),
           ],
         ),
         const SizedBox(height: 16),
@@ -235,8 +235,8 @@ class _AgencyAdStatsScreenState extends State<AgencyAdStatsScreen> {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: const Color(0xFF004D40).withOpacity(0.1),
-            child: lead.name[0].text.color(const Color(0xFF004D40)).bold.make(),
+            backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+            child: lead.name[0].text.color(AppTheme.primaryColor).bold.make(),
           ),
           const SizedBox(width: 12),
           Expanded(

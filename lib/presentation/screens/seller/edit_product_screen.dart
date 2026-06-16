@@ -749,7 +749,132 @@ class _EditProductScreenState extends State<EditProductScreen> {
           _buildTextField(_experienceController, 'e.g., 3 years of experience'),
           const SizedBox(height: 20),
           _buildLabel('Availability'),
-          _buildTextField(_availabilityController, 'e.g., Mon-Fri, 9am-6pm'),
+          InkWell(
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF004D40))), child: child!),
+              );
+              if (date != null && mounted) {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                  builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF004D40))), child: child!),
+                );
+                if (time != null && mounted) {
+                  setState(() {
+                    _availabilityController.text = "${date.day}-${date.month}-${date.year} at ${time.format(context)}";
+                  });
+                }
+              }
+            },
+            child: IgnorePointer(
+              child: TextFormField(
+                controller: _availabilityController,
+                decoration: InputDecoration(
+                  hintText: 'Select Date and Time',
+                  suffixIcon: const Icon(Icons.calendar_month, color: Colors.grey, size: 20),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (cat.contains('event')) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('Event Date (Optional)'),
+                    InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                          builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF004D40))), child: child!),
+                        );
+                        if (date != null && mounted) {
+                          setState(() => _eventDateController.text = "${date.day}-${date.month}-${date.year}");
+                        }
+                      },
+                      child: IgnorePointer(
+                        child: TextFormField(
+                          controller: _eventDateController,
+                          decoration: InputDecoration(
+                            hintText: 'dd-mm-yyyy',
+                            suffixIcon: const Icon(Icons.calendar_today_outlined, color: Colors.grey, size: 20),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel('Event Time (Optional)'),
+                    InkWell(
+                      onTap: () async {
+                        final time = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                          builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF004D40))), child: child!),
+                        );
+                        if (time != null && mounted) {
+                          setState(() => _eventTimeController.text = time.format(context));
+                        }
+                      },
+                      child: IgnorePointer(
+                        child: TextFormField(
+                          controller: _eventTimeController,
+                          decoration: InputDecoration(
+                            hintText: '--:--',
+                            suffixIcon: const Icon(Icons.access_time_outlined, color: Colors.grey, size: 20),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildLabel('Venue Name / Address'),
+          _buildTextField(_venueController, 'e.g., City Convention Center'),
+          const SizedBox(height: 20),
+          _buildLabel('Organizer'),
+          _buildTextField(_organizerController, 'e.g., Global Events Ltd.'),
         ],
       );
     }
