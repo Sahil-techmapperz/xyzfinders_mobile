@@ -51,10 +51,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
   int? _selectedLocationId;
   String? _selectedLocationName;
   String? _selectedSortBy;
+  String? _currentSearchQuery;
 
   @override
   void initState() {
     super.initState();
+    _currentSearchQuery = widget.searchQuery;
+    _searchController.text = _currentSearchQuery ?? '';
     _selectedCategoryId = widget.categoryId;
     _selectedLocationId = widget.locationId;
     _selectedLocationName = widget.locationName;
@@ -63,7 +66,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().fetchProducts(
             refresh: true,
-            search: widget.searchQuery,
+            search: _currentSearchQuery,
             categoryId: widget.categoryId,
             locationId: widget.locationId,
             locationSearch: widget.locationId == null ? widget.locationName : null,
@@ -96,7 +99,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
         _scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent * 0.8) {
       context.read<ProductProvider>().loadMore(
-            search: widget.searchQuery,
+            search: _currentSearchQuery,
             categoryId: widget.categoryId,
             locationId: _selectedLocationId,
             locationSearch: _selectedLocationId == null ? _selectedLocationName : null,
@@ -107,7 +110,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Future<void> _onRefresh() async {
     await context.read<ProductProvider>().fetchProducts(
           refresh: true,
-          search: widget.searchQuery,
+          search: _currentSearchQuery,
           categoryId: widget.categoryId,
           locationId: _selectedLocationId,
           locationSearch: _selectedLocationId == null ? _selectedLocationName : null,
@@ -369,7 +372,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           Navigator.pop(context);
                           context.read<ProductProvider>().fetchProducts(
                                 refresh: true,
-                                search: _searchController.text.isEmpty ? widget.searchQuery : _searchController.text,
+                                search: _currentSearchQuery,
                                 categoryId: _selectedCategoryId,
                                 locationId: _selectedLocationId,
                                 locationSearch: _selectedLocationId == null ? _selectedLocationName : null,
@@ -407,7 +410,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           Navigator.pop(context);
                           context.read<ProductProvider>().fetchProducts(
                                 refresh: true,
-                                search: _searchController.text.isEmpty ? widget.searchQuery : _searchController.text,
+                                search: _currentSearchQuery,
                                 categoryId: widget.categoryId,
                                 locationId: widget.locationId,
                                 locationSearch: widget.locationId == null ? widget.locationName : null,
@@ -433,8 +436,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.searchQuery != null
-        ? "Results for '${widget.searchQuery}'"
+    final title = _currentSearchQuery != null && _currentSearchQuery!.isNotEmpty
+        ? "Results for '${_currentSearchQuery}'"
         : widget.categoryName ?? "Discover";
 
     return Scaffold(
@@ -482,18 +485,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       10.heightBox,
-                      if (widget.searchQuery == null && widget.categoryId == null)
+                      if (_currentSearchQuery == null && widget.categoryId == null)
                         FeaturedCarousel(products: provider.products),
-                      if (widget.searchQuery == null && widget.categoryId == null)
+                      if (_currentSearchQuery == null && widget.categoryId == null)
                         20.heightBox,
-                      (widget.searchQuery != null ? "Search Results" : "Recent Listings")
+                      ((_currentSearchQuery != null && _currentSearchQuery!.isNotEmpty) ? "Search Results" : "Recent Listings")
                           .text
                           .xl
                           .semiBold
                           .color(AppTheme.textColor)
                           .make()
                           .pOnly(left: 16, bottom: 8),
-                      if (widget.searchQuery == null && widget.categoryId == null)
+                      if (_currentSearchQuery == null && widget.categoryId == null)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           child: Row(
@@ -517,11 +520,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                               icon: const Icon(Icons.close, size: 20, color: Colors.grey),
                                               onPressed: () {
                                                 _searchController.clear();
-                                                setState(() {});
+                                                setState(() {
+                                                  _currentSearchQuery = null;
+                                                });
                                                 // Clear current search results and reset to original category/query
                                                 context.read<ProductProvider>().fetchProducts(
                                                       refresh: true,
-                                                      search: widget.searchQuery,
+                                                      search: null,
                                                       categoryId: _selectedCategoryId ?? widget.categoryId,
                                                       locationId: _selectedLocationId,
                                                       locationSearch: _selectedLocationId == null ? _selectedLocationName : null,
@@ -538,9 +543,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                     textInputAction: TextInputAction.search,
                                     onSubmitted: (val) {
                                       FocusScope.of(context).unfocus();
+                                      setState(() {
+                                        _currentSearchQuery = val.trim().isEmpty ? null : val.trim();
+                                      });
                                       context.read<ProductProvider>().fetchProducts(
                                             refresh: true,
-                                            search: val.isEmpty ? widget.searchQuery : val,
+                                            search: _currentSearchQuery,
                                             categoryId: _selectedCategoryId ?? widget.categoryId,
                                             locationId: _selectedLocationId,
                                             locationSearch: _selectedLocationId == null ? _selectedLocationName : null,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:collection/collection.dart';
@@ -45,6 +46,7 @@ import '../seller/seller_dashboard_screen.dart';
 import '../seller/my_products_screen.dart';
 import '../seller/create_product_screen.dart';
 import '../seller/store_list_screen.dart';
+import '../seller/store_detail_screen.dart';
 import '../ads/post_ad_category_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorite_provider.dart';
@@ -154,6 +156,11 @@ class _HomeTabState extends State<HomeTab> {
   List<dynamic> _locations = [];
   bool _isLoadingLocations = false;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  final GlobalKey _searchBoxKey = GlobalKey();
+  OverlayEntry? _suggestionOverlay;
+  List<Map<String, dynamic>> _suggestions = [];
+  Timer? _debounce;
   
   bool _isLoadingCategories = false;
   List<CategoryModel> _categories = [];
@@ -178,6 +185,15 @@ class _HomeTabState extends State<HomeTab> {
     _loadSavedLocation();
     _fetchLocations();
     _fetchCategories();
+    _searchController.addListener(() => setState(() {}));
+    _searchFocusNode.addListener(() {
+      if (!_searchFocusNode.hasFocus) {
+        // Delay a tiny bit so tapping a suggestion is registered first
+        Future.delayed(const Duration(milliseconds: 200), () {
+          _removeSuggestionOverlay();
+        });
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = context.read<AuthProvider>();
       if (authProvider.isAuthenticated) {
@@ -259,12 +275,589 @@ class _HomeTabState extends State<HomeTab> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
+    _debounce?.cancel();
+    _removeSuggestionOverlay();
     super.dispose();
+  }
+
+  void _removeSuggestionOverlay() {
+    _suggestionOverlay?.remove();
+    _suggestionOverlay = null;
+  }
+
+  void _showSuggestionOverlay() {
+    _removeSuggestionOverlay();
+    if (_suggestions.isEmpty) return;
+
+    // Use GlobalKey to get the exact screen position of the search box
+    final RenderBox? renderBox =
+        _searchBoxKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final Offset boxOffset = renderBox.localToGlobal(Offset.zero);
+    final Size boxSize = renderBox.size;
+
+    _suggestionOverlay = OverlayEntry(
+      builder: (ctx) => Stack(
+        children: [
+          // Transparent background to catch outside taps
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () {
+                _searchFocusNode.unfocus();
+                _removeSuggestionOverlay();
+              },
+              behavior: HitTestBehavior.translucent,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          // Suggestion card
+          Positioned(
+            left: boxOffset.dx,
+            top: boxOffset.dy + boxSize.height + 2,
+            width: boxSize.width,
+            child: Material(
+              elevation: 10,
+              borderRadius: BorderRadius.circular(0),
+              color: Colors.white,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 360),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Colors.grey.shade100, width: 1)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.search, size: 13, color: Colors.grey.shade400),
+                          const SizedBox(width: 6),
+                          Text('Search results for',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                          const SizedBox(width: 4),
+                          Text('"${_searchController.text}"',
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87)),
+                        ],
+                      ),
+                    ),
+                    Flexible(
+                      child: ListView.separated(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true,
+                        itemCount: _suggestions.length,
+                        separatorBuilder: (_, __) =>
+                            Divider(height: 1, color: Colors.grey.shade100),
+                        itemBuilder: (context, index) {
+                          final s = _suggestions[index];
+                          final type = s['type'] as String? ?? 'product';
+                          final imgUrl = s['imageUrl'] as String? ?? '';
+
+                          // ── STORE / AGENCY TILE ──
+                          if (type == 'store' || type == 'agency') {
+                            final adCount = s['adCount'] as String? ?? '0';
+                            final loc = s['location'] as String? ?? '';
+                            final isVerified = s['isVerified'] as bool? ?? false;
+                            final isAgency = type == 'agency';
+                            final sellerId = s['id'];
+
+                            return InkWell(
+                              onTap: () {
+                                _removeSuggestionOverlay();
+                                _searchFocusNode.unfocus();
+                                if (sellerId != null) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => StoreDetailScreen(
+                                          sellerId: sellerId is int
+                                              ? sellerId
+                                              : int.tryParse(
+                                                      sellerId.toString()) ??
+                                                  0),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    // Circular avatar
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isAgency
+                                            ? Colors.purple.shade50
+                                            : Colors.blue.shade50,
+                                        border: Border.all(
+                                          color: isAgency
+                                              ? Colors.purple.shade100
+                                              : Colors.blue.shade100,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: ClipOval(
+                                        child: imgUrl.startsWith('http')
+                                            ? Image.network(
+                                                imgUrl,
+                                                width: 48,
+                                                height: 48,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) =>
+                                                    Icon(
+                                                      isAgency
+                                                          ? Icons
+                                                              .business_outlined
+                                                          : Icons.store_outlined,
+                                                      color: isAgency
+                                                          ? Colors.purple
+                                                          : Colors.blue,
+                                                      size: 22,
+                                                    ),
+                                              )
+                                            : Icon(
+                                                isAgency
+                                                    ? Icons.business_outlined
+                                                    : Icons.store_outlined,
+                                                color: isAgency
+                                                    ? Colors.purple
+                                                    : Colors.blue,
+                                                size: 22,
+                                              ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: _buildHighlightedText(
+                                                  s['text'] ?? '',
+                                                  _searchController.text,
+                                                  fontSize: 13.5,
+                                                ),
+                                              ),
+                                              if (isVerified) ...
+                                                [
+                                                  const SizedBox(width: 4),
+                                                  Icon(Icons.verified,
+                                                      size: 14,
+                                                      color: Colors.blue
+                                                          .shade600),
+                                                ],
+                                            ],
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets
+                                                    .symmetric(
+                                                    horizontal: 5,
+                                                    vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: isAgency
+                                                      ? Colors.purple.shade50
+                                                      : Colors.blue.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(3),
+                                                ),
+                                                child: Text(
+                                                  isAgency ? 'Agency' : 'Store',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: isAgency
+                                                        ? Colors.purple
+                                                        : Colors.blue,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                '$adCount listings',
+                                                style: TextStyle(
+                                                    fontSize: 11,
+                                                    color:
+                                                        Colors.grey.shade500),
+                                              ),
+                                            ],
+                                          ),
+                                          if (loc.isNotEmpty)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 3),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                      Icons
+                                                          .location_on_outlined,
+                                                      size: 11,
+                                                      color: Colors
+                                                          .grey.shade400),
+                                                  const SizedBox(width: 2),
+                                                  Expanded(
+                                                    child: Text(
+                                                      loc,
+                                                      style: TextStyle(
+                                                          fontSize: 11,
+                                                          color: Colors
+                                                              .grey.shade500),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(Icons.chevron_right,
+                                        size: 18, color: Colors.grey.shade300),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          // ── PRODUCT TILE ──
+                          final price = s['price'] as String? ?? '';
+                          final loc = s['location'] as String? ?? '';
+                          final category = s['subtitle'] as String? ?? '';
+                          final condition = s['condition'] as String? ?? '';
+
+                          return InkWell(
+                            onTap: () {
+                              _searchController.text = s['text'] ?? '';
+                              _removeSuggestionOverlay();
+                              _searchFocusNode.unfocus();
+                              _handleSearch(s['text'] ?? '');
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              child: Row(
+                                children: [
+                                  // Thumbnail
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: imgUrl.startsWith('http')
+                                        ? Image.network(
+                                            imgUrl,
+                                            width: 48,
+                                            height: 48,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                _buildPlaceholderThumb(),
+                                          )
+                                        : _buildPlaceholderThumb(),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  // Text info
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildHighlightedText(
+                                          s['text'] ?? '',
+                                          _searchController.text,
+                                          fontSize: 13.5,
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Row(
+                                          children: [
+                                            if (category.isNotEmpty)
+                                              Container(
+                                                padding: const EdgeInsets
+                                                    .symmetric(
+                                                    horizontal: 5,
+                                                    vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.primaryColor
+                                                      .withOpacity(0.08),
+                                                  borderRadius:
+                                                      BorderRadius.circular(3),
+                                                ),
+                                                child: Text(
+                                                  category,
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: AppTheme.primaryColor,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            if (condition.isNotEmpty &&
+                                                condition != 'good') ...
+                                              [
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  condition,
+                                                  style: TextStyle(
+                                                      fontSize: 10,
+                                                      color:
+                                                          Colors.grey.shade500),
+                                                ),
+                                              ],
+                                          ],
+                                        ),
+                                        if (loc.isNotEmpty || price.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 3),
+                                            child: Row(
+                                              children: [
+                                                if (loc.isNotEmpty) ...
+                                                  [
+                                                    Icon(Icons.location_on_outlined,
+                                                        size: 11,
+                                                        color: Colors
+                                                            .grey.shade400),
+                                                    const SizedBox(width: 2),
+                                                    Expanded(
+                                                      child: Text(
+                                                        loc,
+                                                        style: TextStyle(
+                                                            fontSize: 11,
+                                                            color: Colors
+                                                                .grey.shade500),
+                                                        maxLines: 1,
+                                                        overflow:
+                                                            TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                if (price.isNotEmpty)
+                                                  Text(
+                                                    price,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w700,
+                                                      color:
+                                                          AppTheme.primaryColor,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Icon(Icons.north_west,
+                                      size: 13, color: Colors.grey.shade300),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    // Footer: view all results
+                    InkWell(
+                      onTap: () {
+                        _removeSuggestionOverlay();
+                        _searchFocusNode.unfocus();
+                        _handleSearch(_searchController.text);
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.05),
+                          border: Border(
+                              top: BorderSide(
+                                  color: Colors.grey.shade200, width: 1)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.search,
+                                size: 14, color: AppTheme.primaryColor),
+                            const SizedBox(width: 6),
+                            Text(
+                              'See all results for "${_searchController.text}"',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    Overlay.of(context).insert(_suggestionOverlay!);
+  }
+
+  Widget _buildPlaceholderThumb() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Icon(Icons.image_outlined, color: Colors.grey.shade400, size: 22),
+    );
+  }
+
+  // Helper: highlight matching text in a suggestion title
+  Widget _buildHighlightedText(String text, String query, {double fontSize = 14}) {
+    if (query.isEmpty) {
+      return Text(text,
+          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w500),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis);
+    }
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase().trim();
+    final index = lowerText.indexOf(lowerQuery);
+    if (index == -1) {
+      return Text(text,
+          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w500),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis);
+    }
+    return Text.rich(
+      TextSpan(children: [
+        if (index > 0)
+          TextSpan(
+              text: text.substring(0, index),
+              style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w400, color: Colors.black87)),
+        TextSpan(
+            text: text.substring(index, index + lowerQuery.length),
+            style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.primaryColor)),
+        if (index + lowerQuery.length < text.length)
+          TextSpan(
+              text: text.substring(index + lowerQuery.length),
+              style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w400, color: Colors.black87)),
+      ]),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Future<void> _fetchSuggestions(String query) async {
+    if (query.trim().length < 2) {
+      _suggestions = [];
+      _removeSuggestionOverlay();
+      return;
+    }
+    try {
+      // Fetch products and stores in parallel
+      final results = await Future.wait([
+        ApiService().get(
+          ApiConstants.products,
+          queryParameters: {'search': query.trim(), 'per_page': '5'},
+        ),
+        ApiService().get(
+          ApiConstants.publicSellers,
+          queryParameters: {'search': query.trim(), 'limit': '3'},
+        ),
+      ]);
+      if (!mounted) return;
+
+      // --- Products ---
+      final raw = results[0].data['data'];
+      List<dynamic> products = raw is List ? raw : [];
+      final productSuggestions = products.map<Map<String, dynamic>>((p) {
+        String? imageUrl;
+        final images = p['images'];
+        if (images is List && images.isNotEmpty) {
+          imageUrl = images.first['image'] as String?;
+        }
+        imageUrl ??= p['company_logo'] as String?;
+
+        final price = p['price'];
+        String priceStr = '';
+        if (price != null) {
+          try { priceStr = CurrencyUtils.formatIndianCurrency(price); } catch (_) {}
+        }
+
+        final loc = (p['location_name'] ?? p['city_name'] ?? '') as String;
+
+        return {
+          'type': 'product',
+          'text': (p['title'] ?? '') as String,
+          'subtitle': (p['category_name'] ?? '') as String,
+          'price': priceStr,
+          'location': loc,
+          'imageUrl': imageUrl ?? '',
+          'condition': (p['condition'] ?? '') as String,
+        };
+      }).where((s) => (s['text'] as String).isNotEmpty).toList();
+
+      // --- Stores / Agencies ---
+      final storeRaw = results[1].data['data'];
+      List<dynamic> stores = storeRaw is List ? storeRaw : [];
+      final storeSuggestions = stores.map<Map<String, dynamic>>((s) {
+        final avatar = s['avatar'] as String? ?? '';
+        final adCount = (s['ad_count'] ?? 0).toString();
+        final isVerified = s['is_verified'] == 1 || s['is_verified'] == true;
+        final sellerType = (s['seller_type'] ?? 'seller') as String;
+        final address = (s['address'] ?? '') as String;
+        return {
+          'type': sellerType == 'agency' ? 'agency' : 'store',
+          'id': s['id'],
+          'text': (s['company_name'] ?? s['user_name'] ?? '') as String,
+          'subtitle': sellerType == 'agency' ? 'Agency' : 'Store',
+          'imageUrl': avatar,
+          'adCount': adCount,
+          'location': address,
+          'isVerified': isVerified,
+        };
+      }).where((s) => (s['text'] as String).isNotEmpty).toList();
+
+      // Interleave: products first, then stores at the end
+      _suggestions = [...productSuggestions, ...storeSuggestions];
+      _showSuggestionOverlay();
+    } catch (e) {
+      debugPrint('Suggestion fetch error: $e');
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    if (value.trim().length < 2) {
+      _suggestions = [];
+      _removeSuggestionOverlay();
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      _fetchSuggestions(value);
+    });
   }
 
   void _handleSearch(String query) {
     if (query.trim().isEmpty) return;
-    
+    _removeSuggestionOverlay();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -272,7 +865,10 @@ class _HomeTabState extends State<HomeTab> {
           searchQuery: query.trim(),
         ),
       ),
-    );
+    ).then((_) {
+      _searchController.clear();
+      _suggestions = [];
+    });
   }
 
   Future<void> _loadSavedLocation() async {
@@ -534,10 +1130,11 @@ class _HomeTabState extends State<HomeTab> {
         children: [
           Expanded(
             child: Container(
+              key: _searchBoxKey,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(4), // square corners
-                border: Border.all(color: Colors.grey.shade400, width: 1.5), // distinct solid border on all 4 sides
+                borderRadius: BorderRadius.zero, // squared corners
+                border: Border.all(color: Colors.grey.shade400, width: 1.5),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
@@ -548,19 +1145,32 @@ class _HomeTabState extends State<HomeTab> {
               ),
               child: TextField(
                 controller: _searchController,
-                onSubmitted: _handleSearch,
+                focusNode: _searchFocusNode,
+                onChanged: _onSearchChanged,
+                onSubmitted: (val) {
+                  _searchFocusNode.unfocus();
+                  _handleSearch(val);
+                },
+                textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
-                  hintText: "Search Anything...",
-                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
+                  hintText: "Search products, stores...",
+                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
                   prefixIcon: const Icon(
-                    Icons.business,
+                    Icons.search,
                     color: AppTheme.secondaryColor,
                     size: 20,
                   ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.search, color: Colors.grey, size: 20),
-                    onPressed: () => _handleSearch(_searchController.text),
-                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close,
+                              color: Colors.grey, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            _suggestions = [];
+                            _removeSuggestionOverlay();
+                          },
+                        )
+                      : null,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,

@@ -24,9 +24,11 @@ class ApiConstants {
   
   // Products
   static const String products = '/products';
+  static const String productSuggest = '/products/suggest';
   static String productById(int id) => '/products/$id';
   static String markProductSold(int id) => '/products/$id/mark-sold';
   static String productAnalytics(int id) => '/products/$id/analytics';
+
   
   // Categories
   static const String categories = '/categories';
