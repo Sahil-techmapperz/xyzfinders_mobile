@@ -101,8 +101,18 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
   final _organizerController = TextEditingController();
   final _highlightsController = TextEditingController();
 
+  // Events manual date selections
+  String? _eventDay;
+  String? _eventMonth;
+  String? _eventYear;
+
   // Services Specific Controllers
   final _availabilityController = TextEditingController();
+
+  // Services manual date selections
+  String? _serviceDay;
+  String? _serviceMonth;
+  String? _serviceYear;
 
   // Jobs Specific Controllers
   final _companyController = TextEditingController();
@@ -1033,56 +1043,152 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     }
 
     if (cat.contains('event')) {
+      final months = ['January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+      final currentYear = DateTime.now().year;
+      final years = List.generate(4, (i) => (currentYear + i).toString());
+
+      // Sync manual date selections into _eventDateController
+      void syncEventDate() {
+        final d = _eventDay ?? '';
+        final m = _eventMonth != null ? (months.indexOf(_eventMonth!) + 1).toString().padLeft(2, '0') : '';
+        final y = _eventYear ?? '';
+        if (d.isNotEmpty && m.isNotEmpty && y.isNotEmpty) {
+          _eventDateController.text = '$d-$m-$y';
+        }
+      }
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          _buildLabel('Event Date (Optional)'),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    _buildLabel('Event Date (Optional)'),
-                    InkWell(
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
-                        );
-                        if (date != null) {
-                          setState(() => _eventDateController.text = DateFormat('dd-MM-yyyy').format(date));
-                        }
-                      },
-                      child: IgnorePointer(
-                        child: _buildTextField(_eventDateController, 'dd-mm-yyyy', suffixIcon: Icons.calendar_today_outlined),
+                    // Day
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Day', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            initialValue: _eventDay,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: 'DD',
+                              hintStyle: TextStyle(color: Colors.grey.shade400),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 1.5)),
+                            ),
+                            onChanged: (v) { _eventDay = v; syncEventDate(); },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Month
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Month', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _eventMonth,
+                                isExpanded: true,
+                                hint: const Text('Month', style: TextStyle(color: Color(0xFFADB5BD), fontSize: 14)),
+                                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                                style: const TextStyle(color: Colors.black87, fontSize: 14),
+                                items: months.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                                onChanged: (v) { setState(() { _eventMonth = v; syncEventDate(); }); },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Year
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Year', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _eventYear,
+                                isExpanded: true,
+                                hint: const Text('Year', style: TextStyle(color: Color(0xFFADB5BD), fontSize: 14)),
+                                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                                style: const TextStyle(color: Colors.black87, fontSize: 14),
+                                items: years.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                                onChanged: (v) { setState(() { _eventYear = v; syncEventDate(); }); },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLabel('Event Time (Optional)'),
-                    InkWell(
-                      onTap: () async {
-                        final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-                        if (time != null) {
-                          setState(() => _eventTimeController.text = time.format(context));
-                        }
-                      },
-                      child: IgnorePointer(
-                        child: _buildTextField(_eventTimeController, '--:--', suffixIcon: Icons.access_time_outlined),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                if (_eventDateController.text.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: AppTheme.secondaryColor, size: 16),
+                      const SizedBox(width: 6),
+                      Text('Date: ${_eventDateController.text}', style: const TextStyle(fontSize: 13, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildLabel('Event Time (Optional)'),
+          InkWell(
+            onTap: () async {
+              final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+              if (time != null) {
+                setState(() => _eventTimeController.text = time.format(context));
+              }
+            },
+            child: IgnorePointer(
+              child: _buildTextField(_eventTimeController, 'Tap to select time', suffixIcon: Icons.access_time_outlined),
+            ),
           ),
           const SizedBox(height: 20),
           _buildLabel('Venue Name / Address*'),
@@ -1148,39 +1254,194 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     }
 
     if (cat.contains('service')) {
+      final months = ['January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+      final currentYear = DateTime.now().year;
+      final years = List.generate(4, (i) => (currentYear + i).toString());
+
+      void syncServiceAvailability() {
+        final d = _serviceDay ?? '';
+        final m = _serviceMonth != null ? (months.indexOf(_serviceMonth!) + 1).toString().padLeft(2, '0') : '';
+        final y = _serviceYear ?? '';
+        if (d.isNotEmpty && m.isNotEmpty && y.isNotEmpty) {
+          final timePart = _availabilityController.text.contains(' at ')
+              ? _availabilityController.text.split(' at ').last
+              : '';
+          _availabilityController.text = '$d-$m-$y${timePart.isNotEmpty ? ' at $timePart' : ''}';
+        }
+      }
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('Availability*'),
-          InkWell(
-            onTap: () async {
-              final date = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
-                builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF004D40))), child: child!),
-              );
-              if (date != null && mounted) {
-                final time = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                  builder: (context, child) => Theme(data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF004D40))), child: child!),
-                );
-                if (time != null && mounted) {
-                  setState(() {
-                    _availabilityController.text = "${date.day}-${date.month}-${date.year} at ${time.format(context)}";
-                  });
-                }
-              }
-            },
-            child: IgnorePointer(
-              child: _buildTextField(
-                _availabilityController, 
-                'Select Date and Time', 
-                suffixIcon: Icons.calendar_month,
-                validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
-              ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select Date', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    // Day
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Day', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            initialValue: _serviceDay,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: 'DD',
+                              hintStyle: TextStyle(color: Colors.grey.shade400),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 1.5)),
+                            ),
+                            onChanged: (v) { _serviceDay = v; syncServiceAvailability(); },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Month
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Month', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _serviceMonth,
+                                isExpanded: true,
+                                hint: const Text('Month', style: TextStyle(color: Color(0xFFADB5BD), fontSize: 14)),
+                                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                                style: const TextStyle(color: Colors.black87, fontSize: 14),
+                                items: months.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                                onChanged: (v) { setState(() { _serviceMonth = v; syncServiceAvailability(); }); },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Year
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Year', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _serviceYear,
+                                isExpanded: true,
+                                hint: const Text('Year', style: TextStyle(color: Color(0xFFADB5BD), fontSize: 14)),
+                                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                                style: const TextStyle(color: Colors.black87, fontSize: 14),
+                                items: years.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                                onChanged: (v) { setState(() { _serviceYear = v; syncServiceAvailability(); }); },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text('Select Time', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                const SizedBox(height: 10),
+                InkWell(
+                  onTap: () async {
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.now(),
+                      builder: (context, child) => Theme(
+                        data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: AppTheme.secondaryColor)),
+                        child: child!,
+                      ),
+                    );
+                    if (time != null && mounted) {
+                      setState(() {
+                        final d = _serviceDay ?? '';
+                        final mIdx = _serviceMonth != null ? (months.indexOf(_serviceMonth!) + 1).toString().padLeft(2, '0') : '';
+                        final y = _serviceYear ?? '';
+                        final datePart = (d.isNotEmpty && mIdx.isNotEmpty && y.isNotEmpty) ? '$d-$mIdx-$y' : '';
+                        _availabilityController.text = datePart.isNotEmpty ? '$datePart at ${time.format(context)}' : time.format(context);
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.access_time_outlined, size: 20, color: Colors.grey.shade500),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _availabilityController.text.contains(' at ')
+                                ? _availabilityController.text.split(' at ').last
+                                : 'Tap to select time',
+                            style: TextStyle(
+                              color: _availabilityController.text.contains(' at ')
+                                  ? Colors.black87
+                                  : Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey.shade500),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_availabilityController.text.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: AppTheme.secondaryColor, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text('Availability: ${_availabilityController.text}', style: const TextStyle(fontSize: 13, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600))),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: 20),
