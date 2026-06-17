@@ -98,7 +98,7 @@ class _JobsDetailScreenState extends State<JobsDetailScreen> {
     }
   }
 
-  Widget _buildProductImage(String? imageVal, {double? height, double? width, BoxFit fit = BoxFit.cover}) {
+  Widget _buildProductImage(String? imageVal, {double? height, double? width, BoxFit fit = BoxFit.contain}) {
     if (imageVal == null || imageVal.isEmpty) {
       return Container(
         height: height,

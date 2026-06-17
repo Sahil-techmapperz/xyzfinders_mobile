@@ -136,7 +136,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Centered Logo
@@ -153,8 +153,8 @@ class _SplashScreenState extends State<SplashScreen> {
               },
               child: Image.asset(
                 'assets/images/short_logo.png',
-                width: 260,
-                height: 260,
+                width: 130,
+                height: 130,
                 fit: BoxFit.contain,
               ),
             ),
@@ -170,7 +170,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   const Text(
                     'from',
                     style: TextStyle(
-                      color: Colors.white54,
+                      color: Colors.black54,
                       fontSize: 12,
                       letterSpacing: 2,
                     ),
@@ -192,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       const Text(
                         'XYZ Finders',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.2,

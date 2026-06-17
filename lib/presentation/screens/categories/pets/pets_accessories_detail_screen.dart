@@ -112,7 +112,7 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
           children: [
             Image.network(
               "https://images.unsplash.com/photo-1591500732359-646c84382994?auto=format&fit=crop&w=800&q=80",
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
             ),
             Positioned(
               bottom: 12,

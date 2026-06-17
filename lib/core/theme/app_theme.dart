@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Brand Colors
   static const Color primaryColor = Color(0xFF005251); // Deep Teal
-  static const Color secondaryColor = Color(0xFFFE8B53); // Vibrant Orange
+  static const Color secondaryColor = Color(0xFFE76713); // Vibrant Orange
   static const Color backgroundColor = Color(0xFFFFFCF3); // Warm Off-White
   static const Color surfaceColor = Colors.white;
   static const Color textColor = Color(0xFF171717); // Dark Gray
