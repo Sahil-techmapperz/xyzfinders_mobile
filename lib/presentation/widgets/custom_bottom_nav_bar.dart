@@ -30,7 +30,7 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
-      height: 44,
+      height: 50,
       notchMargin: 6,
       shape: const CircularNotchedRectangle(),
       color: AppTheme.secondaryColor,
@@ -40,7 +40,7 @@ class CustomBottomNavBar extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () {}, // Consume taps on blank space
         child: Container(
-          height: 44,
+          height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -187,7 +187,7 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
       return [
         _SpeedDialItem(
           icon: Icons.login_rounded,
-          label: 'Login',
+          label: 'Sign In',
           color: AppTheme.secondaryColor,
           onTap: () {
             _close();
@@ -196,7 +196,7 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
         ),
         _SpeedDialItem(
           icon: Icons.person_add_rounded,
-          label: 'Register',
+          label: 'Sign up',
           color: Colors.teal,
           onTap: () {
             _close();
@@ -214,7 +214,7 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
         ),
         _SpeedDialItem(
           icon: Icons.store_rounded,
-          label: 'Store Login',
+          label: 'Store Sign In',
           color: Colors.orange,
           onTap: () {
             _close();
