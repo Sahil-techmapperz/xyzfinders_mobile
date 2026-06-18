@@ -13,6 +13,7 @@ import '../screens/chats/chat_list_screen.dart';
 import '../screens/ads/post_ad_category_screen.dart';
 import '../screens/seller/my_products_screen.dart';
 import '../screens/seller/store_list_screen.dart';
+import '../screens/agency/agency_login_screen.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int selectedIndex;
@@ -203,12 +204,21 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
           },
         ),
         _SpeedDialItem(
+          icon: Icons.add_photo_alternate_rounded,
+          label: 'Post Ad',
+          color: Colors.deepOrange,
+          onTap: () {
+            _close();
+            AuthModal.show(context, initialIsLogin: true);
+          },
+        ),
+        _SpeedDialItem(
           icon: Icons.store_rounded,
-          label: 'Browse Stores',
+          label: 'Store Login',
           color: Colors.orange,
           onTap: () {
             _close();
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const StoreListScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const AgencyLoginScreen()));
           },
         ),
       ];
@@ -268,6 +278,15 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
         },
       ),
       _SpeedDialItem(
+        icon: Icons.add_photo_alternate_rounded,
+        label: 'Post Ad',
+        color: Colors.deepOrange,
+        onTap: () {
+          _close();
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PostAdCategoryScreen()));
+        },
+      ),
+      _SpeedDialItem(
         icon: Icons.store_rounded,
         label: 'Stores',
         color: Colors.teal,
@@ -311,10 +330,10 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
             
             // Half-circle white background for shortcuts
             Positioned(
-              left: fabCenter.dx - 180, // Radius is 180, so shift left by 180
-              top: fabCenter.dy - 180,  // Shift up by 180 so bottom edge hits the FAB center
-              width: 360,
-              height: 180,
+              left: fabCenter.dx - 220, // Increased radius
+              top: fabCenter.dy - 220,
+              width: 440,
+              height: 220,
               child: Transform.scale(
                 alignment: Alignment.bottomCenter,
                 scale: Curves.easeOutBack.transform(_controller.value),
@@ -322,8 +341,8 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(180),
-                      topRight: Radius.circular(180),
+                      topLeft: Radius.circular(220),
+                      topRight: Radius.circular(220),
                     ),
                     boxShadow: [
                       BoxShadow(color: Color(0x1A000000), blurRadius: 10, offset: Offset(0, -2)),
@@ -344,10 +363,10 @@ class _CustomFabState extends State<CustomFab> with SingleTickerProviderStateMix
 
               if (count == 4) {
                 const positions = [
-                  Offset(-120, -50),   // Bottom Left
-                  Offset(-55, -135),   // Top Left
-                  Offset(55, -135),    // Top Right
-                  Offset(120, -50),    // Bottom Right
+                  Offset(-135, -55),   // Bottom Left
+                  Offset(-65, -145),   // Top Left
+                  Offset(65, -145),    // Top Right
+                  Offset(135, -55),    // Bottom Right
                 ];
                 dx = positions[i].dx;
                 dy = positions[i].dy;
