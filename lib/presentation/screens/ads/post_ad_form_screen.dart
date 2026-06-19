@@ -523,110 +523,143 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         iconTheme: const IconThemeData(color: Colors.black87),
         centerTitle: true,
       ),
-      body: Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(primary: AppTheme.secondaryColor),
-        ),
-        child: Stepper(
-          type: StepperType.horizontal,
-          currentStep: _currentStep,
-          onStepContinue: () {
-            if (_currentStep == 0) {
-              if (!_formKeyBasic.currentState!.validate()) return;
-            } else if (_currentStep == 1) {
-              if (!_formKeyDetails.currentState!.validate()) return;
-            } else if (_currentStep == 2) {
-              bool isExemptCategory = widget.category.toLowerCase().contains('job') || 
-                                      widget.category.toLowerCase().contains('education') || 
-                                      widget.category.toLowerCase().contains('learning') || 
-                                      widget.category.toLowerCase().contains('service');
-              if (_images.isEmpty && !isExemptCategory) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please upload at least one image'), backgroundColor: Colors.red),
-                );
-                return;
-              }
-            } else if (_currentStep == 3) {
-              if (!_formKeyLocation.currentState!.validate()) return;
-            }
+      body: Column(
+        children: [
+          _buildStepIndicator(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: _buildCurrentStepContent(),
+            ),
+          ),
+          _buildBottomButtons(),
+        ],
+      ),
+    );
+  }
 
-            if (_currentStep < 4) {
-              setState(() => _currentStep++);
-            } else {
-              _submitForm();
-            }
-          },
-          onStepCancel: () {
-            if (_currentStep > 0) {
-              setState(() => _currentStep--);
-            }
-          },
-          controlsBuilder: (context, details) {
-            return Padding(
-              padding: const EdgeInsets.only(top: 32.0, bottom: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: details.onStepContinue,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.secondaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 4,
-                        shadowColor: AppTheme.secondaryColor.withOpacity(0.3),
-                      ),
-                      child: _isSubmitting && _currentStep == 4 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(_currentStep == 4 ? 'Publish Ad' : 'Next Step', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+  Widget _buildStepIndicator() {
+    final steps = ['Basic', 'Details', 'Media', 'Location', 'Review'];
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+      color: const Color(0xFFFFFDF5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(steps.length, (index) {
+          final isActive = _currentStep == index;
+          final isCompleted = _currentStep > index;
+          
+          return Column(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isActive 
+                      ? AppTheme.secondaryColor
+                      : isCompleted 
+                          ? AppTheme.secondaryColor.withOpacity(0.6)
+                          : Colors.grey.shade400,
+                ),
+                child: Center(
+                  child: Text(
+                    (index + 1).toString(),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
-                  if (_currentStep > 0) ...[
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: details.onStepCancel,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          side: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        child: const Text('Back', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
-            );
-          },
-          steps: [
-            Step(
-              title: const Text('Basic', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 0,
-              state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-              content: _buildBasicStep(),
-            ),
-            Step(
-              title: const Text('Details', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 1,
-              state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-              content: _buildSpecsStep(),
-            ),
-            Step(
-              title: const Text('Media', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 2,
-              state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-              content: _buildPhotosStep(),
-            ),
-            Step(
-              title: const Text('Location', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 3,
-              state: _currentStep > 3 ? StepState.complete : StepState.indexed,
-              content: _buildLocationStep(),
-            ),
-            Step(
-              title: const Text('Review', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 4,
-              state: _currentStep > 4 ? StepState.complete : StepState.indexed,
-              content: _buildConfirmStep(),
+              const SizedBox(height: 8),
+              Text(
+                steps[index],
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: isActive ? Colors.black : Colors.grey,
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildCurrentStepContent() {
+    switch (_currentStep) {
+      case 0: return _buildBasicStep();
+      case 1: return _buildSpecsStep();
+      case 2: return _buildPhotosStep();
+      case 3: return _buildLocationStep();
+      case 4: return _buildConfirmStep();
+      default: return const SizedBox.shrink();
+    }
+  }
+
+  void _nextStep() {
+    if (_currentStep == 0) {
+      if (!_formKeyBasic.currentState!.validate()) return;
+    } else if (_currentStep == 1) {
+      if (!_formKeyDetails.currentState!.validate()) return;
+    } else if (_currentStep == 2) {
+      bool isExemptCategory = widget.category.toLowerCase().contains('job') || 
+                              widget.category.toLowerCase().contains('education') || 
+                              widget.category.toLowerCase().contains('learning') || 
+                              widget.category.toLowerCase().contains('service');
+      if (_images.isEmpty && !isExemptCategory) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please upload at least one image'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+    } else if (_currentStep == 3) {
+      if (!_formKeyLocation.currentState!.validate()) return;
+    }
+
+    if (_currentStep < 4) {
+      setState(() => _currentStep++);
+    } else {
+      _submitForm();
+    }
+  }
+
+  Widget _buildBottomButtons() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            if (_currentStep > 0)
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => setState(() => _currentStep--),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  child: const Text('Back', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            if (_currentStep > 0) const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _nextStep,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 4,
+                  shadowColor: AppTheme.secondaryColor.withOpacity(0.3),
+                ),
+                child: _isSubmitting && _currentStep == 4 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                    : Text(_currentStep == 4 ? 'Publish Ad' : 'Next Step', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
             ),
           ],
         ),
@@ -1021,7 +1054,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             const SizedBox(height: 24),
             Row(
               children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Vaccinated? (Optional)'), _buildSelectionGroup(['Yes', 'No'], _vaccinated, (val) => setState(() => _vaccinated = val))])),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Vaccinated (Optional)'), _buildSelectionGroup(['Yes', 'No'], _vaccinated, (val) => setState(() => _vaccinated = val))])),
                 const SizedBox(width: 16),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('KCI Registered (Optional)'), _buildSelectionGroup(['Yes', 'No'], _kciRegistered, (val) => setState(() => _kciRegistered = val))])),
               ],
@@ -1029,13 +1062,13 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             const SizedBox(height: 24),
             Row(
               children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Health Certificate?'), _buildSelectionGroup(['Yes', 'No'], _healthCert, (val) => setState(() => _healthCert = val))])),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Health Certificate'), _buildSelectionGroup(['Yes', 'No'], _healthCert, (val) => setState(() => _healthCert = val))])),
                 const SizedBox(width: 16),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Dewormed?'), _buildSelectionGroup(['Yes', 'No'], _dewormed, (val) => setState(() => _dewormed = val))])),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Dewormed'), _buildSelectionGroup(['Yes', 'No'], _dewormed, (val) => setState(() => _dewormed = val))])),
               ],
             ),
             const SizedBox(height: 24),
-            _buildLabel('Microchipped?'),
+            _buildLabel('Microchipped'),
             _buildSelectionGroup(['Yes', 'No'], _microchipped, (val) => setState(() => _microchipped = val)),
           ],
         ],

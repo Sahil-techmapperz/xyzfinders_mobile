@@ -267,6 +267,8 @@ class _SupportScreenState extends State<SupportScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ExpansionTile(
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        expandedAlignment: Alignment.centerLeft,
         title: Text(
           question,
           style: const TextStyle(

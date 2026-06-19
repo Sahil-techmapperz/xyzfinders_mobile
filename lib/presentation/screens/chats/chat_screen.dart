@@ -464,8 +464,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.grey.shade400),
                     ),
                     child: TextField(
                       controller: _messageController,

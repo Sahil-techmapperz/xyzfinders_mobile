@@ -100,12 +100,6 @@ class _SplashScreenState extends State<SplashScreen> {
     _checkAuth();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    precacheImage(const AssetImage('assets/images/app_logo_white.png'), context);
-  }
-
   Future<void> _checkAuth() async {
     final authProvider = context.read<AuthProvider>();
     final agencyProvider = context.read<AgencyProvider>();
@@ -129,8 +123,6 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     }
 
-    await Future.delayed(const Duration(seconds: 1));
-
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -141,7 +133,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.secondaryColor,
+      backgroundColor: const Color(0xFFE76713),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
