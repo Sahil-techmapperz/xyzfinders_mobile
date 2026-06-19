@@ -104,11 +104,10 @@ class _SplashScreenState extends State<SplashScreen> {
     final authProvider = context.read<AuthProvider>();
     final agencyProvider = context.read<AgencyProvider>();
 
-    // Run auth checks and minimum display time in parallel
+    // Run auth checks in parallel — navigate immediately when done
     await Future.wait([
       authProvider.checkAuthStatus(),
       agencyProvider.checkAuthStatus(),
-      Future.delayed(const Duration(seconds: 2)), // minimum splash display time
     ]);
 
     // If agency is authenticated, clear any regular user session to avoid conflicts
@@ -133,38 +132,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size.width * 0.35;
     return Scaffold(
       backgroundColor: const Color(0xFFE76713),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/app_logo_white.png',
-              width: 150,
-              height: 150,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'XYZ Finders',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Jo Chaho, Wo Paao',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
+        child: Image.asset(
+          'assets/images/app_logo_white.png',
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
         ),
       ),
     );
