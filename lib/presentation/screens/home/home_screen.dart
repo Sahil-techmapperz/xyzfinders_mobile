@@ -1028,7 +1028,7 @@ class _HomeTabState extends State<HomeTab> {
                 },
               ),
               _buildHorizontalSection(
-                title: "Popular in Car's",
+                title: "Popular in Automobiles",
                 products: _latestCars,
                 isLoading: _isCarsLoading,
                 onViewMore: () {

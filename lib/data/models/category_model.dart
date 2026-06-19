@@ -20,9 +20,20 @@ class CategoryModel {
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    String categoryName = json['name'] as String;
+    if (categoryName == 'Beauty') {
+      categoryName = 'Beauty & Wellness';
+    } else if (categoryName == 'Electronics') {
+      categoryName = 'Gadgets & Electronics';
+    } else if (categoryName == 'Furniture') {
+      categoryName = 'Furniture & Hardware';
+    } else if (categoryName == 'Mobiles') {
+      categoryName = 'Mobiles & Tablets';
+    }
+
     return CategoryModel(
       id: json['id'] as int,
-      name: json['name'] as String,
+      name: categoryName,
       slug: json['slug'] as String?,
       description: json['description'] as String?,
       iconUrl: json['icon_url'] as String?,

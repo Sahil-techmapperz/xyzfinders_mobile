@@ -41,7 +41,7 @@ class CustomBottomNavBar extends StatelessWidget {
         onTap: () {}, // Consume taps on blank space
         child: Container(
           height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.only(top: 12, left: 10, right: 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.center,

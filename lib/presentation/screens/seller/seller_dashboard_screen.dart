@@ -111,6 +111,17 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       pinned: false,
       backgroundColor: AppTheme.secondaryColor,
       elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () {
+          final auth = context.read<AuthProvider>();
+          if (auth.isSellerMode) {
+            auth.toggleMode();
+          } else {
+            Navigator.pop(context);
+          }
+        },
+      ),
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         title: Column(
