@@ -1132,14 +1132,11 @@ class _HomeTabState extends State<HomeTab> {
             child: Container(
               key: _searchBoxKey,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.zero, // squared corners
-                border: Border.all(color: Colors.grey.shade400, width: 1.5),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -1171,10 +1168,21 @@ class _HomeTabState extends State<HomeTab> {
                           },
                         )
                       : null,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
+                  ),
                 ),
               ),
             ),

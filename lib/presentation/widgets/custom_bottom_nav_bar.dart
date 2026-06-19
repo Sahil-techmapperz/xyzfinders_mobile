@@ -30,7 +30,7 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
-      height: 50,
+      height: 60,
       notchMargin: 6,
       shape: const CircularNotchedRectangle(),
       color: AppTheme.secondaryColor,
@@ -40,22 +40,24 @@ class CustomBottomNavBar extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () {}, // Consume taps on blank space
         child: Container(
-          height: 50,
+          height: 60,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(0, isSellerMode ? Icons.dashboard_rounded : Icons.home_filled, isSellerMode ? 'Dashboard' : 'Home'),
-            _buildNavItem(1, isSellerMode ? Icons.campaign_rounded : Icons.favorite_border, isSellerMode ? 'My Ads' : 'Wishlist'),
-            const SizedBox(width: 48), // Space for FAB
-            _buildNavItem(3, Icons.forum_outlined, 'Chats'),
-            _buildNavItem(4, Icons.person_rounded, 'Profile'), // changed from Icons.menu
-          ],
-        ),
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildNavItem(0, isSellerMode ? Icons.dashboard_rounded : Icons.home_filled, isSellerMode ? 'Dashboard' : 'Home'),
+              _buildNavItem(1, isSellerMode ? Icons.campaign_rounded : Icons.favorite_border, isSellerMode ? 'My Ads' : 'Wishlist'),
+              const SizedBox(width: 48), // Space for FAB
+              _buildNavItem(3, Icons.forum_outlined, 'Chats'),
+              _buildNavItem(4, Icons.person_rounded, 'Profile'),
+            ],
+          ),
         ),
       ),
     );
   }
+
 
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = selectedIndex == index;
@@ -66,6 +68,8 @@ class CustomBottomNavBar extends StatelessWidget {
       hoverColor: Colors.transparent,
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(icon, color: isSelected ? Colors.white : Colors.white70, size: 24),
           const SizedBox(height: 2),
