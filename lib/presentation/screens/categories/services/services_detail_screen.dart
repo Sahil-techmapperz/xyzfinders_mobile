@@ -11,6 +11,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_utils.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../providers/product_provider.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/chat_provider.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../widgets/favorite_toggle_button.dart';
 import '../../../providers/notification_provider.dart';
@@ -560,15 +562,334 @@ class _ServicesDetailScreenState extends State<ServicesDetailScreen> {
       child: Row(
         children: [
           Expanded(
+            flex: 2,
             child: InkWell(
               onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatScreen(
+                      chatData: {
+                        'rawId': null,
+                        'otherUserId': product.userId.toString(),
+                        'name': product.sellerName ?? 'Seller',
+                        'productId': product.id,
+                        'productTitle': product.title,
+                        'productPrice': product.price,
+                        'productImage': product.allImageUrls.isNotEmpty ? product.allImageUrls.first : null,
+                        'avatarUrl': product.sellerAvatar,
+                        'isAgencyChat': false,
+                        'agencyIdResolved': null,
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                height: 55,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE3F2FD),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.chat_bubble, color: Color(0xFF1E88E5), size: 20),
+                    const SizedBox(width: 8),
+                    "Chat".text.color(const Color(0xFF1E88E5)).lg.bold.make(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 3,
+            child: InkWell(
+              onTap: () {
+                _showBookingBottomSheet(context, product);
+              },
+              child: Container(
+                height: 55,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF00B0FF), Color(0xFF0091EA)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00B0FF).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: "Book Now".text.white.lg.bold.make(),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBookingBottomSheet(BuildContext context, ProductModel product) {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please login first to book this service.")),
+      );
+      return;
+    }
+
+    final nameController = TextEditingController(text: authProvider.user?.name ?? '');
+    DateTime? selectedDate;
+    TimeOfDay? selectedTime;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      "Book Service".text.xl2.bold.gray800.make(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  "Your Name".text.gray700.bold.size(14).make(),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      hintText: "Enter your name",
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF00B0FF)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            "Preferred Date".text.gray700.bold.size(14).make(),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () async {
+                                final DateTime? picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: DateTime.now(),
+                                  firstDate: DateTime.now(),
+                                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: const ColorScheme.light(
+                                          primary: Color(0xFF00B0FF),
+                                          onPrimary: Colors.white,
+                                          onSurface: Colors.black,
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+                                if (picked != null) {
+                                  setState(() {
+                                    selectedDate = picked;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    (selectedDate == null 
+                                        ? "Select Date" 
+                                        : DateFormat('yyyy-MM-dd').format(selectedDate!))
+                                        .text
+                                        .color(selectedDate == null ? Colors.grey : Colors.black87)
+                                        .make(),
+                                    const Icon(Icons.calendar_today_outlined, size: 18, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            "Preferred Time".text.gray700.bold.size(14).make(),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () async {
+                                final TimeOfDay? picked = await showTimePicker(
+                                  context: context,
+                                  initialTime: TimeOfDay.now(),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: const ColorScheme.light(
+                                          primary: Color(0xFF00B0FF),
+                                          onPrimary: Colors.white,
+                                          onSurface: Colors.black,
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+                                if (picked != null) {
+                                  setState(() {
+                                    selectedTime = picked;
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey.shade200),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    (selectedTime == null 
+                                        ? "Select Time" 
+                                        : selectedTime!.format(context))
+                                        .text
+                                        .color(selectedTime == null ? Colors.grey : Colors.black87)
+                                        .make(),
+                                    const Icon(Icons.access_time_outlined, size: 18, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00B0FF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () async {
+                        final name = nameController.text.trim();
+                        if (name.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Please enter your name")),
+                          );
+                          return;
+                        }
+                        if (selectedDate == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Please select preferred date")),
+                          );
+                          return;
+                        }
+                        if (selectedTime == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Please select preferred time")),
+                          );
+                          return;
+                        }
+
+                        final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
+                        final formattedTime = selectedTime!.format(context);
+                        final message = "Hi my name is $name and I want to book this service (${product.title}) in this date: $formattedDate, time: $formattedTime. Is this slot available?";
+
+                        final chatProvider = context.read<ChatProvider>();
+                        
+                        Navigator.pop(context);
+
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(
+                            child: CircularProgressIndicator(color: Color(0xFF00B0FF)),
+                          ),
+                        );
+
+                        final success = await chatProvider.sendMessage(
+                          productId: product.id,
+                          receiverId: product.userId.toString(),
+                          message: message,
+                        );
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Booking request sent successfully!")),
+                          );
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => ChatScreen(
                                 chatData: {
                                   'rawId': null,
-                                  'otherUserId': product.userId?.toString() ?? '',
+                                  'otherUserId': product.userId.toString(),
                                   'name': product.sellerName ?? 'Seller',
                                   'productId': product.id,
                                   'productTitle': product.title,
@@ -581,26 +902,21 @@ class _ServicesDetailScreenState extends State<ServicesDetailScreen> {
                               ),
                             ),
                           );
-                        },
-                        child: Container(
-                height: 55,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.chat_bubble, color: Color(0xFF1E88E5), size: 24),
-                    const SizedBox(width: 10),
-                    "Chat".text.color(const Color(0xFF1E88E5)).xl.bold.make(),
-                  ],
-                ),
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(chatProvider.error ?? "Failed to send booking request")),
+                          );
+                        }
+                      },
+                      child: "Send Booking Request".text.white.bold.make(),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 }
