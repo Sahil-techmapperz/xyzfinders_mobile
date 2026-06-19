@@ -103,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    precacheImage(const AssetImage('assets/images/short_logo.png'), context);
+    precacheImage(const AssetImage('assets/images/app_logo_white.png'), context);
   }
 
   Future<void> _checkAuth() async {
@@ -141,12 +141,12 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Centered Logo
-          Center(
-            child: TweenAnimationBuilder<double>(
+      backgroundColor: AppTheme.secondaryColor,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0.8, end: 1.0),
               duration: const Duration(milliseconds: 800),
               curve: Curves.easeOutBack,
@@ -157,59 +157,33 @@ class _SplashScreenState extends State<SplashScreen> {
                 );
               },
               child: Image.asset(
-                'assets/images/short_logo.png',
-                width: 80,
-                height: 80,
+                'assets/images/app_logo_white.png',
+                width: 150,
+                height: 150,
                 fit: BoxFit.contain,
               ),
             ),
-          ),
-          // Bottom Branding
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 48.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'from',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 12,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.asset(
-                          'assets/images/short_logo.png',
-                          width: 24,
-                          height: 24,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'XYZ Finders',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            const SizedBox(height: 24),
+            const Text(
+              'XYZ Finders',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            const Text(
+              'Jo Chaho, Wo Paao',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
