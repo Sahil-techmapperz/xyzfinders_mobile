@@ -104,10 +104,11 @@ class _SplashScreenState extends State<SplashScreen> {
     final authProvider = context.read<AuthProvider>();
     final agencyProvider = context.read<AgencyProvider>();
 
-    // Run both checks in parallel
+    // Run auth checks and minimum display time in parallel
     await Future.wait([
       authProvider.checkAuthStatus(),
       agencyProvider.checkAuthStatus(),
+      Future.delayed(const Duration(seconds: 2)), // minimum splash display time
     ]);
 
     // If agency is authenticated, clear any regular user session to avoid conflicts
@@ -138,22 +139,11 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0.8, end: 1.0),
-              duration: const Duration(milliseconds: 800),
-              curve: Curves.easeOutBack,
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: child,
-                );
-              },
-              child: Image.asset(
-                'assets/images/app_logo_white.png',
-                width: 150,
-                height: 150,
-                fit: BoxFit.contain,
-              ),
+            Image.asset(
+              'assets/images/app_logo_white.png',
+              width: 150,
+              height: 150,
+              fit: BoxFit.contain,
             ),
             const SizedBox(height: 24),
             const Text(
