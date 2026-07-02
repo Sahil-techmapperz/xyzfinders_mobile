@@ -113,7 +113,7 @@ class _ServicesDetailScreenState extends State<ServicesDetailScreen> {
         final List<Map<String, String>> specsList = [];
         specs.forEach((key, value) {
           if (value != null && value.toString().isNotEmpty) {
-            specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+            specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
           }
         });
 
@@ -366,7 +366,7 @@ class _ServicesDetailScreenState extends State<ServicesDetailScreen> {
     } else if (amenitiesData is Map) {
       amenitiesData.forEach((key, value) {
         if (value == true || value == 1) {
-          allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
+          allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter()});
         }
       });
     }

@@ -115,7 +115,7 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
         final List<Map<String, String>> specsList = [];
         specs.forEach((key, value) {
           if (value != null && value.toString().isNotEmpty) {
-            specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+            specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
           }
         });
 

@@ -18,9 +18,13 @@ class ShareButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
+        final box = context.findRenderObject() as RenderBox?;
         final String shareText = 'Check out this listing on XYZ Finders: ${product.title}\n\n'
             'https://xyzfinders.com/product/${product.id}';
-        Share.share(shareText);
+        Share.share(
+          shareText,
+          sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+        );
       },
       child: Icon(Icons.share_outlined, size: iconSize, color: color),
     );

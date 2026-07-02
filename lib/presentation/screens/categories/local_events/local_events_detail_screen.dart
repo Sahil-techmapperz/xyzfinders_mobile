@@ -123,7 +123,7 @@ class _LocalEventsDetailScreenState extends State<LocalEventsDetailScreen> {
                 }
               } catch (e) {}
             }
-            specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": valStr});
+            specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": valStr});
           }
         });
 
@@ -398,7 +398,7 @@ class _LocalEventsDetailScreenState extends State<LocalEventsDetailScreen> {
     } else if (amenitiesData is Map) {
       amenitiesData.forEach((key, value) {
         if (value == true || value == 1) {
-          allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
+          allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter()});
         }
       });
     }

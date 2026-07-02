@@ -127,7 +127,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         specs.forEach((key, value) {
           if (!['brand', 'make', 'model', 'storage', 'internal_storage', 'rom', 'ram', 'memory', 'specs', 'location', 'city', 'state', 'address'].contains(key.toLowerCase())) {
             if (value != null && value.toString().isNotEmpty && value is! Map && value is! List) {
-              specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+              specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
             }
           }
         });
@@ -400,7 +400,7 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
      } else if (amenitiesData is Map) {
        amenitiesData.forEach((key, value) {
          if (value == true || value == 1 || value.toString().toLowerCase() == 'yes') {
-           allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
+           allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter()});
          }
        });
      }

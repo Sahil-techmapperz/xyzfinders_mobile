@@ -133,7 +133,7 @@ class _AutomobileDetailScreenState extends State<AutomobileDetailScreen> {
         specs.forEach((key, value) {
           if (!['year', 'mileage', 'km_driven', 'kmDriven', 'brand', 'make', 'model', 'fuel_type', 'fuelType', 'fuel', 'transmission', 'specs', 'location', 'city', 'state', 'address'].contains(key.toLowerCase())) {
             if (value != null && value.toString().isNotEmpty && value is! Map && value is! List) {
-              specsList.add({"label": key.replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+              specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
             }
           }
         });
@@ -425,7 +425,7 @@ class _AutomobileDetailScreenState extends State<AutomobileDetailScreen> {
     } else if (amenitiesData is Map) {
       amenitiesData.forEach((key, value) {
         if (value == true || value == 1 || value.toString().toLowerCase() == 'yes') {
-          allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
+          allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter()});
         }
       });
     }
