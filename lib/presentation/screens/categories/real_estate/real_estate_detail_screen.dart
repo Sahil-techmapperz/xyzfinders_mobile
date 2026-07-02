@@ -289,53 +289,59 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
   }
 
   Widget _buildActionButtons(ProductModel product) {
+    const double _iconSize = 22;
+    const EdgeInsets _btnPadding = EdgeInsets.all(8);
+    const BoxDecoration _btnDecoration = BoxDecoration(color: Colors.white, shape: BoxShape.circle);
+
     return Positioned(
       top: MediaQuery.of(context).padding.top + 10,
       right: 16,
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: Consumer<NotificationProvider>(
-              builder: (context, provider, child) {
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.notifications_none, color: Colors.black87, size: 22),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const NotificationScreen()),
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+          Consumer<NotificationProvider>(
+            builder: (context, provider, child) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const NotificationScreen()),
                     ),
-                    if (provider.unreadCount > 0)
-                      Positioned(
-                        right: -2,
-                        top: -2,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                          constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
-                          child: (provider.unreadCount > 9 ? "9+" : provider.unreadCount.toString())
-                              .text.white.size(7).bold.make().centered(),
-                        ),
+                    child: Container(
+                      padding: _btnPadding,
+                      decoration: _btnDecoration,
+                      child: const Icon(Icons.notifications_none, color: Colors.black87, size: _iconSize),
+                    ),
+                  ),
+                  if (provider.unreadCount > 0)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                        child: (provider.unreadCount > 9 ? "9+" : provider.unreadCount.toString())
+                            .text.white.size(7).bold.make().centered(),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            },
           ),
           const SizedBox(width: 10),
           Container(
-            padding: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: ShareButton(product: product, iconSize: 22),
+            padding: _btnPadding,
+            decoration: _btnDecoration,
+            child: ShareButton(product: product, iconSize: _iconSize),
           ),
           const SizedBox(width: 10),
-          FavoriteToggleButton(product: product),
+          FavoriteToggleButton(
+            product: product,
+            iconSize: _iconSize,
+            padding: _btnPadding,
+          ),
         ],
       ),
     );
@@ -386,10 +392,18 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
          allAmenities.add({"icon": Icons.check_circle_outline, "label": amenitiesData.capitalizeFirstLetter()});
        }
      } else if (amenitiesData is List) {
-       for (var item in amenitiesData) {
-          allAmenities.add({"icon": Icons.check_circle_outline, "label": item.toString().capitalizeFirstLetter()});
-       }
-     } else if (amenitiesData is Map) {
+        for (var item in amenitiesData) {
+          if (item is Map) {
+            String name = item['name']?.toString() ?? '';
+            String iconStr = item['icon']?.toString() ?? '';
+            if (name.isNotEmpty) {
+               allAmenities.add({"icon": _getAmenityIcon(iconStr, name), "label": name.capitalizeFirstLetter()});
+            }
+          } else {
+            allAmenities.add({"icon": Icons.check_circle_outline, "label": item.toString().capitalizeFirstLetter()});
+          }
+        }
+      } else if (amenitiesData is Map) {
        amenitiesData.forEach((key, value) {
          if (value == true || value == 1 || value.toString().toLowerCase() == 'yes') {
            allAmenities.add({"icon": Icons.check_circle_outline, "label": key.replaceAll('_', ' ').capitalizeFirstLetter()});
@@ -413,34 +427,88 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
     );
   }
 
+  IconData _getAmenityIcon(String? iconStr, String label) {
+    if (iconStr == null || iconStr.isEmpty) return Icons.check_circle_outline;
+    final lowerStr = iconStr.toLowerCase();
+    final lowerLabel = label.toLowerCase();
+    if (lowerStr.contains('car') || lowerLabel.contains('parking')) return Icons.local_parking;
+    if (lowerStr.contains('building') || lowerLabel.contains('lift') || lowerLabel.contains('elevator')) return Icons.elevator;
+    if (lowerStr.contains('battery') || lowerLabel.contains('power')) return Icons.power;
+    if (lowerStr.contains('shield') || lowerLabel.contains('security')) return Icons.security;
+    if (lowerStr.contains('wifi') || lowerLabel.contains('wifi') || lowerLabel.contains('internet')) return Icons.wifi;
+    if (lowerStr.contains('snowflake') || lowerLabel.contains('ac') || lowerLabel.contains('air')) return Icons.ac_unit;
+    if (lowerStr.contains('drop') || lowerLabel.contains('water')) return Icons.water_drop;
+    if (lowerStr.contains('fire') || lowerLabel.contains('fire')) return Icons.local_fire_department;
+    if (lowerStr.contains('swim') || lowerLabel.contains('pool')) return Icons.pool;
+    if (lowerStr.contains('run') || lowerLabel.contains('gym') || lowerLabel.contains('fitness')) return Icons.fitness_center;
+    if (lowerStr.contains('leaf') || lowerLabel.contains('garden') || lowerLabel.contains('park')) return Icons.park;
+    return Icons.check_circle_outline;
+  }
+
   Widget _buildAmenityCircle(Map<String, dynamic> item) {
-    return Container(
-      height: 60,
-      width: 60,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1.0),
+    return Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 60,
+            width: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1.0),
+            ),
+            child: Icon(item['icon'] as IconData, size: 28, color: Colors.black87).centered(),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 70,
+            alignment: Alignment.center,
+            child: Text(
+              item['label'].toString(),
+              style: const TextStyle(fontSize: 10, color: Colors.black87, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
-      child: Icon(item['icon'] as IconData, size: 28, color: Colors.black87).centered(),
     );
   }
 
   Widget _buildMoreCircle(int count, List<Map<String, dynamic>> allAmenities) {
     return InkWell(
       onTap: () => _showAllAmenitiesModal(allAmenities),
-      child: Container(
-        height: 60,
-        width: 60,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1.0),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            "+$count".text.bold.gray800.size(12).make(),
-            "More".text.bold.gray800.size(10).make(),
+            Container(
+              height: 60,
+              width: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1.0),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  "+$count".text.bold.gray800.size(12).make(),
+                  "More".text.bold.gray800.size(10).make(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: 70,
+              alignment: Alignment.center,
+              child: const Text(
+                'View All',
+                style: TextStyle(fontSize: 10, color: Colors.transparent), // invisible to maintain alignment
+              ),
+            ),
           ],
         ),
       ),

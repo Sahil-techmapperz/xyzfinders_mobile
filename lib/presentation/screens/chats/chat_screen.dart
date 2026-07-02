@@ -8,12 +8,7 @@ import '../../providers/chat_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../../data/models/chat_model.dart';
 import '../../../../core/constants/api_constants.dart';
-import '../categories/real_estate/real_estate_detail_screen.dart';
-import '../categories/automobiles/automobile_detail_screen.dart';
-import '../categories/electronics/electronics_detail_screen.dart';
-import '../categories/fashion/fashion_detail_screen.dart';
-import '../categories/furniture/furniture_detail_screen.dart';
-import '../categories/mobiles/mobiles_detail_screen.dart';
+import '../../../../core/utils/product_navigation_utils.dart';
 
 class ChatScreen extends StatefulWidget {
   final Map<String, dynamic> chatData;
@@ -224,30 +219,17 @@ class _ChatScreenState extends State<ChatScreen> {
               final int? productId = int.tryParse(rawId.toString());
               if (productId == null) return;
 
-              final t = title.toString().toLowerCase();
-              final catId = widget.chatData['categoryId'];
-              Widget target;
-              
-              // Try categoryId first if available (ID mapping from your backend)
-              if (catId != null) {
-                final int id = int.parse(catId.toString());
-                if (id == 2) { // Automobiles
-                  target = AutomobileDetailScreen(productId: productId, title: title);
-                } else if (id == 5) { // Electronics
-                  target = ElectronicsDetailScreen(productId: productId, title: title);
-                } else if (id == 3) { // Mobiles
-                  target = MobilesDetailScreen(productId: productId, title: title);
-                } else if (id == 1) { // Real Estate
-                  target = RealEstateDetailScreen(productId: productId, title: title);
-                } else {
-                  // Fallback to title matching if categoryId is unknown or other
-                  target = _detectTargetByTitle(t, productId, title);
-                }
-              } else {
-                target = _detectTargetByTitle(t, productId, title);
-              }
-              
-              Navigator.push(context, MaterialPageRoute(builder: (context) => target));
+              final rawCatId = widget.chatData['categoryId'];
+              final int? catId = rawCatId != null ? int.tryParse(rawCatId.toString()) : null;
+              final String? catName = widget.chatData['categoryName']?.toString();
+
+              ProductNavigationUtils.navigateByCategory(
+                context,
+                productId: productId,
+                title: title.toString(),
+                categoryName: catName,
+                categoryId: catId,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
@@ -263,21 +245,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _detectTargetByTitle(String t, int productId, dynamic title) {
-    if (t.contains('car') || t.contains('bike') || t.contains('scooter') || t.contains('auto') || t.contains('vehicle')) {
-      return AutomobileDetailScreen(productId: productId, title: title);
-    } else if (t.contains('electronic') || t.contains('gadget') || t.contains('processor') || t.contains('tv') || t.contains('laptop')) {
-      return ElectronicsDetailScreen(productId: productId, title: title);
-    } else if (t.contains('mobile') || t.contains('phone') || t.contains('iphone') || t.contains('android')) {
-      return MobilesDetailScreen(productId: productId, title: title);
-    } else if (t.contains('fashion') || t.contains('dress') || t.contains('cloth') || t.contains('shoe')) {
-      return FashionDetailScreen(productId: productId, title: title);
-    } else if (t.contains('furniture') || t.contains('sofa') || t.contains('chair') || t.contains('table')) {
-      return FurnitureDetailScreen(productId: productId, title: title);
-    } else {
-      return RealEstateDetailScreen(productId: productId, title: title);
-    }
-  }
 
   Widget _buildProductImage(dynamic image) {
     if (image == null) return const Icon(Icons.image_outlined, color: Colors.grey);

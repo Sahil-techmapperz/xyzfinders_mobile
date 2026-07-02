@@ -248,53 +248,59 @@ class _ServicesDetailScreenState extends State<ServicesDetailScreen> {
   }
 
   Widget _buildActionButtons(ProductModel product) {
+    const double _iconSize = 22;
+    const EdgeInsets _btnPadding = EdgeInsets.all(8);
+    const BoxDecoration _btnDecoration = BoxDecoration(color: Colors.white, shape: BoxShape.circle);
+
     return Positioned(
       top: MediaQuery.of(context).padding.top + 10,
       right: 16,
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: Consumer<NotificationProvider>(
-              builder: (context, provider, child) {
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.notifications_none, color: Colors.black87, size: 22),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const NotificationScreen()),
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+          Consumer<NotificationProvider>(
+            builder: (context, provider, child) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const NotificationScreen()),
                     ),
-                    if (provider.unreadCount > 0)
-                      Positioned(
-                        right: -2,
-                        top: -2,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                          constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
-                          child: (provider.unreadCount > 9 ? "9+" : provider.unreadCount.toString())
-                              .text.white.size(7).bold.make().centered(),
-                        ),
+                    child: Container(
+                      padding: _btnPadding,
+                      decoration: _btnDecoration,
+                      child: const Icon(Icons.notifications_none, color: Colors.black87, size: _iconSize),
+                    ),
+                  ),
+                  if (provider.unreadCount > 0)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                        child: (provider.unreadCount > 9 ? "9+" : provider.unreadCount.toString())
+                            .text.white.size(7).bold.make().centered(),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            },
           ),
           const SizedBox(width: 10),
           Container(
-            padding: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: ShareButton(product: product, iconSize: 22),
+            padding: _btnPadding,
+            decoration: _btnDecoration,
+            child: ShareButton(product: product, iconSize: _iconSize),
           ),
           const SizedBox(width: 10),
-          FavoriteToggleButton(product: product),
+          FavoriteToggleButton(
+            product: product,
+            iconSize: _iconSize,
+            padding: _btnPadding,
+          ),
         ],
       ),
     );

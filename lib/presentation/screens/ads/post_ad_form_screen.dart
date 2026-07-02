@@ -1838,7 +1838,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+        Text(label.toUpperCase(), style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
         const SizedBox(width: 20),
         Flexible(child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis)),
       ],
@@ -1859,6 +1859,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      textCapitalization: TextCapitalization.sentences,
       maxLines: maxLines,
       readOnly: readOnly,
       onTap: onTap,

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../data/models/product_model.dart';
 import '../../../core/constants/api_constants.dart';
-import '../screens/categories/real_estate/real_estate_detail_screen.dart';
+import '../../../core/utils/product_navigation_utils.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/currency_utils.dart';
 
@@ -38,17 +38,7 @@ class FeaturedCarousel extends StatelessWidget {
         return Builder(
           builder: (BuildContext context) {
             return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RealEstateDetailScreen(
-                      productId: product.id,
-                      title: product.title,
-                    ),
-                  ),
-                );
-              },
+              onTap: () => ProductNavigationUtils.navigateTo(context, product),
               child: VxBox(
                 child: ZStack([
                   if (imageUrl != null)

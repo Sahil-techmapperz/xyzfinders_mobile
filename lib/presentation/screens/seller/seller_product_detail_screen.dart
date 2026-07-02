@@ -210,11 +210,15 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: _product!.isSold ? Colors.grey : Colors.green,
+                      color: _product!.isSold 
+                          ? Colors.grey 
+                          : (!_product!.isActive ? Colors.orange : Colors.green),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      _product!.isSold ? 'SOLD' : 'ACTIVE',
+                      _product!.isSold 
+                          ? 'SOLD' 
+                          : (!_product!.isActive ? 'INACTIVE' : 'ACTIVE'),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -385,8 +389,8 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
         ? 'Used - Like New'
         : _product!.condition.toUpperCase();
 
-    // Condition: only relevant for physical goods, not real estate or jobs
-    if (!cat.contains('real estate') && !cat.contains('propert') && !cat.contains('job') && !cat.contains('education') && !cat.contains('learning')) {
+    // Condition: only relevant for physical goods, not real estate, jobs, or pets
+    if (!cat.contains('real estate') && !cat.contains('propert') && !cat.contains('job') && !cat.contains('education') && !cat.contains('learning') && !cat.contains('pet')) {
       items.add({'label': 'Condition', 'value': condDisplay});
     }
 

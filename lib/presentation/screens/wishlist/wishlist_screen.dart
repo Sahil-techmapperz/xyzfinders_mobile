@@ -9,12 +9,7 @@ import '../../../../core/constants/api_constants.dart';
 import '../../providers/favorite_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../../../data/models/product_model.dart';
-import '../categories/real_estate/real_estate_detail_screen.dart';
-import '../categories/automobiles/automobile_detail_screen.dart';
-import '../categories/electronics/electronics_detail_screen.dart';
-import '../categories/fashion/fashion_detail_screen.dart';
-import '../categories/furniture/furniture_detail_screen.dart';
-import '../categories/mobiles/mobiles_detail_screen.dart';
+import '../../../../core/utils/product_navigation_utils.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
 import '../../widgets/auth/auth_modal.dart';
 import '../home/home_screen.dart';
@@ -52,29 +47,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
   }
 
   void _navigateToDetail(BuildContext context, ProductModel product) {
-    final title = product.title.toLowerCase();
-    Widget target;
-
-    if (title.contains('real estate') || title.contains('apartment') || title.contains('house')) {
-      target = RealEstateDetailScreen(productId: product.id, title: product.title);
-    } else if (title.contains('automobile') || title.contains('car') || title.contains('bmw')) {
-      target = AutomobileDetailScreen(productId: product.id, title: product.title);
-    } else if (title.contains('electronic') || title.contains('gadget') || title.contains('processor')) {
-      target = ElectronicsDetailScreen(productId: product.id, title: product.title);
-    } else if (title.contains('mobile') || title.contains('phone') || title.contains('iphone')) {
-      target = MobilesDetailScreen(productId: product.id, title: product.title);
-    } else if (title.contains('fashion') || title.contains('dress')) {
-      target = FashionDetailScreen(productId: product.id, title: product.title);
-    } else if (title.contains('furniture') || title.contains('sofa')) {
-      target = FurnitureDetailScreen(productId: product.id, title: product.title);
-    } else {
-      target = RealEstateDetailScreen(productId: product.id, title: product.title);
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => target),
-    ).then((_) {
+    ProductNavigationUtils.navigateTo(context, product).then((_) {
       if (mounted) context.read<FavoriteProvider>().loadFavorites();
     });
   }

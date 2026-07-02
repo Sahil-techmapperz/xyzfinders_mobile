@@ -1090,6 +1090,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      textCapitalization: TextCapitalization.sentences,
       decoration: InputDecoration(
         hintText: hint,
         filled: true,

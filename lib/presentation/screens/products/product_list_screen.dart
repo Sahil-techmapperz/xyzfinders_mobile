@@ -8,7 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../providers/product_provider.dart';
 import '../../widgets/products/product_card.dart';
 import '../../widgets/featured_carousel.dart';
-import '../categories/real_estate/real_estate_detail_screen.dart';
+import '../../../core/utils/product_navigation_utils.dart';
 import '../../../data/services/category_service.dart';
 import '../../../data/models/category_model.dart';
 import '../../../data/services/category_service.dart';
@@ -624,14 +624,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 Expanded(
                                   child: ProductCard(
                                     product: leftProduct,
-                                    onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => RealEstateDetailScreen(
-                                          productId: leftProduct.id,
-                                        ),
-                                      ),
-                                    ),
+                                    onTap: () => ProductNavigationUtils.navigateTo(context, leftProduct),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -639,14 +632,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                   child: rightProduct != null
                                       ? ProductCard(
                                           product: rightProduct,
-                                          onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => RealEstateDetailScreen(
-                                                productId: rightProduct.id,
-                                              ),
-                                            ),
-                                          ),
+                                          onTap: () => ProductNavigationUtils.navigateTo(context, rightProduct),
                                         )
                                       : const SizedBox.shrink(),
                                 ),

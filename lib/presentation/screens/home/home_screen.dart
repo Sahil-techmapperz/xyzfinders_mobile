@@ -17,6 +17,7 @@ import '../categories/pets/pets_accessories_list_screen.dart';
 import '../categories/services/services_list_screen.dart';
 import '../categories/mobiles/mobiles_list_screen.dart';
 import '../categories/jobs/jobs_list_screen.dart';
+import '../categories/real_estate/real_estate_detail_screen.dart';
 import '../categories/automobiles/automobile_detail_screen.dart';
 import '../categories/beauty/beauty_detail_screen.dart';
 import '../categories/electronics/electronics_detail_screen.dart';
@@ -28,6 +29,7 @@ import '../categories/pets_accessories/pets_accessories_detail_screen.dart';
 import '../categories/services/services_detail_screen.dart';
 import '../categories/mobiles/mobiles_detail_screen.dart';
 import '../categories/real_estate/real_estate_detail_screen.dart';
+import '../../../core/utils/product_navigation_utils.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
 import '../profile/profile_screen.dart';
 import '../wishlist/wishlist_screen.dart';
@@ -1790,27 +1792,7 @@ class _HomeTabState extends State<HomeTab> {
               final baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
               
               return InkWell(
-                onTap: () {
-                  final catName = title.toLowerCase();
-                  Widget target;
-
-                  if (catName.contains('real estate') || catName.contains('property')) {
-                    target = RealEstateDetailScreen(productId: item.id, title: item.title);
-                  } else if (catName.contains('automobile') || catName.contains('car')) {
-                    target = AutomobileDetailScreen(productId: item.id, title: item.title);
-                  } else if (catName.contains('electronic') || catName.contains('gadget')) {
-                    target = ElectronicsDetailScreen(productId: item.id, title: item.title);
-                  } else if (catName.contains('mobile') || catName.contains('phone')) {
-                    target = MobilesDetailScreen(productId: item.id, title: item.title);
-                  } else {
-                    target = RealEstateDetailScreen(productId: item.id, title: item.title); // Default fallback
-                  }
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => target),
-                  );
-                },
+                onTap: () => ProductNavigationUtils.navigateTo(context, item),
                 child: Container(
                   width: 180,
                   margin: const EdgeInsets.symmetric(

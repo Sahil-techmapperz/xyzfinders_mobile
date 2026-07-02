@@ -8,7 +8,7 @@ import '../../../data/models/seller_model.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/services/buyer_service.dart';
 import '../../widgets/favorite_toggle_button.dart';
-import '../categories/real_estate/real_estate_detail_screen.dart';
+import '../../../core/utils/product_navigation_utils.dart';
 
 class StoreDetailScreen extends StatefulWidget {
   final int sellerId;
@@ -268,10 +268,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     }
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => RealEstateDetailScreen(productId: product.id)),
-      ),
+      onTap: () => ProductNavigationUtils.navigateTo(context, product),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

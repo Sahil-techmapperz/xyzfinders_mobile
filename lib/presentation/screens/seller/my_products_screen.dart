@@ -448,6 +448,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
         ],
@@ -472,6 +473,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
           decoration: BoxDecoration(
             color: isSelected ? AppTheme.secondaryColor : Colors.white,
             border: Border.all(color: isSelected ? AppTheme.secondaryColor : Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(20),
           ),
           alignment: Alignment.center,
           child: Text(

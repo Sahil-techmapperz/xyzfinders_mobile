@@ -1737,7 +1737,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          label.text.gray500.sm.make().box.width(100).make(),
+          label.toUpperCase().text.gray500.bold.sm.make().box.width(100).make(),
           const SizedBox(width: 12),
           Expanded(child: value.text.bold.make()),
         ],
