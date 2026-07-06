@@ -465,25 +465,6 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           "Showing Results - ${_products.length}".text.italic.gray600.size(12).make(),
-          Row(
-            children: [
-              "Verified Only".text.semiBold.size(12).make(),
-              const SizedBox(width: 8),
-              SizedBox(
-                height: 24,
-                width: 40,
-                child: Switch(
-                  value: _showVerifiedOnly,
-                  onChanged: (val) {
-                    setState(() => _showVerifiedOnly = val);
-                    _fetchProducts();
-                  },
-                  activeColor: AppTheme.secondaryColor,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

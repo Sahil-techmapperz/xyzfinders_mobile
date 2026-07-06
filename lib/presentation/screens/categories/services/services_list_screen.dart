@@ -229,25 +229,6 @@ class _ServicesListScreenState extends State<ServicesListScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           "Showing Results - ${_products.length} nearby".text.italic.gray600.size(12).make(),
-          Row(
-            children: [
-              "Verified Only".text.semiBold.size(12).make(),
-              const SizedBox(width: 8),
-              SizedBox(
-                height: 24,
-                width: 40,
-                child: Switch(
-                  value: _isVerifiedOnly,
-                  onChanged: (val) {
-                    setState(() => _isVerifiedOnly = val);
-                    _fetchProducts();
-                  },
-                  activeColor: AppTheme.secondaryColor,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

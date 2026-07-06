@@ -39,6 +39,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
   final _roomTypeController = TextEditingController();
   final _securityDepositController = TextEditingController();
   final _bedroomsController = TextEditingController();
+  final _minPriceController = TextEditingController();
+  final _maxPriceController = TextEditingController();
   final _bathroomsController = TextEditingController();
   final _balconyController = TextEditingController();
   final _areaController = TextEditingController();
@@ -136,6 +138,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
   String _warranty = 'In Warranty';
   String _fuelType = 'Petrol';
   String _transmission = 'Manual';
+  String _vehicleType = 'Car';
   String _jobType = 'Full-time';
   String _workMode = 'On-site';
   String _gender = 'Male';
@@ -232,6 +235,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     _roomTypeController.dispose();
     _securityDepositController.dispose();
     _bedroomsController.dispose();
+    _minPriceController.dispose();
+    _maxPriceController.dispose();
     _bathroomsController.dispose();
     _balconyController.dispose();
     _areaController.dispose();
@@ -374,6 +379,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         'furnished': _furnishedStatus,
         'tenants': _tenantPreference,
         'amenities': _selectedAmenities,
+        if (_propertyType == 'PG') 'minPrice': _minPriceController.text,
+        if (_propertyType == 'PG') 'maxPrice': _maxPriceController.text,
       };
     } else if (cat.contains('gadget') || cat.contains('electronic')) {
       data = {
@@ -388,6 +395,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       };
     } else if (cat.contains('automobile') || cat.contains('car')) {
       data = {
+        'vehicleType': _vehicleType,
         'brand': _brandController.text,
         'model': _modelController.text,
         'year': _yearController.text,
@@ -680,13 +688,13 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a title' : null,
           ),
           const SizedBox(height: 20),
-          _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : (widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning') ? 'Price (₹) (Optional)' : 'Price (₹)*')),
+          _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : ((widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning') || widget.category.toLowerCase().contains('property') || widget.category.toLowerCase().contains('real estate')) ? 'Price (₹) (Optional for PG)' : 'Price (₹)*')),
           _buildTextField(
             _priceController, 
             'e.g. 5000', 
             keyboardType: TextInputType.number,
             validator: (v) {
-              if (widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning')) return null;
+              if (widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning') || widget.category.toLowerCase().contains('property') || widget.category.toLowerCase().contains('real estate')) return null;
               return v == null || v.trim().isEmpty ? 'Please enter a price' : null;
             },
           ),
@@ -731,7 +739,18 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('Property Type*'),
-          _buildSelectionGroup(['Apartment', 'House', 'Villa', 'Plot'], _propertyType, (val) => setState(() => _propertyType = val)),
+          _buildSelectionGroup(['Apartment', 'House', 'Villa', 'Plot', 'PG'], _propertyType, (val) => setState(() => _propertyType = val)),
+          const SizedBox(height: 24),
+          if (_propertyType == 'PG') ...[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Min Price (₹)*'), _buildTextField(_minPriceController, 'e.g., 5000', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Max Price (₹)*'), _buildTextField(_maxPriceController, 'e.g., 10000', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              ],
+            ),
+          ],
           const SizedBox(height: 24),
           Row(
             children: [
@@ -743,7 +762,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bedrooms*'), _buildTextField(_bedroomsController, 'e.g., 3', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bedrooms'), _buildTextField(_bedroomsController, 'e.g., 3', keyboardType: TextInputType.number)])),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bathrooms (Opt)'), _buildTextField(_bathroomsController, 'e.g., 2', keyboardType: TextInputType.number)])),
               const SizedBox(width: 12),
@@ -753,7 +772,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Area (sq ft)*'), _buildTextField(_areaController, 'e.g., 1200', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Area (sq ft)'), _buildTextField(_areaController, 'e.g., 1200', keyboardType: TextInputType.number)])),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Kitchen (Opt)'), _buildTextField(_kitchenController, 'e.g., Modular')])),
               const SizedBox(width: 12),
@@ -842,22 +861,29 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     }
 
     if (cat.contains('automobile') || cat.contains('car')) {
+      final isBicycle = _vehicleType == 'Bicycle';
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildLabel('Vehicle Type*'),
+          _buildSelectionGroup(['Car', 'Bike', 'Scooter', 'Commercial Vehicle', 'Bicycle'], _vehicleType, (val) => setState(() => _vehicleType = val)),
+          const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, 'e.g., Honda, Maruti, Hyundai', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, isBicycle ? 'e.g., Hero, Trek, Firefox' : 'e.g., Honda, Maruti, Hyundai', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model (Optional)'), _buildTextField(_modelController, 'e.g., City, Swift, Creta')])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model (Optional)'), _buildTextField(_modelController, isBicycle ? 'e.g., Lectro, Ranger' : 'e.g., City, Swift, Creta')])),
             ],
           ),
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Year*'), _buildTextField(_yearController, 'e.g., 2020', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel(isBicycle ? 'Year (Optional)' : 'Year*'), _buildTextField(_yearController, 'e.g., 2020', keyboardType: TextInputType.number, validator: isBicycle ? null : (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
               const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('KM Driven*'), _buildTextField(_kmDrivenController, 'e.g., 25000', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              if (!isBicycle)
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('KM Driven*'), _buildTextField(_kmDrivenController, 'e.g., 25000', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
+              if (isBicycle)
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Gear System (Optional)'), _buildTextField(_bodyTypeController, 'e.g., 21-Speed, Single Speed')])),
             ],
           ),
           const SizedBox(height: 20),
@@ -867,52 +893,67 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           _buildLabel('Condition*'),
           _buildSelectionGroup(['New', 'Used', 'Refurbished'], _condition, (val) => setState(() => _condition = val)),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Mileage (Opt)'), _buildTextField(_mileageController, 'e.g., 18 kmpl')])),
-              const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Insurance (Opt)'), _buildTextField(_insuranceController, 'e.g., Valid until Dec 2025')])),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildLabel('Warranty*'),
-          _buildSelectionGroup(['Under Warranty', 'Expired', 'N/A'], _warranty, (val) => setState(() => _warranty = val)),
-          const SizedBox(height: 24),
-          _buildLabel('Fuel Type*'),
-          _buildSelectionGroup(['Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'], _fuelType, (val) => setState(() => _fuelType = val)),
-          const SizedBox(height: 24),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Transmission*'), _buildSelectionGroup(['Manual', 'Automatic'], _transmission, (val) => setState(() => _transmission = val))])),
-              const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Body Type (Opt)'), _buildTextField(_bodyTypeController, 'e.g., SUV, Sedan, Hatchback')])),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Exterior Color'), _buildTextField(_extColorController, 'e.g., White, Black, Red')])),
-              const SizedBox(width: 16),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Interior Color'), _buildTextField(_intColorController, 'e.g., Beige, Black, Tan')])),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Horsepower'), _buildTextField(_horsepowerController, 'e.g., 120 HP')])),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Engine Cap'), _buildTextField(_engineCapacityController, 'e.g., 1500 cc')])),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Seater Cap'), _buildTextField(_seaterCapacityController, 'e.g., 5, 7')])),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _buildLabel('Doors'),
-          _buildTextField(_doorsController, 'e.g., 4, 2'),
+          if (!isBicycle) ...[
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Mileage (Opt)'), _buildTextField(_mileageController, 'e.g., 18 kmpl')])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Insurance (Opt)'), _buildTextField(_insuranceController, 'e.g., Valid until Dec 2025')])),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildLabel('Warranty*'),
+            _buildSelectionGroup(['Under Warranty', 'Expired', 'N/A'], _warranty, (val) => setState(() => _warranty = val)),
+            const SizedBox(height: 24),
+            _buildLabel('Fuel Type*'),
+            _buildSelectionGroup(['Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'], _fuelType, (val) => setState(() => _fuelType = val)),
+            const SizedBox(height: 24),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Transmission*'), _buildSelectionGroup(['Manual', 'Automatic'], _transmission, (val) => setState(() => _transmission = val))])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Body Type (Opt)'), _buildTextField(_bodyTypeController, 'e.g., SUV, Sedan, Hatchback')])),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Exterior Color'), _buildTextField(_extColorController, 'e.g., White, Black, Red')])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Interior Color'), _buildTextField(_intColorController, 'e.g., Beige, Black, Tan')])),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Horsepower'), _buildTextField(_horsepowerController, 'e.g., 120 HP')])),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Engine Cap'), _buildTextField(_engineCapacityController, 'e.g., 1500 cc')])),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Seater Cap'), _buildTextField(_seaterCapacityController, 'e.g., 5, 7')])),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildLabel('Doors'),
+            _buildTextField(_doorsController, 'e.g., 4, 2'),
+          ],
+          if (isBicycle) ...[
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Frame Size (Optional)'), _buildTextField(_extColorController, 'e.g., 26 inch, 29 inch')])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Color (Optional)'), _buildTextField(_intColorController, 'e.g., Red, Black, Blue')])),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildLabel('Warranty (Optional)'),
+            _buildSelectionGroup(['Under Warranty', 'Expired', 'N/A'], _warranty, (val) => setState(() => _warranty = val)),
+          ],
         ],
       );
     }
+
 
     if (cat.contains('mobile') || cat.contains('tablet')) {
       return Column(
