@@ -10,7 +10,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_utils.dart';
-import '../../../../core/utils/currency_utils.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../providers/product_provider.dart';
 import '../../../../data/models/product_model.dart';
@@ -124,10 +123,18 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
         specsList.add({"label": "Condition", "value": product.formattedCondition});
 
         // Add other dynamic specs that aren't already included
+        const _phoneKeys = ['phone', 'mobile', 'seller_phone', 'number', 'contact', 'tel', 'telephone', 'whatsapp'];
+        final _seenLabels = specsList.map((s) => s['label']!.toLowerCase()).toSet();
         specs.forEach((key, value) {
-          if (!['brand', 'make', 'model', 'storage', 'internal_storage', 'rom', 'ram', 'memory', 'specs', 'location', 'city', 'state', 'address'].contains(key.toLowerCase())) {
+          final lowerKey = key.toLowerCase();
+          if (!['brand', 'make', 'model', 'storage', 'internal_storage', 'rom', 'ram', 'memory', 'specs', 'location', 'city', 'state', 'address'].contains(lowerKey) &&
+              !_phoneKeys.any((p) => lowerKey.contains(p))) {
             if (value != null && value.toString().isNotEmpty && value is! Map && value is! List) {
-              specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+              final label = key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter();
+              if (!_seenLabels.contains(label.toLowerCase())) {
+                specsList.add({"label": label, "value": value.toString()});
+                _seenLabels.add(label.toLowerCase());
+              }
             }
           }
         });

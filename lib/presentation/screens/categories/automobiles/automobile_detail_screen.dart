@@ -130,10 +130,18 @@ class _AutomobileDetailScreenState extends State<AutomobileDetailScreen> {
         addSpec("Transmission", ["transmission"]);
         
         // Add other dynamic specs that aren't already included
+        const _phoneKeys = ['phone', 'mobile', 'seller_phone', 'number', 'contact', 'tel', 'telephone', 'whatsapp'];
+        final _seenLabels = specsList.map((s) => s['label']!.toLowerCase()).toSet();
         specs.forEach((key, value) {
-          if (!['year', 'mileage', 'km_driven', 'kmDriven', 'brand', 'make', 'model', 'fuel_type', 'fuelType', 'fuel', 'transmission', 'specs', 'location', 'city', 'state', 'address'].contains(key.toLowerCase())) {
+          final lowerKey = key.toLowerCase();
+          if (!['year', 'mileage', 'km_driven', 'kmdriven', 'brand', 'make', 'model', 'fuel_type', 'fueltype', 'fuel', 'transmission', 'specs', 'location', 'city', 'state', 'address'].contains(lowerKey) &&
+              !_phoneKeys.any((p) => lowerKey.contains(p))) {
             if (value != null && value.toString().isNotEmpty && value is! Map && value is! List) {
-              specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+              final label = key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter();
+              if (!_seenLabels.contains(label.toLowerCase())) {
+                specsList.add({"label": label, "value": value.toString()});
+                _seenLabels.add(label.toLowerCase());
+              }
             }
           }
         });

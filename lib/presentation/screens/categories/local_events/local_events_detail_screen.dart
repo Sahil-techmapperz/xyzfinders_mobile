@@ -109,10 +109,13 @@ class _LocalEventsDetailScreenState extends State<LocalEventsDetailScreen> {
         }
         
         final List<Map<String, String>> specsList = [];
+        const _phoneKeys = ['phone', 'mobile', 'seller_phone', 'number', 'contact', 'tel', 'telephone', 'whatsapp'];
+        final _seenLabels = <String>{};
         specs.forEach((key, value) {
-          if (value != null && value.toString().isNotEmpty) {
+          final lowerKey = key.toLowerCase();
+          if (value != null && value.toString().isNotEmpty && !_phoneKeys.any((p) => lowerKey.contains(p))) {
             String valStr = value.toString();
-            if (key.toLowerCase().contains('date') && valStr.contains('-')) {
+            if (lowerKey.contains('date') && valStr.contains('-')) {
               try {
                 final parts = valStr.split('-');
                 if (parts.length == 3) {
@@ -123,7 +126,11 @@ class _LocalEventsDetailScreenState extends State<LocalEventsDetailScreen> {
                 }
               } catch (e) {}
             }
-            specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": valStr});
+            final label = key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter();
+            if (!_seenLabels.contains(label.toLowerCase())) {
+              specsList.add({"label": label, "value": valStr});
+              _seenLabels.add(label.toLowerCase());
+            }
           }
         });
 

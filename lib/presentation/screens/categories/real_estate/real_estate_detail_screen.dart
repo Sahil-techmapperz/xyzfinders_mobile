@@ -122,10 +122,18 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
         specsList.add({"label": "Condition", "value": product.formattedCondition});
 
         // Add other dynamic specs that aren't already included
+        const _phoneKeys = ['phone', 'mobile', 'seller_phone', 'number', 'contact', 'tel', 'telephone', 'whatsapp'];
+        final _seenLabels = specsList.map((s) => s['label']!.toLowerCase()).toSet();
         specs.forEach((key, value) {
-          if (!['bedrooms', 'bedroom', 'bhk', 'bathrooms', 'bathroom', 'washrooms', 'furnishing', 'furnished', 'specs', 'location', 'city', 'state', 'address'].contains(key.toLowerCase())) {
+          final lowerKey = key.toLowerCase();
+          if (!['bedrooms', 'bedroom', 'bhk', 'bathrooms', 'bathroom', 'washrooms', 'furnishing', 'furnished', 'specs', 'location', 'city', 'state', 'address'].contains(lowerKey) &&
+              !_phoneKeys.any((p) => lowerKey.contains(p))) {
             if (value != null && value.toString().isNotEmpty && value is! Map && value is! List) {
-              specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+              final label = key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter();
+              if (!_seenLabels.contains(label.toLowerCase())) {
+                specsList.add({"label": label, "value": value.toString()});
+                _seenLabels.add(label.toLowerCase());
+              }
             }
           }
         });

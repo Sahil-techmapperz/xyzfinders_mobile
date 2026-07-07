@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../home/home_screen.dart';
 
 class NotificationDetailScreen extends StatelessWidget {
   final Map<String, dynamic> notification;
@@ -141,8 +142,15 @@ class NotificationDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Just pop for mock implementation
-                    Navigator.pop(context);
+                    if (type.toLowerCase() == 'message' || type.toLowerCase() == 'chat') {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const HomeScreen(initialIndex: 3)),
+                        (route) => false,
+                      );
+                    } else {
+                      Navigator.pop(context);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.secondaryColor,

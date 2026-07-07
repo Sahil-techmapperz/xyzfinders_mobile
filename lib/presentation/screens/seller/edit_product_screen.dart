@@ -125,6 +125,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
   
   String _condition = 'New';
   String _warranty = 'In Warranty';
+  String _vehicleType = 'Car';
   String _fuelType = 'Petrol';
   String _transmission = 'Manual';
   String _jobType = 'Full-time';
@@ -249,6 +250,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       _batteryLifeController.text = attrs['batteryLife']?.toString() ?? '';
       _connectivityController.text = attrs['connectivity']?.toString() ?? '';
     } else if (cat.contains('automobile') || cat.contains('car')) {
+      _vehicleType = attrs['vehicleType']?.toString() ?? 'Car';
       _brandController.text = attrs['brand']?.toString() ?? '';
       _modelController.text = attrs['model']?.toString() ?? '';
       _yearController.text = attrs['year']?.toString() ?? '';
@@ -468,6 +470,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       };
     } else if (cat.contains('automobile') || cat.contains('car')) {
       data = {
+        'vehicleType': _vehicleType,
         'brand': _brandController.text,
         'model': _modelController.text,
         'year': _yearController.text,
@@ -565,103 +568,136 @@ class _EditProductScreenState extends State<EditProductScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(
-          "Edit Ad",
-          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
+        title: const Text(
+          'Edit Ad',
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
         centerTitle: true,
       ),
-      body: _isLoadingDetails 
-        ? const Center(child: CircularProgressIndicator())
-        : Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: Theme.of(context).colorScheme.copyWith(primary: AppTheme.secondaryColor),
-            ),
-            child: Stepper(
-          type: StepperType.horizontal,
-          currentStep: _currentStep,
-          onStepContinue: () {
-            if (_currentStep < 4) {
-              setState(() => _currentStep++);
-            } else {
-              _submitForm();
-            }
-          },
-          onStepCancel: () {
-            if (_currentStep > 0) {
-              setState(() => _currentStep--);
-            }
-          },
-          controlsBuilder: (context, details) {
-            return Padding(
-              padding: const EdgeInsets.only(top: 32.0, bottom: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: details.onStepContinue,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.secondaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 4,
-                      ),
-                      child: _isSubmitting && _currentStep == 4 
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                        : Text(_currentStep == 4 ? 'Update Ad' : 'Next Step', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+      body: _isLoadingDetails
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                _buildStepIndicator(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: _buildCurrentStepContent(),
                   ),
-                  if (_currentStep > 0) ...[
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: details.onStepCancel,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          side: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        child: const Text('Back', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ],
+                ),
+                _buildBottomButtons(),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildStepIndicator() {
+    final steps = ['Basic', 'Details', 'Media', 'Location', 'Review'];
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+      color: const Color(0xFFFFFDF5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(steps.length, (index) {
+          final isActive = _currentStep == index;
+          final isCompleted = _currentStep > index;
+          return Column(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isActive
+                      ? AppTheme.secondaryColor
+                      : isCompleted
+                          ? AppTheme.secondaryColor.withOpacity(0.6)
+                          : Colors.grey.shade400,
+                ),
+                child: Center(
+                  child: Text(
+                    (index + 1).toString(),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
-            );
-          },
-          steps: [
-            Step(
-              title: const Text('Basic', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 0,
-              state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-              content: _buildBasicStep(),
-            ),
-            Step(
-              title: const Text('Details', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 1,
-              state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-              content: _buildSpecsStep(),
-            ),
-            Step(
-              title: const Text('Media', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 2,
-              state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-              content: _buildPhotosStep(),
-            ),
-            Step(
-              title: const Text('Location', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 3,
-              state: _currentStep > 3 ? StepState.complete : StepState.indexed,
-              content: _buildLocationStep(),
-            ),
-            Step(
-              title: const Text('Review', style: TextStyle(fontSize: 10)),
-              isActive: _currentStep >= 4,
-              state: _currentStep > 4 ? StepState.complete : StepState.indexed,
-              content: _buildConfirmStep(),
+              const SizedBox(height: 8),
+              Text(
+                steps[index],
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: isActive ? Colors.black : Colors.grey,
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildCurrentStepContent() {
+    switch (_currentStep) {
+      case 0: return _buildBasicStep();
+      case 1: return _buildSpecsStep();
+      case 2: return _buildPhotosStep();
+      case 3: return _buildLocationStep();
+      case 4: return _buildConfirmStep();
+      default: return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildBottomButtons() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            if (_currentStep > 0) ...[
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => setState(() => _currentStep--),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  child: const Text('Back', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 16),
+            ],
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_currentStep < 4) {
+                    setState(() => _currentStep++);
+                  } else {
+                    _submitForm();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 4,
+                ),
+                child: _isSubmitting && _currentStep == 4
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(
+                        _currentStep == 4 ? 'Update Ad' : 'Next Step',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+              ),
             ),
           ],
         ),
@@ -875,6 +911,100 @@ class _EditProductScreenState extends State<EditProductScreen> {
           const SizedBox(height: 20),
           _buildLabel('Organizer'),
           _buildTextField(_organizerController, 'e.g., Global Events Ltd.'),
+        ],
+      );
+    }
+
+    if (cat.contains('automobile') || cat.contains('car')) {
+      final isBicycle = _vehicleType == 'Bicycle';
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildLabel('Vehicle Type*'),
+          _buildSelectionGroup(['Car', 'Bike', 'Scooter', 'Commercial Vehicle', 'Bicycle'], _vehicleType, (val) => setState(() => _vehicleType = val)),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, isBicycle ? 'e.g., Hero, Trek, Firefox' : 'e.g., Honda, Maruti, Hyundai')])),
+              const SizedBox(width: 16),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Model (Optional)'), _buildTextField(_modelController, isBicycle ? 'e.g., Lectro, Ranger' : 'e.g., City, Swift, Creta')])),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel(isBicycle ? 'Year (Optional)' : 'Year*'), _buildTextField(_yearController, 'e.g., 2020', keyboardType: TextInputType.number)])),
+              const SizedBox(width: 16),
+              if (!isBicycle)
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('KM Driven*'), _buildTextField(_kmDrivenController, 'e.g., 25000', keyboardType: TextInputType.number)])),
+              if (isBicycle)
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Gear System (Optional)'), _buildTextField(_bodyTypeController, 'e.g., 21-Speed, Single Speed')])),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildLabel('No. of Owners (Optional)'),
+          _buildTextField(_ownersController, 'e.g., 1st Owner, 2nd Owner'),
+          const SizedBox(height: 24),
+          _buildLabel('Condition*'),
+          _buildSelectionGroup(['New', 'Used', 'Refurbished'], _condition, (val) => setState(() => _condition = val)),
+          const SizedBox(height: 24),
+          if (!isBicycle) ...[
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Mileage (Opt)'), _buildTextField(_mileageController, 'e.g., 18 kmpl')])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Insurance (Opt)'), _buildTextField(_insuranceController, 'e.g., Valid until Dec 2025')])),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildLabel('Warranty*'),
+            _buildSelectionGroup(['Under Warranty', 'Expired', 'N/A'], _warranty, (val) => setState(() => _warranty = val)),
+            const SizedBox(height: 24),
+            _buildLabel('Fuel Type*'),
+            _buildSelectionGroup(['Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'], _fuelType, (val) => setState(() => _fuelType = val)),
+            const SizedBox(height: 24),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Transmission*'), _buildSelectionGroup(['Manual', 'Automatic'], _transmission, (val) => setState(() => _transmission = val))])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Body Type (Opt)'), _buildTextField(_bodyTypeController, 'e.g., SUV, Sedan, Hatchback')])),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Exterior Color'), _buildTextField(_extColorController, 'e.g., White, Black, Red')])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Interior Color'), _buildTextField(_intColorController, 'e.g., Beige, Black, Tan')])),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Horsepower'), _buildTextField(_horsepowerController, 'e.g., 120 HP')])),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Engine Cap'), _buildTextField(_engineCapacityController, 'e.g., 1500 cc')])),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Seater Cap'), _buildTextField(_seaterCapacityController, 'e.g., 5, 7')])),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildLabel('Doors'),
+            _buildTextField(_doorsController, 'e.g., 4, 2'),
+          ],
+          if (isBicycle) ...[
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Frame Size (Optional)'), _buildTextField(_extColorController, 'e.g., 26 inch, 29 inch')])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Color (Optional)'), _buildTextField(_intColorController, 'e.g., Red, Black, Blue')])),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildLabel('Warranty (Optional)'),
+            _buildSelectionGroup(['Under Warranty', 'Expired', 'N/A'], _warranty, (val) => setState(() => _warranty = val)),
+          ],
         ],
       );
     }

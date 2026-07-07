@@ -109,9 +109,16 @@ class _FashionDetailScreenState extends State<FashionDetailScreen> {
         }
         
         final List<Map<String, String>> specsList = [];
+        const _phoneKeys = ['phone', 'mobile', 'seller_phone', 'number', 'contact', 'tel', 'telephone', 'whatsapp'];
+        final _seenLabels = <String>{};
         specs.forEach((key, value) {
-          if (value != null && value.toString().isNotEmpty) {
-            specsList.add({"label": key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter(), "value": value.toString()});
+          final lowerKey = key.toLowerCase();
+          if (value != null && value.toString().isNotEmpty && !_phoneKeys.any((p) => lowerKey.contains(p))) {
+            final label = key.replaceAll(RegExp(r'(?<=[a-z])(?=[A-Z])'), ' ').replaceAll('_', ' ').capitalizeFirstLetter();
+            if (!_seenLabels.contains(label.toLowerCase())) {
+              specsList.add({"label": label, "value": value.toString()});
+              _seenLabels.add(label.toLowerCase());
+            }
           }
         });
 

@@ -163,6 +163,7 @@ class _HomeTabState extends State<HomeTab> {
   OverlayEntry? _suggestionOverlay;
   List<Map<String, dynamic>> _suggestions = [];
   Timer? _debounce;
+  int _suggestionRequestId = 0;
   
   bool _isLoadingCategories = false;
   List<CategoryModel> _categories = [];
@@ -767,6 +768,7 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Future<void> _fetchSuggestions(String query) async {
+    final currentRequestId = ++_suggestionRequestId;
     if (query.trim().length < 2) {
       _suggestions = [];
       _removeSuggestionOverlay();
@@ -784,7 +786,7 @@ class _HomeTabState extends State<HomeTab> {
           queryParameters: {'search': query.trim(), 'limit': '3'},
         ),
       ]);
-      if (!mounted) return;
+      if (!mounted || currentRequestId != _suggestionRequestId) return;
 
       // --- Products ---
       final raw = results[0].data['data'];
@@ -858,6 +860,8 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   void _handleSearch(String query) {
+    _suggestionRequestId++;
+    _debounce?.cancel();
     if (query.trim().isEmpty) return;
     _removeSuggestionOverlay();
     Navigator.push(
