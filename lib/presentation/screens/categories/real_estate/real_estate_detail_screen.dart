@@ -1,3 +1,4 @@
+import '../../../widgets/products/full_screen_image_viewer.dart';
 import '../../../widgets/share_button.dart';
 import '../../chats/chat_screen.dart';
 import 'dart:convert';
@@ -225,7 +226,20 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
               PageView.builder(
                 itemCount: images.length,
                 onPageChanged: (index) => setState(() => _activeImageIndex = index),
-                itemBuilder: (context, index) => _buildProductImage(images[index]),
+                itemBuilder: (context, index) => GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FullScreenImageViewer(
+                          imageUrls: images,
+                          initialIndex: index,
+                        ),
+                      ),
+                    );
+                  },
+                  child: _buildProductImage(images[index]),
+                ),
               ),
             Positioned(
               bottom: 12,

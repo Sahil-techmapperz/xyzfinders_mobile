@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/services/product_service.dart';
 import 'edit_product_screen.dart';
+import '../../widgets/products/full_screen_image_viewer.dart';
 
 class SellerProductDetailScreen extends StatefulWidget {
   final int productId;
@@ -167,13 +168,35 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                         imageUrl = '${ApiConstants.baseUrl.replaceAll('/api', '')}/api/images/product/$cleanVal?t=${DateTime.now().millisecondsSinceEpoch}';
                       }
                       
-                      return Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.broken_image, color: Colors.grey),
+                      return GestureDetector(
+                        onTap: () {
+                          final urls = _product!.images!.map<String>((img) {
+                            final String imageVal = (img['image']?.toString() ?? img['id']?.toString() ?? '').trim();
+                            if (imageVal.toLowerCase().startsWith('http')) {
+                              return imageVal;
+                            } else {
+                              final String cleanVal = imageVal.startsWith('/') ? imageVal.substring(1) : imageVal;
+                              return '${ApiConstants.baseUrl.replaceAll('/api', '')}/api/images/product/$cleanVal';
+                            }
+                          }).toList();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FullScreenImageViewer(
+                                imageUrls: urls,
+                                initialIndex: _product!.images!.indexOf(image),
+                              ),
+                            ),
+                          );
+                        },
+                        child: Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
                         ),
                       );
                     }).toList(),
