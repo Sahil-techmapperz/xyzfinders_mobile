@@ -310,6 +310,21 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
 
   bool _isSubmitting = false;
 
+  String _getDbCategoryName(String categoryName) {
+    switch (categoryName) {
+      case 'Beauty & Wellness':
+        return 'Beauty';
+      case 'Gadgets & Electronics':
+        return 'Electronics';
+      case 'Furniture & Hardware':
+        return 'Furniture';
+      case 'Mobiles & Tablets':
+        return 'Mobiles';
+      default:
+        return categoryName;
+    }
+  }
+
   void _submitForm() async {
     bool isExemptCategory = widget.category.toLowerCase().contains('job') || 
                             widget.category.toLowerCase().contains('education') || 
@@ -330,7 +345,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       'price': _priceController.text,
       'phone': _phoneController.text,
       'description': _descriptionController.text,
-      'category': widget.category,
+      'category': _getDbCategoryName(widget.category),
       ..._getCategorySpecificData(),
       'state': _stateController.text,
       'city': _cityController.text,

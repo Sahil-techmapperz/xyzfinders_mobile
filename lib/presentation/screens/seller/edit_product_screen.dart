@@ -1050,7 +1050,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     image: DecorationImage(
-                      image: NetworkImage(url.startsWith('http') ? url : 'https://xyzfinders.com/storage/$url'),
+                      image: NetworkImage(url.startsWith('http') ? url : 'https://xyzfinders.in/storage/$url'),
                       fit: BoxFit.cover,
                     ),
                   ),
