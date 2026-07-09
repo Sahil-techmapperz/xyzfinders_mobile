@@ -38,7 +38,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.xyzfinders.app"
+        applicationId = "xyz.finders"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
