@@ -1,4 +1,5 @@
 import '../../../widgets/products/full_screen_image_viewer.dart';
+import '../../../widgets/common/product_location_map.dart';
 import '../../../widgets/share_button.dart';
 import '../../chats/chat_screen.dart';
 import 'dart:convert';
@@ -564,32 +565,11 @@ class _AutomobileDetailScreenState extends State<AutomobileDetailScreen> {
       children: [
         "Map View".text.bold.size(15).make(),
         const SizedBox(height: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: GoogleMap(
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(29.2104, 78.9619),
-                zoom: 15,
-              ),
-              markers: {
-                Marker(
-                  markerId: const MarkerId("automobile_location"),
-                  position: const LatLng(29.2104, 78.9619),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-                ),
-              },
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              mapToolbarEnabled: false,
-            ),
-          ),
+        ProductLocationMap(
+          locationName: product.locationName,
+          cityName: product.cityName,
+          stateName: product.stateName,
+          postalCode: product.postalCode,
         ),
         const SizedBox(height: 12),
         "${product.locationName ?? product.cityName ?? 'Location N/A'}".text.gray600.size(12).make(),

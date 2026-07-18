@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../../widgets/common/product_location_map.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -253,33 +254,24 @@ class _PetsAccessoriesDetailScreenState extends State<PetsAccessoriesDetailScree
   }
 
   Widget _buildMapView() {
+    final product = widget.product;
+    final locationText = product != null
+        ? (product.locationName ?? product.cityName ?? 'Location N/A')
+        : "Civil Lines, Kashipur, Uttarakhand 244713, India";
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         "Store Location".text.bold.size(15).make(),
         const SizedBox(height: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: const GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(29.2104, 78.9619),
-                zoom: 15,
-              ),
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              mapToolbarEnabled: false,
-            ),
-          ),
+        ProductLocationMap(
+          locationName: product?.locationName ?? "Civil Lines",
+          cityName: product?.cityName ?? "Kashipur",
+          stateName: product?.stateName ?? "Uttarakhand",
+          postalCode: product?.postalCode ?? "244713",
         ),
         const SizedBox(height: 12),
-        "Civil Lines, Kashipur, Uttarakhand 244713, India".text.gray600.size(12).make(),
+        locationText.text.gray600.size(12).make(),
       ],
     );
   }
