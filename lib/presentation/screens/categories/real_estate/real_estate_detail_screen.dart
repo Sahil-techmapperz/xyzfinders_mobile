@@ -636,7 +636,6 @@ class _RealEstateDetailScreenState extends State<RealEstateDetailScreen> {
             ]
           ],
         ),
-        "Verified Real Estate Consultant".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

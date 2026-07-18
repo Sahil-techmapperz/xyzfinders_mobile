@@ -575,7 +575,6 @@ class _MobilesDetailScreenState extends State<MobilesDetailScreen> {
             ]
           ],
         ),
-        "Verified Gadget Seller".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

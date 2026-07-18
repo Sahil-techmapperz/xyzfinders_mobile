@@ -703,7 +703,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a title' : null,
           ),
           const SizedBox(height: 20),
-          _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : ((widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning') || widget.category.toLowerCase().contains('property') || widget.category.toLowerCase().contains('real estate')) ? 'Price (₹) (Optional for PG)' : 'Price (₹)*')),
+          _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : ((widget.category.toLowerCase().contains('property') || widget.category.toLowerCase().contains('real estate')) ? 'Price (₹) (Optional for PG)' : ((widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning')) ? 'Price (₹) (Optional)' : 'Price (₹)*'))),
           _buildTextField(
             _priceController, 
             'e.g. 5000', 
@@ -756,16 +756,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           _buildLabel('Property Type*'),
           _buildSelectionGroup(['Apartment', 'House', 'Villa', 'Plot', 'PG'], _propertyType, (val) => setState(() => _propertyType = val)),
           const SizedBox(height: 24),
-          if (_propertyType == 'PG') ...[
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Min Price (₹)*'), _buildTextField(_minPriceController, 'e.g., 5000', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
-                const SizedBox(width: 16),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Max Price (₹)*'), _buildTextField(_maxPriceController, 'e.g., 10000', keyboardType: TextInputType.number, validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
-              ],
-            ),
-          ],
+
           const SizedBox(height: 24),
           Row(
             children: [
@@ -777,7 +768,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bedrooms'), _buildTextField(_bedroomsController, 'e.g., 3', keyboardType: TextInputType.number)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel(_propertyType == 'PG' ? 'Bedrooms (Optional)' : 'Bedrooms*'), _buildTextField(_bedroomsController, 'e.g., 3', keyboardType: TextInputType.number)])),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Bathrooms (Opt)'), _buildTextField(_bathroomsController, 'e.g., 2', keyboardType: TextInputType.number)])),
               const SizedBox(width: 12),
@@ -787,7 +778,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Area (sq ft)'), _buildTextField(_areaController, 'e.g., 1200', keyboardType: TextInputType.number)])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel(_propertyType == 'PG' ? 'Area (sq ft) (Optional)' : 'Area (sq ft)*'), _buildTextField(_areaController, 'e.g., 1200', keyboardType: TextInputType.number)])),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Kitchen (Opt)'), _buildTextField(_kitchenController, 'e.g., Modular')])),
               const SizedBox(width: 12),

@@ -545,7 +545,6 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
             ]
           ],
         ),
-        "Verified Seller".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

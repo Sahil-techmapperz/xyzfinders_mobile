@@ -601,7 +601,6 @@ class _AutomobileDetailScreenState extends State<AutomobileDetailScreen> {
             ]
           ],
         ),
-        "Certified Dealer".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

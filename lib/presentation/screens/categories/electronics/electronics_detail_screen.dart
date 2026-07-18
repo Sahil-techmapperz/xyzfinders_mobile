@@ -536,7 +536,6 @@ class _ElectronicsDetailScreenState extends State<ElectronicsDetailScreen> {
             ]
           ],
         ),
-        "Verified Electronics Dealer".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

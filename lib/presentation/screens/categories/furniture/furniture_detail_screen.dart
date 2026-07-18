@@ -536,7 +536,6 @@ class _FurnitureDetailScreenState extends State<FurnitureDetailScreen> {
             ]
           ],
         ),
-        "Verified Furniture Dealer".text.gray500.size(14).make(),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

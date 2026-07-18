@@ -1094,16 +1094,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
         _buildSelectionRow(['Apartment', 'House', 'Villa', 'Plot', 'PG'], _selectedPropType, (v) => setState(() => _selectedPropType = v)),
         const SizedBox(height: 20),
 
-        if (_selectedPropType == 'PG') ...[
-          Row(
-            children: [
-              Expanded(child: _buildField("Min Price (₹)*", "e.g., 5000", _propMinPriceController)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildField("Max Price (₹)*", "e.g., 10000", _propMaxPriceController)),
-            ],
-          ),
-          const SizedBox(height: 20),
-        ],
+
 
         Row(
           children: [
@@ -1116,7 +1107,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
 
         Row(
           children: [
-            Expanded(child: _buildField("Bedrooms", "e.g., 3", _propBedroomsController)),
+            Expanded(child: _buildField(_selectedPropType == 'PG' ? "Bedrooms (Optional)" : "Bedrooms*", "e.g., 3", _propBedroomsController)),
             const SizedBox(width: 8),
             Expanded(child: _buildField("Bathrooms (Optional)", "e.g., 2", _propBathroomsController)),
             const SizedBox(width: 8),
@@ -1127,7 +1118,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
 
         Row(
           children: [
-            Expanded(child: _buildField("Area (sq ft)", "e.g., 1200", _propAreaController)),
+            Expanded(child: _buildField(_selectedPropType == 'PG' ? "Area (sq ft) (Optional)" : "Area (sq ft)*", "e.g., 1200", _propAreaController)),
             const SizedBox(width: 8),
             Expanded(child: _buildField("Kitchen (Optional)", "e.g., Modular", _propKitchenController)),
             const SizedBox(width: 8),
