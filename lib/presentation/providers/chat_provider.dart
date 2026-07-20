@@ -36,8 +36,16 @@ class ChatProvider extends ChangeNotifier {
     // We should initialize socket manually when user authenticates
   }
 
-  void initializeSocket(String token) {
+  void initializeSocket(String token, {String? userId, String? agencyId}) {
     _socketService.initSocket(token);
+    
+    if (userId != null) {
+      _socketService.joinUser(userId);
+    }
+    if (agencyId != null) {
+      _socketService.joinAgency(agencyId);
+    }
+
     _socketService.onMessageReceived((data) {
       final newMessage = ChatMessage.fromJson(data);
 
@@ -143,9 +151,29 @@ class ChatProvider extends ChangeNotifier {
     String? receiverAgencyId,
     String? message,
     File? attachment,
+    int? senderId,
   }) async {
     _isSending = true;
     _error = null;
+
+    final tempId = -(DateTime.now().millisecondsSinceEpoch);
+    final optimisticMsg = ChatMessage(
+      id: tempId,
+      productId: productId,
+      senderId: senderId,
+      receiverId: receiverId != null ? int.tryParse(receiverId) : null,
+      receiverAgencyId: receiverAgencyId != null ? int.tryParse(receiverAgencyId) : null,
+      message: message ?? '',
+      attachmentUrl: attachment?.path,
+      isRead: false,
+      createdAt: DateTime.now(),
+      senderName: 'Me',
+      receiverName: '',
+      isAgencyChat: receiverAgencyId != null,
+    );
+
+    _currentMessages.add(optimisticMsg);
+    onNewMessageReceived?.call();
     notifyListeners();
 
     try {
@@ -162,13 +190,26 @@ class ChatProvider extends ChangeNotifier {
         attachmentUrl: attachmentUrl,
       );
 
-      _currentMessages.add(sentMessage);
+      final index = _currentMessages.indexWhere((m) => m.id == tempId);
+      if (index != -1) {
+        _currentMessages[index] = sentMessage;
+      } else {
+        _currentMessages.add(sentMessage);
+      }
+      
+      // Emit the socket event so the receiver gets it instantly
+      if (receiverAgencyId != null) {
+        _socketService.emitAgencyMessage(agencyId: receiverAgencyId, message: sentMessage.toJson());
+      } else if (receiverId != null) {
+        _socketService.emitUserMessage(receiverId: receiverId, message: sentMessage.toJson());
+      }
       
       // Optimistically fetch conversations to update the latest message preview
       loadConversations();
       
       return true;
     } catch (e) {
+      _currentMessages.removeWhere((m) => m.id == tempId);
       _error = e.toString();
       return false;
     } finally {

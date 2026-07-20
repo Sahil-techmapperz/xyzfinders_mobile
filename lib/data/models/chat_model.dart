@@ -123,4 +123,24 @@ class ChatMessage {
       reportId: json['report_id'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'product_id': productId,
+      'sender_id': senderId,
+      'receiver_id': receiverId,
+      'receiver_agency_id': receiverAgencyId,
+      'message': message,
+      'attachment_url': attachmentUrl,
+      'is_read': isRead ? 1 : 0,
+      'created_at': createdAt.toIso8601String(),
+      'sender_name': senderName,
+      'receiver_name': receiverName,
+      'agency_name': agencyName,
+      'agency_logo': agencyLogo,
+      'is_agency_chat': isAgencyChat ? 1 : 0,
+      'report_id': reportId,
+    };
+  }
 }

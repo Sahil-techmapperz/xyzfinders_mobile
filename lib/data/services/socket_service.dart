@@ -39,12 +39,34 @@ class SocketService {
     _socket = null;
   }
 
+  void joinUser(String userId) {
+    _socket?.emit('join_user', userId);
+  }
+
+  void joinAgency(String agencyId) {
+    _socket?.emit('join_agency', agencyId);
+  }
+
+  void emitUserMessage({required String receiverId, required dynamic message}) {
+    _socket?.emit('send_user_message', {
+      'receiverId': receiverId,
+      'message': message,
+    });
+  }
+
+  void emitAgencyMessage({required String agencyId, required dynamic message}) {
+    _socket?.emit('send_agency_message', {
+      'agencyId': agencyId,
+      'message': message,
+    });
+  }
+
   void onMessageReceived(Function(dynamic) callback) {
-    _socket?.on('receive_message', callback);
+    _socket?.on('receive_user_message', callback);
   }
 
   void offMessageReceived() {
-    _socket?.off('receive_message');
+    _socket?.off('receive_user_message');
   }
 
   IO.Socket? get socket => _socket;

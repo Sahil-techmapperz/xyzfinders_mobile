@@ -5,6 +5,10 @@ import 'register_screen.dart';
 import '../home/home_screen.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/agency_provider.dart';
+import '../../providers/chat_provider.dart';
+import '../../../core/config/api_service.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -38,10 +42,25 @@ class LoginScreen extends StatelessWidget {
                       MaterialPageRoute(builder: (_) => RegisterScreen()),
                     );
                   },
-                  onSuccess: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => HomeScreen()),
-                    );
+                  onSuccess: () async {
+                    final authProvider = context.read<AuthProvider>();
+                    final agencyProvider = context.read<AgencyProvider>();
+                    final token = await ApiService().getAuthToken();
+                    
+                    if (token != null) {
+                      final userId = authProvider.isAuthenticated ? authProvider.user?.id?.toString() : null;
+                      final agencyId = agencyProvider.isAuthenticated ? agencyProvider.agencyUser?.id?.toString() : null;
+                      if (context.mounted) {
+                        context.read<ChatProvider>().initializeSocket(token, userId: userId, agencyId: agencyId);
+                        context.read<ChatProvider>().loadConversations();
+                      }
+                    }
+
+                    if (context.mounted) {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => HomeScreen()),
+                      );
+                    }
                   },
                 ),
               ],

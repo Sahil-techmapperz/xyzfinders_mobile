@@ -75,26 +75,29 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty && !hasImage) return;
 
     final provider = context.read<ChatProvider>();
+    final currentUserId = context.read<AuthProvider>().user?.id;
     final isAgencyChat = widget.chatData['isAgencyChat'] == true;
     final otherUserId = widget.chatData['otherUserId'].toString();
     final receiverId = !isAgencyChat ? otherUserId : null;
     final receiverAgencyId = isAgencyChat ? widget.chatData['agencyIdResolved']?.toString() : null;
+
+    final tempImage = _selectedImage;
+    setState(() {
+       _messageController.clear();
+       _selectedImage = null;
+    });
+    _scrollToBottom();
 
     final success = await provider.sendMessage(
       productId: widget.chatData['productId'],
       receiverId: receiverId,
       receiverAgencyId: receiverAgencyId,
       message: text,
-      attachment: _selectedImage,
+      attachment: tempImage,
+      senderId: currentUserId,
     );
 
-    if (success) {
-      setState(() {
-         _messageController.clear();
-         _selectedImage = null;
-      });
-      _scrollToBottom();
-    } else {
+    if (!success) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(provider.error ?? 'Failed to send message')),
@@ -362,24 +365,30 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (message.attachmentUrl != null)
-                   Padding(
-                     padding: const EdgeInsets.only(bottom: 8.0),
-                     child: ClipRRect(
-                       borderRadius: BorderRadius.circular(12),
-                       child: CachedNetworkImage(
-                         imageUrl: message.attachmentUrl!,
-                         placeholder: (context, url) => Container(
-                           width: 200,
-                           height: 150,
-                           color: Colors.grey.shade200,
-                           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                         ),
-                         errorWidget: (context, url, error) => const Icon(Icons.error),
-                         fit: BoxFit.cover,
-                         width: 200,
-                       ),
-                     ),
-                   ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: message.attachmentUrl!.startsWith('http')
+                          ? CachedNetworkImage(
+                              imageUrl: message.attachmentUrl!,
+                              placeholder: (context, url) => Container(
+                                width: 200,
+                                height: 150,
+                                color: Colors.grey.shade200,
+                                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                              ),
+                              errorWidget: (context, url, error) => const Icon(Icons.error),
+                              fit: BoxFit.cover,
+                              width: 200,
+                            )
+                          : Image.file(
+                              File(message.attachmentUrl!),
+                              width: 200,
+                              fit: BoxFit.cover,
+                            ),
+                    ),
+                  ),
                 if (message.message.isNotEmpty)
                   Text(
                     message.message,

@@ -58,12 +58,10 @@ class MyApp extends StatelessWidget {
             navigatorKey: navigatorKey,
             debugShowCheckedModeBanner: false,
             builder: (context, child) {
-              return AnnotatedRegion<SystemUiOverlayStyle>(
-                value: SystemUiOverlayStyle.dark,
-                child: GestureDetector(
-                  onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-                  child: child,
-                ),
+              return GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                child: child,
               );
             },
             theme: AppTheme.lightTheme,
@@ -127,7 +125,9 @@ class _SplashScreenState extends State<SplashScreen> {
     if (agencyProvider.isAuthenticated || authProvider.isAuthenticated) {
       final token = await ApiService().getAuthToken();
       if (token != null) {
-        context.read<ChatProvider>().initializeSocket(token);
+        final userId = authProvider.isAuthenticated ? authProvider.user?.id?.toString() : null;
+        final agencyId = agencyProvider.isAuthenticated ? agencyProvider.agencyUser?.id?.toString() : null;
+        context.read<ChatProvider>().initializeSocket(token, userId: userId, agencyId: agencyId);
         context.read<ChatProvider>().loadConversations();
       }
     }
