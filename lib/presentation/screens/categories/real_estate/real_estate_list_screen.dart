@@ -557,7 +557,7 @@ class _RealEstateListScreenState extends State<RealEstateListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CurrencyUtils.formatIndianCurrency(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
+                  CurrencyUtils.formatPriceDisplay(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
                   const SizedBox(height: 8),
                   item.title.text.lg.bold.make(),
                   const SizedBox(height: 4),

@@ -1857,7 +1857,7 @@ class _HomeTabState extends State<HomeTab> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              "${CurrencyUtils.formatIndianCurrency(item.price)} /-".text.lg.bold.color(AppTheme.secondaryColor).make(),
+                              "${CurrencyUtils.formatPriceDisplay(item.price)} /-".text.lg.bold.color(AppTheme.secondaryColor).make(),
                               const SizedBox(height: 2),
                               Flexible(
                                 child: item.title.text.semiBold

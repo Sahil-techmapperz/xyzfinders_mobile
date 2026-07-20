@@ -1,3 +1,4 @@
+import '../../../core/utils/currency_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:velocity_x/velocity_x.dart';
@@ -477,7 +478,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            "₹ ${product.price}".text.bold.color(AppTheme.secondaryColor).sm.make(),
+                            CurrencyUtils.formatPriceDisplay(product.price).text.bold.color(AppTheme.secondaryColor).sm.make(),
                           ],
                         ),
                       ),

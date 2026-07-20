@@ -214,8 +214,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
       }
       
       // Price filter
-      if (_minPrice != null && p.price < _minPrice!) return false;
-      if (_maxPrice != null && p.price > _maxPrice!) return false;
+      if (_minPrice != null && p.numericPrice < _minPrice!) return false;
+      if (_maxPrice != null && p.numericPrice > _maxPrice!) return false;
       
       return true;
     }).toList();
@@ -344,7 +344,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
     // Find absolute min/max prices from current wishlist
     double absMax = 100000;
     if (allProducts.isNotEmpty) {
-      absMax = allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
+      absMax = allProducts.map((p) => p.numericPrice).reduce((a, b) => a > b ? a : b);
     }
     if (absMax < 1000) absMax = 1000;
 
@@ -459,8 +459,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
   }
 
   Widget _buildModernProductCard(BuildContext context, ProductModel product, String baseUrl, FavoriteProvider provider) {
-    final hasDiscount = product.originalPrice != null && product.originalPrice! > product.price;
-    final discountPercent = hasDiscount ? (((product.originalPrice! - product.price) / product.originalPrice!) * 100).round() : 0;
+    final hasDiscount = product.hasDiscount;
+    final discountPercent = hasDiscount ? (((product.numericOriginalPrice! - product.numericPrice) / product.numericOriginalPrice!) * 100).round() : 0;
 
     return GestureDetector(
       onTap: () => _navigateToDetail(context, product),
@@ -539,10 +539,10 @@ class _WishlistScreenState extends State<WishlistScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        CurrencyUtils.formatIndianCurrency(product.price).text.bold.color(AppTheme.secondaryColor).make(),
+                        CurrencyUtils.formatPriceDisplay(product.price).text.bold.color(AppTheme.secondaryColor).make(),
                         if (hasDiscount) ...[
                           const SizedBox(width: 4),
-                          CurrencyUtils.formatIndianCurrency(product.originalPrice!.round()).text.gray400.xs.lineThrough.make(),
+                          CurrencyUtils.formatPriceDisplay(product.originalPrice).text.gray400.xs.lineThrough.make(),
                         ],
                       ],
                     ),

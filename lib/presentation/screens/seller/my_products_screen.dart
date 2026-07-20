@@ -1,3 +1,4 @@
+import '../../../core/utils/currency_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../data/models/product_model.dart';
@@ -573,7 +574,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                     Row(
                       children: [
                         Text(
-                          '₹ ${product.price.toStringAsFixed(0)}',
+                          CurrencyUtils.formatPriceDisplay(product.price),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,

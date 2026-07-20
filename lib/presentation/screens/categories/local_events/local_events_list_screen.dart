@@ -314,7 +314,7 @@ class _LocalEventsListScreenState extends State<LocalEventsListScreen> {
               children: [
                 Row(
                   children: [
-                    CurrencyUtils.formatIndianCurrency(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
+                    CurrencyUtils.formatPriceDisplay(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
                     "/Starts at".text.gray700.semiBold.size(14).make(),
                   ],
                 ),

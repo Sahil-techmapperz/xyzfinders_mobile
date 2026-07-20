@@ -389,7 +389,7 @@ class _AutomobileListScreenState extends State<AutomobileListScreen> {
               children: [
                 Row(
                   children: [
-                    CurrencyUtils.formatIndianCurrency(car.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
+                    CurrencyUtils.formatPriceDisplay(car.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
                   ],
                 ),
                 car.title.text.semiBold.xl.black.make(),

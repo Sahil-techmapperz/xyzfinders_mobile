@@ -107,7 +107,7 @@ class ProductCard extends StatelessWidget {
           6.heightBox,
           
           HStack([
-            CurrencyUtils.formatIndianCurrency(product.price).text.bold.xl.color(AppTheme.secondaryColor).make(),
+            CurrencyUtils.formatPriceDisplay(product.price).text.bold.xl.color(AppTheme.secondaryColor).make(),
           ]),
 
           6.heightBox,

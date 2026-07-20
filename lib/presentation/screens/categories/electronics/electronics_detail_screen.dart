@@ -353,7 +353,7 @@ class _ElectronicsDetailScreenState extends State<ElectronicsDetailScreen> {
   Widget _buildPriceSection(ProductModel product) {
     return Row(
       children: [
-        CurrencyUtils.formatIndianCurrency(product.price).text.xl3.bold.color(AppTheme.secondaryColor).make(),
+        CurrencyUtils.formatPriceDisplay(product.price).text.xl3.bold.color(AppTheme.secondaryColor).make(),
         "/-".text.xl2.bold.color(AppTheme.secondaryColor).make(),
       ],
     );

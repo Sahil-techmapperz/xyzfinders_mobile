@@ -112,9 +112,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       final product = await _productService.createProduct(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
-        price: double.parse(_priceController.text),
+        price: _priceController.text,
         originalPrice: _originalPriceController.text.isNotEmpty
-            ? double.parse(_originalPriceController.text)
+            ? _originalPriceController.text
             : null,
         categoryId: _selectedCategoryId!,
         locationId: _selectedLocationId!,
@@ -307,7 +307,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                             hintText: '0.00',
                             prefixIcon: Icon(Icons.attach_money),
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: TextInputType.text,
                           validator: (value) {
                              if (value == null || value.isEmpty) return 'Required';
                              if (double.tryParse(value) == null) return 'Invalid';
@@ -360,7 +360,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                 prefixIcon: Icon(Icons.money_off),
                 helperText: 'Enter if item is on sale',
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: TextInputType.text,
               validator: (value) {
                 if (value != null && value.isNotEmpty) {
                   final originalPrice = double.tryParse(value);

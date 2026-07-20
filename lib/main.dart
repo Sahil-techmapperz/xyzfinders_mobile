@@ -57,6 +57,15 @@ class MyApp extends StatelessWidget {
             scaffoldMessengerKey: scaffoldMessengerKey,
             navigatorKey: navigatorKey,
             debugShowCheckedModeBanner: false,
+            builder: (context, child) {
+              return AnnotatedRegion<SystemUiOverlayStyle>(
+                value: SystemUiOverlayStyle.dark,
+                child: GestureDetector(
+                  onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                  child: child,
+                ),
+              );
+            },
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.light,

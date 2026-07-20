@@ -302,7 +302,7 @@ class _FindJobsScreenState extends State<FindJobsScreen> {
                   children: [
                     const Icon(Icons.currency_rupee, size: 14, color: Colors.grey),
                     const SizedBox(width: 6),
-                    "${CurrencyUtils.formatIndianCurrency(job.price)} / Monthly".text.color(AppTheme.secondaryColor).semiBold.size(12).make(),
+                    "${CurrencyUtils.formatPriceDisplay(job.price)} / Monthly".text.color(AppTheme.secondaryColor).semiBold.size(12).make(),
                   ],
                 ),
                 const SizedBox(height: 6),

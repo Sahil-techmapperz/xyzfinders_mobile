@@ -500,7 +500,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
                 children: [
                   const Icon(Icons.payments_outlined, size: 16, color: Colors.grey),
                   const SizedBox(width: 8),
-                  "${CurrencyUtils.formatIndianCurrency(item.price)} /Monthly".text.semiBold.size(14).color(AppTheme.secondaryColor).make(),
+                  "${CurrencyUtils.formatPriceDisplay(item.price)} /Monthly".text.semiBold.size(14).color(AppTheme.secondaryColor).make(),
                 ],
               ),
               const SizedBox(height: 12),

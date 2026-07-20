@@ -228,7 +228,7 @@ class _JobsDetailScreenState extends State<JobsDetailScreen> {
                             (attrs['companyName'] ?? attrs['company_name'] ?? attrs['company'] ?? product.sellerName ?? "Company Name").toString().text.xl.color(Colors.blue.shade400).semiBold.make(),
                             const SizedBox(height: 24),
                             
-                            _buildInfoRow(Icons.payments_outlined, "${CurrencyUtils.formatIndianCurrency(product.price)} - ${CurrencyUtils.formatIndianCurrency(product.price + 5000)} /-"),
+                            _buildInfoRow(Icons.payments_outlined, "${CurrencyUtils.formatPriceDisplay(product.price)} - ${CurrencyUtils.formatPriceDisplay(attrs['salaryTo'] ?? attrs['salary_to'] ?? '')} Monthly"),
                             _buildInfoRow(Icons.location_on_outlined, "${product.locationName ?? product.cityName ?? 'Gurgaon, Sector 62, New Delhi'}, India"),
                             _buildInfoRow(Icons.access_time, jobType.toString()),
                             _buildInfoRow(Icons.business_center_outlined, experience.toString()),

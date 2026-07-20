@@ -1,3 +1,4 @@
+import '../../../core/utils/currency_utils.dart';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -300,7 +301,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 children: [
                   product.title.text.semiBold.maxLines(1).ellipsis.make(),
                   const SizedBox(height: 4),
-                  "₹${product.price}".text.bold.color(AppTheme.secondaryColor).make(),
+                  CurrencyUtils.formatPriceDisplay(product.price).text.bold.color(AppTheme.secondaryColor).make(),
                 ],
               ),
             ),

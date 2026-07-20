@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -34,6 +35,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
   final _priceController = TextEditingController();
   final _phoneController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _typeController = TextEditingController();
+  String? _selectedSubCategory;
   
   // Property Specific Controllers
   final _roomTypeController = TextEditingController();
@@ -232,6 +235,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     _priceController.dispose();
     _phoneController.dispose();
     _descriptionController.dispose();
+    _typeController.dispose();
     _roomTypeController.dispose();
     _securityDepositController.dispose();
     _bedroomsController.dispose();
@@ -529,6 +533,11 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         'condition': _condition,
       };
     }
+    if (_selectedSubCategory != null) {
+      data['subCategory'] = _selectedSubCategory;
+    } else {
+      data['subCategory'] = _getSubcategories(widget.category.toLowerCase()).first;
+    }
     return data;
   }
 
@@ -706,8 +715,8 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           _buildLabel(widget.category.toLowerCase().contains('job') ? 'Salary (Monthly)*' : ((widget.category.toLowerCase().contains('property') || widget.category.toLowerCase().contains('real estate')) ? 'Price (₹) (Optional for PG)' : ((widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning')) ? 'Price (₹) (Optional)' : 'Price (₹)*'))),
           _buildTextField(
             _priceController, 
-            'e.g. 5000', 
-            keyboardType: TextInputType.number,
+            'e.g. 5000 or Negotiable', 
+            keyboardType: TextInputType.text,
             validator: (v) {
               if (widget.category.toLowerCase().contains('education') || widget.category.toLowerCase().contains('learning') || widget.category.toLowerCase().contains('property') || widget.category.toLowerCase().contains('real estate')) return null;
               return v == null || v.trim().isEmpty ? 'Please enter a price' : null;
@@ -738,12 +747,54 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     );
   }
 
+  List<String> _getSubcategories(String cat) {
+    if (cat.contains('property') || cat.contains('real estate')) {
+      return ['Apartment', 'House', 'Villa', 'Plot', 'PG', 'Other'];
+    } else if (cat.contains('gadget') || cat.contains('electronic')) {
+      return ['Laptops', 'Cameras', 'TVs', 'Audio', 'Accessories', 'Other'];
+    } else if (cat.contains('automobile') || cat.contains('car')) {
+      return ['Cars', 'Bikes', 'Scooters', 'Commercial Vehicles', 'Bicycles', 'Other'];
+    } else if (cat.contains('mobile') || cat.contains('tablet')) {
+      return ['Mobile Phones', 'Tablets', 'Accessories', 'Smartwatches', 'Other'];
+    } else if (cat.contains('furniture')) {
+      return ['Sofa', 'Bed', 'Wardrobe', 'Table', 'Chairs', 'Other'];
+    } else if (cat.contains('fashion') || cat.contains('lifestyle')) {
+      return ['Men', 'Women', 'Kids', 'Accessories', 'Footwear', 'Other'];
+    } else if (cat.contains('pet') || cat.contains('animal')) {
+      return ['Dogs', 'Cats', 'Fishes', 'Birds', 'Accessories', 'Food', 'Other'];
+    } else if (cat.contains('event')) {
+      return ['Weddings', 'Parties', 'Corporate', 'Concerts', 'Other'];
+    } else if (cat.contains('beauty') || cat.contains('wellness')) {
+      return ['Makeup', 'Skincare', 'Haircare', 'Fragrances', 'Other'];
+    } else if (cat.contains('education') || cat.contains('learning')) {
+      return ['Tutoring', 'Courses', 'Workshops', 'Books', 'Other'];
+    } else if (cat.contains('service')) {
+      return ['Cleaning', 'Plumbing', 'Electrical', 'Carpentry', 'Other'];
+    } else if (cat.contains('job')) {
+      return ['IT', 'BPO', 'Sales', 'Marketing', 'Finance', 'Other'];
+    }
+    return ['General', 'Other'];
+  }
+
   Widget _buildSpecsStep() {
     final cat = widget.category.toLowerCase();
+    final subcategories = _getSubcategories(cat);
 
     return Form(
       key: _formKeyDetails,
-      child: _buildCategoryFields(cat),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildLabel('Category / Sub-Category*'),
+          _buildDropdown(
+            subcategories, 
+            _selectedSubCategory ?? subcategories.first, 
+            (val) => setState(() => _selectedSubCategory = val)
+          ),
+          const SizedBox(height: 24),
+          _buildCategoryFields(cat),
+        ],
+      ),
     );
   }
 
@@ -1902,10 +1953,11 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType? keyboardType, int maxLines = 1, IconData? suffixIcon, bool readOnly = false, VoidCallback? onTap, String? Function(String?)? validator}) {
+  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType? keyboardType, int maxLines = 1, IconData? suffixIcon, bool readOnly = false, VoidCallback? onTap, String? Function(String?)? validator, List<TextInputFormatter>? inputFormatters}) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       textCapitalization: TextCapitalization.sentences,
       maxLines: maxLines,
       readOnly: readOnly,

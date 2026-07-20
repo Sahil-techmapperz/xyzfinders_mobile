@@ -312,7 +312,7 @@ class _FurnitureListScreenState extends State<FurnitureListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CurrencyUtils.formatIndianCurrency(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
+                CurrencyUtils.formatPriceDisplay(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
                 item.title.text.semiBold.xl.black.make(),
                 const SizedBox(height: 4),
                 "Condition: ${item.formattedCondition}".text.gray600.medium.size(13).make(),

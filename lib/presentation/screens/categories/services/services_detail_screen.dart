@@ -353,12 +353,12 @@ class _ServicesDetailScreenState extends State<ServicesDetailScreen> {
   }
 
   Widget _buildPriceSection(ProductModel product) {
-    if (product.price == 0) {
-      return "Price on Request".text.xl2.bold.orange600.make();
+    if (product.numericPrice == 0) {
+      return const SizedBox();
     }
     return Row(
       children: [
-        CurrencyUtils.formatIndianCurrency(product.price).text.xl3.bold.color(AppTheme.secondaryColor).make(),
+        CurrencyUtils.formatPriceDisplay(product.price).text.xl3.bold.color(AppTheme.secondaryColor).make(),
         "/-".text.xl2.bold.color(AppTheme.secondaryColor).make(),
       ],
     );

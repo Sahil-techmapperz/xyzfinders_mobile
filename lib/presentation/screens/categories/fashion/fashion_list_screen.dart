@@ -299,7 +299,7 @@ class _FashionListScreenState extends State<FashionListScreen> {
               children: [
                 Row(
                   children: [
-                    CurrencyUtils.formatIndianCurrency(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
+                    CurrencyUtils.formatPriceDisplay(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
                   ],
                 ),
                 item.title.text.semiBold.xl.black.make(),

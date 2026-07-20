@@ -717,7 +717,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
         _buildTextField(_titleController, 'e.g. Title of your ad'),
         const SizedBox(height: 20),
         _buildLabel(isJob ? 'Salary (Monthly)*' : (isEducation ? 'Price (₹) (Optional)' : 'Price (₹)*')),
-        _buildTextField(_priceController, 'e.g. 5000', keyboardType: TextInputType.number),
+        _buildTextField(_priceController, 'e.g. 5000 /h', keyboardType: TextInputType.text),
         const SizedBox(height: 20),
         _buildLabel('Contact Number*'),
         _buildTextField(_phoneController, 'e.g. 9876543210', keyboardType: TextInputType.phone),

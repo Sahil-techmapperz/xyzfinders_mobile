@@ -1,3 +1,4 @@
+import '../../../core/utils/currency_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -291,7 +292,7 @@ class _SellerProductDetailScreenState extends State<SellerProductDetailScreen> {
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        '₹ ${_product!.price.toStringAsFixed(0)}',
+                        CurrencyUtils.formatPriceDisplay(_product!.price),
                         style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
                       ),
                     ],

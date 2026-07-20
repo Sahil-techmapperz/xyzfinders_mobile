@@ -312,7 +312,7 @@ class _EducationListScreenState extends State<EducationListScreen> {
               children: [
                 Row(
                   children: [
-                    CurrencyUtils.formatIndianCurrency(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
+                    CurrencyUtils.formatPriceDisplay(item.price).text.xl2.bold.color(AppTheme.secondaryColor).make(),
                   ],
                 ),
                 item.title.text.semiBold.xl.black.make(),

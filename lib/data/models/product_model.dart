@@ -9,8 +9,8 @@ class ProductModel {
   final int? locationId;
   final String title;
   final String description;
-  final double price;
-  final double? originalPrice;
+  final String price;
+  final String? originalPrice;
   final String condition;
   final String status;
   final bool isFeatured;
@@ -121,9 +121,9 @@ class ProductModel {
       locationId: parseInt(json['location_id']),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? json['content'] ?? json['body'] ?? '').toString(),
-      price: safeParseDouble(json['price']),
+      price: (json['price'] ?? '0').toString(),
       originalPrice: json['original_price'] != null 
-          ? safeParseDouble(json['original_price']) 
+          ? json['original_price'].toString() 
           : null,
       condition: (json['condition'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
@@ -215,9 +215,29 @@ class ProductModel {
     }
   }
 
+  double get numericPrice {
+    try {
+      final numericOnly = price.replaceAll(RegExp(r'[^0-9.]'), '');
+      return double.parse(numericOnly.isEmpty ? '0' : numericOnly);
+    } catch (_) {
+      return 0.0;
+    }
+  }
+
+  double? get numericOriginalPrice {
+    if (originalPrice == null) return null;
+    try {
+      final numericOnly = originalPrice!.replaceAll(RegExp(r'[^0-9.]'), '');
+      if (numericOnly.isEmpty) return null;
+      return double.parse(numericOnly);
+    } catch (_) {
+      return null;
+    }
+  }
+
   bool get isActive => status == 'active';
   bool get isSold => status == 'sold';
-  bool get hasDiscount => originalPrice != null && originalPrice! > price;
+  bool get hasDiscount => numericOriginalPrice != null && numericOriginalPrice! > numericPrice;
   
   String? get firstImageUrl {
     if (images != null && images!.isNotEmpty) {

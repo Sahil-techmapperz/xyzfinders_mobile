@@ -385,12 +385,12 @@ class _LocalEventsDetailScreenState extends State<LocalEventsDetailScreen> {
   }
 
   Widget _buildPriceSection(ProductModel product) {
-    if (product.price == 0) {
-      return "FREE ENTRY".text.xl2.bold.green600.make();
+    if (product.numericPrice == 0) {
+      return const SizedBox();
     }
     return Row(
       children: [
-        CurrencyUtils.formatIndianCurrency(product.price).text.xl3.bold.color(AppTheme.secondaryColor).make(),
+        CurrencyUtils.formatPriceDisplay(product.price).text.xl3.bold.color(AppTheme.secondaryColor).make(),
         "/-".text.xl2.bold.color(AppTheme.secondaryColor).make(),
       ],
     );
