@@ -17,18 +17,30 @@ class _ChatListScreenState extends State<ChatListScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
+  bool _hasLoadedChats = false;
+
   @override
   void initState() {
     super.initState();
     _searchController.addListener(() {
       if (mounted) setState(() {});
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (context.read<AuthProvider>().isAuthenticated) {
-        context.read<ChatProvider>().loadConversations();
-      }
-    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final isAuth = Provider.of<AuthProvider>(context).isAuthenticated;
+    if (isAuth && !_hasLoadedChats) {
+      _hasLoadedChats = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<ChatProvider>().loadConversations();
+        }
+      });
+    } else if (!isAuth) {
+      _hasLoadedChats = false;
+    }
   }
 
   @override

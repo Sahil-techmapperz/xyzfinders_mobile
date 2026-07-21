@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -119,28 +120,33 @@ class _HomeScreenState extends State<HomeScreen> {
     final isSellerMode = authProvider.isSellerMode;
     final screens = isSellerMode ? _sellerScreens : _buyerScreens;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: IndexedStack(
-        key: ValueKey('${isSellerMode ? 'seller' : 'buyer'}_stack'),
-        index: _selectedIndex, 
-        children: screens,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent, // Ensure it's transparent so it doesn't block background
       ),
-      extendBody: true,
-      bottomNavigationBar: CustomBottomNavBar(
-        selectedIndex: _selectedIndex,
-        isSellerMode: isSellerMode,
-        onItemSelected: (index) {
-          if (index != 2) {
-            setState(() => _selectedIndex = index);
-          }
-        },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: IndexedStack(
+          key: ValueKey('${isSellerMode ? 'seller' : 'buyer'}_stack'),
+          index: _selectedIndex, 
+          children: screens,
+        ),
+        extendBody: true,
+        bottomNavigationBar: CustomBottomNavBar(
+          selectedIndex: _selectedIndex,
+          isSellerMode: isSellerMode,
+          onItemSelected: (index) {
+            if (index != 2) {
+              setState(() => _selectedIndex = index);
+            }
+          },
+        ),
+        floatingActionButton: CustomFab(
+          onPressed: () {}, // speed-dial handles its own actions internally
+          isSellerMode: isSellerMode,
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       ),
-      floatingActionButton: CustomFab(
-        onPressed: () {}, // speed-dial handles its own actions internally
-        isSellerMode: isSellerMode,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

@@ -1,7 +1,7 @@
 class ApiConstants {
   // Base URL - Update this when deploying
   static const String baseUrl = 'https://xyzfinders.in/api';
-  static const String socketUrl = 'https://xyzfinders.in/3001'; // WebSocket server
+  static const String socketUrl = 'https://xyzfinders.in'; // WebSocket server (proxied via nginx)
   // For iOS simulator use: http://localhost:3000/api
   // For physical device use your computer's IP: http://192.168.x.x:3000/api
   

@@ -31,7 +31,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final String entityId = widget.chatData['otherUserId'];
+      final String entityId = widget.chatData['otherUserId'].toString();
       final dynamic rawProductId = widget.chatData['productId'];
       final int? productId = rawProductId != null ? int.tryParse(rawProductId.toString()) : null;
       _chatProvider = context.read<ChatProvider>();
@@ -133,11 +133,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     final String name = widget.chatData['name'] as String? ?? 'User';
     final String avatarUrl = widget.chatData['avatarUrl'] as String? ?? '';
-    final bool isOnline = widget.chatData['isOnline'] as bool? ?? false;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: _buildAppBar(name, avatarUrl, isOnline),
+      appBar: _buildAppBar(name, avatarUrl),
       body: Consumer<ChatProvider>(
         builder: (context, chatProvider, child) {
           if (chatProvider.isLoadingMessages && chatProvider.currentMessages.isEmpty) {
@@ -266,7 +264,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return const Icon(Icons.image_outlined, color: Colors.grey);
   }
 
-  PreferredSizeWidget _buildAppBar(String name, String avatarUrl, bool isOnline) {
+  PreferredSizeWidget _buildAppBar(String name, String avatarUrl) {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 1,
@@ -278,29 +276,11 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       title: Row(
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                child: avatarUrl.isEmpty ? const Icon(Icons.person, color: AppTheme.primaryColor) : null,
-              ),
-              if (isOnline)
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                  ),
-                ),
-            ],
+          CircleAvatar(
+            radius: 20,
+            backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+            backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+            child: avatarUrl.isEmpty ? const Icon(Icons.person, color: AppTheme.primaryColor) : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -313,13 +293,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: Colors.black87,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  isOnline ? 'Active Now' : 'Offline',
-                  style: TextStyle(
-                    color: isOnline ? Colors.green : Colors.grey,
-                    fontSize: 12,
                   ),
                 ),
               ],

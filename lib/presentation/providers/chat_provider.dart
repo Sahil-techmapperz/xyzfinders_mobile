@@ -31,14 +31,13 @@ class ChatProvider extends ChangeNotifier {
     return _conversations.fold(0, (sum, item) => sum + item.unreadCount);
   }
 
-  ChatProvider() {
-    // When Provider is instantiated, we can't initialize socket without token
-    // We should initialize socket manually when user authenticates
-  }
-
   void initializeSocket(String token, {String? userId, String? agencyId}) {
+    // ALWAYS unregister old listener before registering a new one
+    // This prevents stacking of duplicate handlers across re-logins / re-inits
+    _socketService.offMessageReceived();
+
     _socketService.initSocket(token);
-    
+
     if (userId != null) {
       _socketService.joinUser(userId);
     }
@@ -47,29 +46,97 @@ class ChatProvider extends ChangeNotifier {
     }
 
     _socketService.onMessageReceived((data) {
-      final newMessage = ChatMessage.fromJson(data);
+      _handleIncomingMessage(data);
+    });
+  }
 
-      // Check if this message belongs to the currently open conversation
-      final matchesAgency = (newMessage.receiverAgencyId != null && 'agency-${newMessage.receiverAgencyId}' == _activeEntityId);
+  void _handleIncomingMessage(dynamic data) {
+    final newMessage = ChatMessage.fromJson(data as Map<String, dynamic>);
+
+    // --- 1. Update the open ChatScreen if this message belongs to it ---
+    if (_activeEntityId != null) {
+      final matchesAgency = newMessage.receiverAgencyId != null &&
+          'agency-${newMessage.receiverAgencyId}' == _activeEntityId;
       final matchesSender = newMessage.senderId?.toString() == _activeEntityId ||
           newMessage.receiverId?.toString() == _activeEntityId ||
           matchesAgency;
-      final matchesProduct = _activeProductId == null || newMessage.productId == _activeProductId;
+      final matchesProduct =
+          _activeProductId == null || newMessage.productId == _activeProductId;
 
-      if (_activeEntityId != null && matchesSender && matchesProduct) {
-        // Avoid duplicates (own sent messages are added immediately in sendMessage)
+      if (matchesSender && matchesProduct) {
+        // Avoid duplicates — sender's own message was already added optimistically
         final alreadyExists = _currentMessages.any((m) => m.id == newMessage.id);
         if (!alreadyExists) {
           _currentMessages.add(newMessage);
           notifyListeners();
-          // Trigger scroll-to-bottom callback on the open ChatScreen
           onNewMessageReceived?.call();
         }
+        // Don't return here — also update the conversations list below
       }
+    }
 
-      // Always refresh the inbox list to update previews / unread counts
-      loadConversations();
+    // --- 2. Update the chat list in-memory (no API call needed) ---
+    _updateConversationPreview(newMessage);
+  }
+
+  /// Updates the conversation list in-memory when a new socket message arrives.
+  /// This avoids a slow API round-trip just to refresh the preview text.
+  void _updateConversationPreview(ChatMessage newMessage) {
+    final idx = _conversations.indexWhere((c) {
+      // Match by the participants involved in this message
+      final senderMatch = c.senderId?.toString() == newMessage.senderId?.toString() ||
+          c.senderId?.toString() == newMessage.receiverId?.toString();
+      final receiverMatch = c.receiverId?.toString() == newMessage.senderId?.toString() ||
+          c.receiverId?.toString() == newMessage.receiverId?.toString();
+      final agencyMatch = newMessage.receiverAgencyId != null &&
+          c.agencyIdResolved == newMessage.receiverAgencyId;
+      final productMatch = c.productId == newMessage.productId;
+      return (senderMatch || receiverMatch || agencyMatch) && productMatch;
     });
+
+    if (idx != -1) {
+      final existing = _conversations[idx];
+      // Build updated conversation with the new message preview & incremented unread
+      final updated = Conversation(
+        id: existing.id,
+        productId: existing.productId,
+        productTitle: existing.productTitle,
+        productPrice: existing.productPrice,
+        productImage: existing.productImage,
+        senderId: newMessage.senderId,
+        senderName: newMessage.senderName,
+        senderAvatar: existing.senderAvatar,
+        receiverId: existing.receiverId,
+        receiverName: existing.receiverName,
+        receiverAvatar: existing.receiverAvatar,
+        agencyName: existing.agencyName,
+        agencyLogo: existing.agencyLogo,
+        isAgencyChat: existing.isAgencyChat,
+        agencyIdResolved: existing.agencyIdResolved,
+        // Increment unread only if this chat is NOT the currently open one
+        unreadCount: (_activeEntityId != null &&
+                (existing.senderId?.toString() == _activeEntityId ||
+                    existing.receiverId?.toString() == _activeEntityId ||
+                    'agency-${existing.agencyIdResolved}' == _activeEntityId))
+            ? 0
+            : existing.unreadCount + 1,
+        message: newMessage.message.isNotEmpty
+            ? newMessage.message
+            : (newMessage.attachmentUrl != null ? '📷 Image' : existing.message),
+        attachmentUrl: newMessage.attachmentUrl ?? existing.attachmentUrl,
+        isRead: false,
+        createdAt: newMessage.createdAt,
+      );
+      // Move updated conversation to the top
+      _conversations.removeAt(idx);
+      _conversations.insert(0, updated);
+    } else {
+      // New conversation not yet in list — do a full refresh from API
+      loadConversations();
+      return;
+    }
+
+    notifyListeners();
   }
 
   void clearActiveConversation() {
@@ -108,33 +175,34 @@ class ChatProvider extends ChangeNotifier {
 
     try {
       _currentMessages = await _chatService.getMessages(entityId: entityId, productId: productId);
-      
+
       // Clear unread counts for this specific conversation in the list locally
-      final idx = _conversations.indexWhere((c) => 
-        (c.senderId.toString() == entityId || c.receiverId.toString() == entityId || 'agency-${c.agencyIdResolved}' == entityId) && 
-        c.productId == productId
-      );
+      final idx = _conversations.indexWhere((c) =>
+          (c.senderId.toString() == entityId ||
+              c.receiverId.toString() == entityId ||
+              'agency-${c.agencyIdResolved}' == entityId) &&
+          c.productId == productId);
       if (idx != -1) {
         final existing = _conversations[idx];
         _conversations[idx] = Conversation(
-           id: existing.id,
-           productId: existing.productId,
-           productTitle: existing.productTitle,
-           productPrice: existing.productPrice,
-           productImage: existing.productImage,
-           senderId: existing.senderId,
-           senderName: existing.senderName,
-           receiverId: existing.receiverId,
-           receiverName: existing.receiverName,
-           agencyName: existing.agencyName,
-           agencyLogo: existing.agencyLogo,
-           isAgencyChat: existing.isAgencyChat,
-           agencyIdResolved: existing.agencyIdResolved,
-           unreadCount: 0,
-           message: existing.message,
-           attachmentUrl: existing.attachmentUrl,
-           isRead: true,
-           createdAt: existing.createdAt,
+          id: existing.id,
+          productId: existing.productId,
+          productTitle: existing.productTitle,
+          productPrice: existing.productPrice,
+          productImage: existing.productImage,
+          senderId: existing.senderId,
+          senderName: existing.senderName,
+          receiverId: existing.receiverId,
+          receiverName: existing.receiverName,
+          agencyName: existing.agencyName,
+          agencyLogo: existing.agencyLogo,
+          isAgencyChat: existing.isAgencyChat,
+          agencyIdResolved: existing.agencyIdResolved,
+          unreadCount: 0,
+          message: existing.message,
+          attachmentUrl: existing.attachmentUrl,
+          isRead: true,
+          createdAt: existing.createdAt,
         );
       }
     } catch (e) {
@@ -190,23 +258,26 @@ class ChatProvider extends ChangeNotifier {
         attachmentUrl: attachmentUrl,
       );
 
+      // Replace the optimistic placeholder with the real persisted message
       final index = _currentMessages.indexWhere((m) => m.id == tempId);
       if (index != -1) {
         _currentMessages[index] = sentMessage;
       } else {
         _currentMessages.add(sentMessage);
       }
-      
-      // Emit the socket event so the receiver gets it instantly
+
+      // Emit via socket so the RECEIVER gets it instantly
       if (receiverAgencyId != null) {
-        _socketService.emitAgencyMessage(agencyId: receiverAgencyId, message: sentMessage.toJson());
+        _socketService.emitAgencyMessage(
+            agencyId: receiverAgencyId, message: sentMessage.toJson());
       } else if (receiverId != null) {
-        _socketService.emitUserMessage(receiverId: receiverId, message: sentMessage.toJson());
+        _socketService.emitUserMessage(
+            receiverId: receiverId, message: sentMessage.toJson());
       }
-      
-      // Optimistically fetch conversations to update the latest message preview
-      loadConversations();
-      
+
+      // Update conversation preview locally for the sender
+      _updateConversationPreview(sentMessage);
+
       return true;
     } catch (e) {
       _currentMessages.removeWhere((m) => m.id == tempId);
