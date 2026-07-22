@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/auth/auth_modal.dart';
 import 'chat_screen.dart';
 import 'package:intl/intl.dart';
+import '../../../data/services/socket_service.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -71,6 +72,66 @@ class _ChatListScreenState extends State<ChatListScreen> {
     } catch (_) {
       return '';
     }
+  }
+
+  void _showDebugDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final logs = List<String>.from(SocketService.debugLogs.reversed);
+        return AlertDialog(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('App Debug Logs'),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  _showDebugDialog(context);
+                },
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 400,
+            child: logs.isEmpty
+                ? const Center(child: Text('No debug logs captured yet.'))
+                : ListView.separated(
+                    itemCount: logs.length,
+                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6.0),
+                        child: Text(
+                          logs[index],
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                SocketService.debugLogs.clear();
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Clear Logs'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -145,12 +206,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 ),
                 style: const TextStyle(color: Colors.black87, fontSize: 16),
               )
-            : const Text(
-                'Chats',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
+            : GestureDetector(
+                onDoubleTap: () => _showDebugDialog(context),
+                child: const Text(
+                  'Chats',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                  ),
                 ),
               ),
         backgroundColor: Colors.white,
@@ -204,7 +268,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             if (searchQuery.isEmpty) return true;
             
             final currentUserId = context.read<AuthProvider>().user?.id?.toString();
-            final isMeSender = chat.senderId == currentUserId;
+            final isMeSender = chat.senderId?.toString() == currentUserId;
             final otherUserName = isMeSender ? chat.receiverName : chat.senderName;
             
             final nameMatch = (otherUserName?.toLowerCase() ?? '').contains(searchQuery);
@@ -275,7 +339,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final bool isUnread = chat.unreadCount > 0;
     
     final currentUserId = context.read<AuthProvider>().user?.id?.toString();
-    final isMeSender = chat.senderId == currentUserId;
+    final isMeSender = chat.senderId?.toString() == currentUserId;
     final otherUserId = isMeSender ? chat.receiverId : chat.senderId;
     final otherUserName = isMeSender ? chat.receiverName : chat.senderName;
     // Use real avatar from API, fall back to generated initials avatar

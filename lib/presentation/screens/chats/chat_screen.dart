@@ -386,12 +386,25 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            _formatTime(message.createdAt),
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 11,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _formatTime(message.createdAt),
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 11,
+                ),
+              ),
+              if (isMe) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  message.isDelivered || message.isRead ? Icons.done_all : Icons.done,
+                  size: 15,
+                  color: message.isRead ? const Color(0xFF34B7F1) : Colors.grey.shade400,
+                ),
+              ],
+            ],
           ),
         ],
       ),

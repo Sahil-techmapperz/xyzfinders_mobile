@@ -79,4 +79,20 @@ class ChatService {
     }
     return null;
   }
+
+  Future<void> markAsRead(int messageId) async {
+    try {
+      await _apiService.put('/messages/$messageId/read');
+    } catch (e) {
+      print('Error marking message as read: $e');
+    }
+  }
+
+  Future<void> markAsDelivered(int messageId) async {
+    try {
+      await _apiService.put('/messages/$messageId/delivered');
+    } catch (e) {
+      print('Error marking message as delivered: $e');
+    }
+  }
 }

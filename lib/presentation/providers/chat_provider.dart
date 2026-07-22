@@ -35,6 +35,8 @@ class ChatProvider extends ChangeNotifier {
     // ALWAYS unregister old listener before registering a new one
     // This prevents stacking of duplicate handlers across re-logins / re-inits
     _socketService.offMessageReceived();
+    _socketService.offMessagesRead();
+    _socketService.offMessageDelivered();
 
     _socketService.initSocket(token);
 
@@ -48,21 +50,43 @@ class ChatProvider extends ChangeNotifier {
     _socketService.onMessageReceived((data) {
       _handleIncomingMessage(data);
     });
+
+    _socketService.onMessagesRead((data) {
+      _handleMessagesRead(data);
+    });
+
+    _socketService.onMessageDelivered((data) {
+      _handleMessageDelivered(data);
+    });
   }
 
   void _handleIncomingMessage(dynamic data) {
     try {
-      print('[Socket] Raw incoming message data: $data');
+      SocketService.log('Raw incoming message data: $data');
       if (data == null) {
-        print('[Socket] Warning: Received null message data');
+        SocketService.log('Warning: Received null message data');
         return;
       }
       
       final Map<String, dynamic> jsonMap = Map<String, dynamic>.from(data as Map);
       final newMessage = ChatMessage.fromJson(jsonMap);
-      print('[Socket] Parsed incoming message: ID=${newMessage.id}, text="${newMessage.message}"');
+      SocketService.log('Parsed incoming message: ID=${newMessage.id}, text="${newMessage.message}"');
 
-      // --- 1. Update the open ChatScreen if this message belongs to it ---
+      // 1. Mark as delivered in DB immediately!
+      _chatService.markAsDelivered(newMessage.id);
+
+      // 2. Emit socket delivery receipt back to the sender
+      final currentUserId = newMessage.receiverId?.toString();
+      if (currentUserId != null) {
+        _socketService.emitMessageDelivered(
+          messageId: newMessage.id,
+          senderId: newMessage.senderId!.toString(),
+          receiverId: currentUserId,
+          productId: newMessage.productId,
+        );
+      }
+
+      // --- 3. Update the open ChatScreen if this message belongs to it ---
       if (_activeEntityId != null) {
         final matchesAgency = newMessage.receiverAgencyId != null &&
             'agency-${newMessage.receiverAgencyId}' == _activeEntityId;
@@ -72,28 +96,123 @@ class ChatProvider extends ChangeNotifier {
         final matchesProduct =
             _activeProductId == null || newMessage.productId == _activeProductId;
 
-        print('[Socket] Active check: entityId=$_activeEntityId, productId=$_activeProductId, matchesSender=$matchesSender, matchesProduct=$matchesProduct');
+        SocketService.log('Active check: entityId=$_activeEntityId, productId=$_activeProductId, matchesSender=$matchesSender, matchesProduct=$matchesProduct');
 
         if (matchesSender && matchesProduct) {
           // Avoid duplicates — sender's own message was already added optimistically
           final alreadyExists = _currentMessages.any((m) => m.id == newMessage.id);
           if (!alreadyExists) {
             _currentMessages.add(newMessage);
+
+            // Mark this specific message as read in DB
+            _chatService.markAsRead(newMessage.id);
+
+            // Emit read receipt so the sender knows we read it immediately
+            if (currentUserId != null) {
+              _socketService.emitMessagesRead(
+                senderId: _activeEntityId!,
+                receiverId: currentUserId,
+                productId: _activeProductId,
+              );
+            }
+
             notifyListeners();
             onNewMessageReceived?.call();
-            print('[Socket] Message added to current active messages list');
+            SocketService.log('Message added to current active messages list');
           } else {
-            print('[Socket] Message already exists in current list, skipping');
+            SocketService.log('Message already exists in current list, skipping');
           }
           // Don't return here — also update the conversations list below
         }
       }
 
-      // --- 2. Update the chat list in-memory (no API call needed) ---
+      // --- 4. Update the chat list in-memory (no API call needed) ---
       _updateConversationPreview(newMessage);
     } catch (e, stackTrace) {
-      print('[Socket] Error handling incoming message: $e');
-      print(stackTrace);
+      SocketService.log('Error handling incoming message: $e\n$stackTrace');
+    }
+  }
+
+  void _handleMessagesRead(dynamic data) {
+    try {
+      SocketService.log('Received read receipt: $data');
+      final Map<String, dynamic> jsonMap = Map<String, dynamic>.from(data as Map);
+      final String otherUserId = jsonMap['receiverId'].toString(); // the user who read our messages
+      final dynamic rawProductId = jsonMap['productId'];
+      final int? productId = rawProductId != null ? int.tryParse(rawProductId.toString()) : null;
+
+      if (_activeEntityId == otherUserId && _activeProductId == productId) {
+        _currentMessages = _currentMessages.map((m) {
+          // If the message is sent by me (not the other user), set isRead to true
+          if (m.senderId?.toString() != _activeEntityId) {
+            return ChatMessage(
+              id: m.id,
+              productId: m.productId,
+              senderId: m.senderId,
+              receiverId: m.receiverId,
+              receiverAgencyId: m.receiverAgencyId,
+              message: m.message,
+              attachmentUrl: m.attachmentUrl,
+              isRead: true,
+              isDelivered: true,
+              createdAt: m.createdAt,
+              senderName: m.senderName,
+              receiverName: m.receiverName,
+              agencyName: m.agencyName,
+              agencyLogo: m.agencyLogo,
+              isAgencyChat: m.isAgencyChat,
+              reportId: m.reportId,
+            );
+          }
+          return m;
+        }).toList();
+        notifyListeners();
+        SocketService.log('Marked sent messages as READ in active window');
+      }
+    } catch (e) {
+      SocketService.log('Error handling read receipt: $e');
+    }
+  }
+
+  void _handleMessageDelivered(dynamic data) {
+    try {
+      SocketService.log('Received delivery receipt: $data');
+      final Map<String, dynamic> jsonMap = Map<String, dynamic>.from(data as Map);
+      final String otherUserId = jsonMap['receiverId'].toString(); // the user who received our message
+      final dynamic rawProductId = jsonMap['productId'];
+      final int? productId = rawProductId != null ? int.tryParse(rawProductId.toString()) : null;
+      final int messageId = jsonMap['messageId'] as int;
+
+      if (_activeEntityId == otherUserId && _activeProductId == productId) {
+        _currentMessages = _currentMessages.map((m) {
+          // If this is the specific message that was delivered and is NOT currently read
+          if (m.id == messageId && !m.isRead) {
+            return ChatMessage(
+              id: m.id,
+              productId: m.productId,
+              senderId: m.senderId,
+              receiverId: m.receiverId,
+              receiverAgencyId: m.receiverAgencyId,
+              message: m.message,
+              attachmentUrl: m.attachmentUrl,
+              isRead: m.isRead,
+              isDelivered: true,
+              createdAt: m.createdAt,
+              senderName: m.senderName,
+              receiverName: m.receiverName,
+              agencyName: m.agencyName,
+              agencyLogo: m.agencyLogo,
+              isAgencyChat: m.isAgencyChat,
+              reportId: m.reportId,
+            );
+          }
+          return m;
+        }).toList();
+        notifyListeners();
+        SocketService.log('Marked message ID $messageId as DELIVERED in active window');
+      }
+    } catch (e) {
+      SocketService.log('Error handling delivery receipt: $e');
     }
   }
 
@@ -121,8 +240,8 @@ class ChatProvider extends ChangeNotifier {
         productTitle: existing.productTitle,
         productPrice: existing.productPrice,
         productImage: existing.productImage,
-        senderId: newMessage.senderId,
-        senderName: newMessage.senderName,
+        senderId: existing.senderId,
+        senderName: existing.senderName,
         senderAvatar: existing.senderAvatar,
         receiverId: existing.receiverId,
         receiverName: existing.receiverName,
@@ -223,6 +342,24 @@ class ChatProvider extends ChangeNotifier {
           createdAt: existing.createdAt,
         );
       }
+
+      // Emit read status to the server so the other user knows we've read their messages!
+      if (_currentMessages.isNotEmpty) {
+        final firstMsg = _currentMessages.first;
+        String? currentUserId;
+        if (firstMsg.senderId?.toString() == entityId) {
+          currentUserId = firstMsg.receiverId?.toString();
+        } else {
+          currentUserId = firstMsg.senderId?.toString();
+        }
+        if (currentUserId != null) {
+          _socketService.emitMessagesRead(
+            senderId: entityId,
+            receiverId: currentUserId,
+            productId: productId,
+          );
+        }
+      }
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -284,11 +421,15 @@ class ChatProvider extends ChangeNotifier {
         _currentMessages.add(sentMessage);
       }
 
+      SocketService.log('API message sent successfully, ID=${sentMessage.id}');
+
       // Emit via socket so the RECEIVER gets it instantly
       if (receiverAgencyId != null) {
+        SocketService.log('Emitting emitAgencyMessage to agency_$receiverAgencyId');
         _socketService.emitAgencyMessage(
             agencyId: receiverAgencyId, message: sentMessage.toJson());
       } else if (receiverId != null) {
+        SocketService.log('Emitting emitUserMessage to user_$receiverId');
         _socketService.emitUserMessage(
             receiverId: receiverId, message: sentMessage.toJson());
       }
@@ -297,7 +438,8 @@ class ChatProvider extends ChangeNotifier {
       _updateConversationPreview(sentMessage);
 
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      SocketService.log('Error sending message: $e\n$stackTrace');
       _currentMessages.removeWhere((m) => m.id == tempId);
       _error = e.toString();
       return false;

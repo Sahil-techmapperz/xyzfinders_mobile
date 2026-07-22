@@ -78,6 +78,7 @@ class ChatMessage {
   final String message;
   final String? attachmentUrl;
   final bool isRead;
+  final bool isDelivered;
   final DateTime createdAt;
   final String senderName;
   final String receiverName;
@@ -95,6 +96,7 @@ class ChatMessage {
     required this.message,
     this.attachmentUrl,
     required this.isRead,
+    this.isDelivered = false,
     required this.createdAt,
     required this.senderName,
     required this.receiverName,
@@ -114,6 +116,7 @@ class ChatMessage {
       message: json['message'] ?? '',
       attachmentUrl: json['attachment_url'],
       isRead: json['is_read'] == 1 || json['is_read'] == true,
+      isDelivered: json['is_delivered'] == 1 || json['is_delivered'] == true,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       senderName: json['sender_name'] ?? 'Unknown',
       receiverName: json['receiver_name'] ?? 'Unknown',
@@ -134,6 +137,7 @@ class ChatMessage {
       'message': message,
       'attachment_url': attachmentUrl,
       'is_read': isRead ? 1 : 0,
+      'is_delivered': isDelivered ? 1 : 0,
       'created_at': createdAt.toIso8601String(),
       'sender_name': senderName,
       'receiver_name': receiverName,

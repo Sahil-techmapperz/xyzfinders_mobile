@@ -108,31 +108,40 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
+    print('[Startup] Starting _checkAuth...');
     final authProvider = context.read<AuthProvider>();
     final agencyProvider = context.read<AgencyProvider>();
 
     // Run auth checks in parallel — navigate immediately when done
+    print('[Startup] Awaiting auth status check...');
     await Future.wait([
       authProvider.checkAuthStatus(),
       agencyProvider.checkAuthStatus(),
     ]);
+    print('[Startup] Auth status check complete. User Auth: ${authProvider.isAuthenticated}, Agency Auth: ${agencyProvider.isAuthenticated}');
 
     // If agency is authenticated, clear any regular user session to avoid conflicts
     if (agencyProvider.isAuthenticated && authProvider.isAuthenticated) {
+      print('[Startup] Both regular and agency sessions active. Clearing regular user session.');
       await authProvider.logout();
     }
 
     if (agencyProvider.isAuthenticated || authProvider.isAuthenticated) {
       final token = await ApiService().getAuthToken();
+      print('[Startup] Found stored token: ${token != null ? "YES" : "NO"}');
       if (token != null) {
         final userId = authProvider.isAuthenticated ? authProvider.user?.id?.toString() : null;
         final agencyId = agencyProvider.isAuthenticated ? agencyProvider.agencyUser?.id?.toString() : null;
+        print('[Startup] Initializing socket with userId: $userId, agencyId: $agencyId');
         context.read<ChatProvider>().initializeSocket(token, userId: userId, agencyId: agencyId);
         context.read<ChatProvider>().loadConversations();
       }
+    } else {
+      print('[Startup] User is not authenticated. Skipping socket initialization.');
     }
 
     if (mounted) {
+      print('[Startup] Navigating to HomeScreen');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );

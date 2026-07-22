@@ -6,6 +6,17 @@ class SocketService {
   factory SocketService() => _instance;
   SocketService._internal();
 
+  static final List<String> debugLogs = [];
+
+  static void log(String message) {
+    final String time = DateTime.now().toIso8601String().split('T').last.substring(0, 8);
+    debugLogs.add('[$time] $message');
+    if (debugLogs.length > 200) {
+      debugLogs.removeAt(0);
+    }
+    print('[SocketService] $message');
+  }
+
   IO.Socket? _socket;
 
   // Saved IDs so we can re-join rooms after reconnect
@@ -42,50 +53,50 @@ class SocketService {
     );
 
     _socket!.onConnect((_) {
-      print('[Socket] ✅ Connected to: ${ApiConstants.socketUrl} | ID: ${_socket!.id}');
+      SocketService.log('✅ Connected to: ${ApiConstants.socketUrl} | ID: ${_socket!.id}');
       // Always re-join rooms on (re)connect
       _rejoinRooms();
     });
 
     _socket!.on('reconnect', (_) {
-      print('[Socket] 🔄 Reconnected — re-joining rooms');
+      SocketService.log('🔄 Reconnected — re-joining rooms');
       _rejoinRooms();
     });
 
     _socket!.onDisconnect((_) {
-      print('[Socket] ❌ Disconnected');
+      SocketService.log('❌ Disconnected');
     });
 
     _socket!.onError((error) {
-      print('[Socket] ⚠️ Error: $error');
+      SocketService.log('⚠️ Error: $error');
     });
 
     _socket!.onConnectError((error) {
-      print('[Socket] 🔴 Connect error: $error');
+      SocketService.log('🔴 Connect error: $error');
     });
   }
 
   void _rejoinRooms() {
     if (_userId != null) {
       _socket?.emit('join_user', _userId);
-      print('[Socket] Re-joined user room: user_$_userId');
+      SocketService.log('Re-joined user room: user_$_userId');
     }
     if (_agencyId != null) {
       _socket?.emit('join_agency', _agencyId);
-      print('[Socket] Re-joined agency room: agency_$_agencyId');
+      SocketService.log('Re-joined agency room: agency_$_agencyId');
     }
   }
 
   void joinUser(String userId) {
     _userId = userId;
     _socket?.emit('join_user', userId);
-    print('[Socket] Joined user room: user_$userId');
+    SocketService.log('Joined user room: user_$userId');
   }
 
   void joinAgency(String agencyId) {
     _agencyId = agencyId;
     _socket?.emit('join_agency', agencyId);
-    print('[Socket] Joined agency room: agency_$agencyId');
+    SocketService.log('Joined agency room: agency_$agencyId');
   }
 
   void emitUserMessage({required String receiverId, required dynamic message}) {
@@ -102,6 +113,14 @@ class SocketService {
     });
   }
 
+  void emitMessagesRead({required String senderId, required String receiverId, required int? productId}) {
+    _socket?.emit('messages_read', {
+      'senderId': senderId,
+      'receiverId': receiverId,
+      'productId': productId,
+    });
+  }
+
   /// Register a listener for incoming messages.
   /// Always call [offMessageReceived] before this to avoid stacking.
   void onMessageReceived(Function(dynamic) callback) {
@@ -110,6 +129,31 @@ class SocketService {
 
   void offMessageReceived() {
     _socket?.off('receive_user_message');
+  }
+
+  void onMessagesRead(Function(dynamic) callback) {
+    _socket?.on('messages_read', callback);
+  }
+
+  void offMessagesRead() {
+    _socket?.off('messages_read');
+  }
+
+  void emitMessageDelivered({required int messageId, required String senderId, required String receiverId, required int? productId}) {
+    _socket?.emit('message_delivered', {
+      'messageId': messageId,
+      'senderId': senderId,
+      'receiverId': receiverId,
+      'productId': productId,
+    });
+  }
+
+  void onMessageDelivered(Function(dynamic) callback) {
+    _socket?.on('message_delivered', callback);
+  }
+
+  void offMessageDelivered() {
+    _socket?.off('message_delivered');
   }
 
   void disconnect() {
