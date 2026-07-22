@@ -51,32 +51,50 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _handleIncomingMessage(dynamic data) {
-    final newMessage = ChatMessage.fromJson(data as Map<String, dynamic>);
-
-    // --- 1. Update the open ChatScreen if this message belongs to it ---
-    if (_activeEntityId != null) {
-      final matchesAgency = newMessage.receiverAgencyId != null &&
-          'agency-${newMessage.receiverAgencyId}' == _activeEntityId;
-      final matchesSender = newMessage.senderId?.toString() == _activeEntityId ||
-          newMessage.receiverId?.toString() == _activeEntityId ||
-          matchesAgency;
-      final matchesProduct =
-          _activeProductId == null || newMessage.productId == _activeProductId;
-
-      if (matchesSender && matchesProduct) {
-        // Avoid duplicates — sender's own message was already added optimistically
-        final alreadyExists = _currentMessages.any((m) => m.id == newMessage.id);
-        if (!alreadyExists) {
-          _currentMessages.add(newMessage);
-          notifyListeners();
-          onNewMessageReceived?.call();
-        }
-        // Don't return here — also update the conversations list below
+    try {
+      print('[Socket] Raw incoming message data: $data');
+      if (data == null) {
+        print('[Socket] Warning: Received null message data');
+        return;
       }
-    }
+      
+      final Map<String, dynamic> jsonMap = Map<String, dynamic>.from(data as Map);
+      final newMessage = ChatMessage.fromJson(jsonMap);
+      print('[Socket] Parsed incoming message: ID=${newMessage.id}, text="${newMessage.message}"');
 
-    // --- 2. Update the chat list in-memory (no API call needed) ---
-    _updateConversationPreview(newMessage);
+      // --- 1. Update the open ChatScreen if this message belongs to it ---
+      if (_activeEntityId != null) {
+        final matchesAgency = newMessage.receiverAgencyId != null &&
+            'agency-${newMessage.receiverAgencyId}' == _activeEntityId;
+        final matchesSender = newMessage.senderId?.toString() == _activeEntityId ||
+            newMessage.receiverId?.toString() == _activeEntityId ||
+            matchesAgency;
+        final matchesProduct =
+            _activeProductId == null || newMessage.productId == _activeProductId;
+
+        print('[Socket] Active check: entityId=$_activeEntityId, productId=$_activeProductId, matchesSender=$matchesSender, matchesProduct=$matchesProduct');
+
+        if (matchesSender && matchesProduct) {
+          // Avoid duplicates — sender's own message was already added optimistically
+          final alreadyExists = _currentMessages.any((m) => m.id == newMessage.id);
+          if (!alreadyExists) {
+            _currentMessages.add(newMessage);
+            notifyListeners();
+            onNewMessageReceived?.call();
+            print('[Socket] Message added to current active messages list');
+          } else {
+            print('[Socket] Message already exists in current list, skipping');
+          }
+          // Don't return here — also update the conversations list below
+        }
+      }
+
+      // --- 2. Update the chat list in-memory (no API call needed) ---
+      _updateConversationPreview(newMessage);
+    } catch (e, stackTrace) {
+      print('[Socket] Error handling incoming message: $e');
+      print(stackTrace);
+    }
   }
 
   /// Updates the conversation list in-memory when a new socket message arrives.

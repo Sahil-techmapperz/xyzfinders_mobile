@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../../../data/models/chat_model.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/product_navigation_utils.dart';
+import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
   final Map<String, dynamic> chatData;
@@ -120,10 +121,20 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final date = dateStr.toLocal();
       final now = DateTime.now();
-      if (date.year == now.year && date.month == now.month && date.day == now.day) {
-        return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      final messageDate = DateTime(date.year, date.month, date.day);
+      
+      final timeString = DateFormat('h:mm a').format(date);
+      
+      if (messageDate == today) {
+        return timeString;
+      } else if (messageDate == yesterday) {
+        return 'Yesterday, $timeString';
+      } else {
+        return '${DateFormat('d MMM').format(date)}, $timeString';
       }
-      return '${date.day}/${date.month}';
     } catch (_) {
       return '';
     }

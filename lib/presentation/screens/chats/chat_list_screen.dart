@@ -5,6 +5,7 @@ import '../../providers/chat_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/auth/auth_modal.dart';
 import 'chat_screen.dart';
+import 'package:intl/intl.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -49,12 +50,27 @@ class _ChatListScreenState extends State<ChatListScreen> {
     super.dispose();
   }
 
-  String _formatTime(DateTime date) {
-    final now = DateTime.now();
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
-      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  String _formatTime(DateTime dateStr) {
+    try {
+      final date = dateStr.toLocal();
+      final now = DateTime.now();
+      
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      final messageDate = DateTime(date.year, date.month, date.day);
+      
+      final timeString = DateFormat('h:mm a').format(date);
+      
+      if (messageDate == today) {
+        return timeString;
+      } else if (messageDate == yesterday) {
+        return 'Yesterday';
+      } else {
+        return DateFormat('d MMM').format(date);
+      }
+    } catch (_) {
+      return '';
     }
-    return '${date.day}/${date.month}';
   }
 
   @override
