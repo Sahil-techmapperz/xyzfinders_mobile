@@ -126,7 +126,7 @@ class _ElectronicsListScreenState extends State<ElectronicsListScreen> {
       context: context,
       builder: (context) => FilterBottomSheet(
         title: "Select Condition",
-        options: const ["New", "Used", "Refurbished"],
+        options: const ["New", "Used", "Reconditioned"],
         selectedValue: _selectedCondition,
         onSelected: (val) {
           setState(() => _selectedCondition = val);

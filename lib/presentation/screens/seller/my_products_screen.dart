@@ -548,7 +548,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      product.categoryName == 'Beauty' ? 'Beauty & Wellness' : (product.categoryName == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : (product.categoryName ?? 'Other')),
+                      product.categoryName ?? 'Other',
                       style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     ),
                     // Location

@@ -1322,10 +1322,6 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
         ),
         const SizedBox(height: 24),
         
-        _buildLabel("Vehicle Type*"),
-        _buildSelectionRow(['Car', 'Bike', 'Scooter', 'Commercial Vehicle', 'Bicycle'], _selectedVehicleType, (v) => setState(() => _selectedVehicleType = v)),
-        const SizedBox(height: 20),
-
         Row(
           children: [
             Expanded(child: _buildField("Brand*", "e.g., Honda, Maruti, Hyundai", _brandController)),
@@ -1348,7 +1344,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
         const SizedBox(height: 20),
 
         _buildLabel("Condition*"),
-        _buildSelectionRow(['New', 'Used', 'Refurbished'], _selectedCondition, (v) => setState(() => _selectedCondition = v)),
+        _buildSelectionRow(['New', 'Used', 'Reconditioned'], _selectedCondition, (v) => setState(() => _selectedCondition = v)),
         const SizedBox(height: 20),
 
         Row(
@@ -1764,7 +1760,19 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel("Listing Title*"),
+          _buildLabel(
+            widget.category.name.toLowerCase().contains('auto') || widget.category.name.toLowerCase().contains('car')
+                ? 'Vehicle Title*'
+                : (widget.category.name.toLowerCase().contains('property') || widget.category.name.toLowerCase().contains('real estate')
+                    ? 'Property Title*'
+                    : (widget.category.name.toLowerCase().contains('job')
+                        ? 'Job Title*'
+                        : (widget.category.name.toLowerCase().contains('event')
+                            ? 'Event Title*'
+                            : (widget.category.name.toLowerCase().contains('furniture')
+                                ? 'Item Title*'
+                                : 'Title*')))),
+          ),
           TextFormField(
             controller: _titleController,
             decoration: InputDecoration(
@@ -1810,7 +1818,7 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
           ),
           const SizedBox(height: 24),
 
-          _buildLabel("Description*"),
+          _buildLabel("Description (Optional)"),
           TextFormField(
             controller: _descriptionController,
             maxLines: 5,
@@ -1821,7 +1829,6 @@ class _AgencyPostAdWizardScreenState extends State<AgencyPostAdWizardScreen> {
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
             ),
-            validator: (v) => v!.isEmpty ? 'Required' : null,
           ),
         ],
       ),

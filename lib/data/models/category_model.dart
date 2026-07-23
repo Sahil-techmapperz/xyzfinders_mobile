@@ -29,6 +29,8 @@ class CategoryModel {
       categoryName = 'Furniture & Hardware';
     } else if (categoryName == 'Mobiles') {
       categoryName = 'Mobiles & Tablets';
+    } else if (categoryName == 'Pets & Animals Accessories' || categoryName == 'Pet & Animal Accessories') {
+      categoryName = 'Pets & Accessories';
     }
 
     return CategoryModel(

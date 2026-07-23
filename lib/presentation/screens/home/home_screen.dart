@@ -1280,7 +1280,8 @@ class _HomeTabState extends State<HomeTab> {
       case 'local events': return Icons.event_available_rounded;
       case 'mobiles': return Icons.phone_iphone_rounded;
       case 'pets & animals accessories':
-      case 'pet & animal accessories': return Icons.pets_rounded;
+      case 'pet & animal accessories':
+      case 'pets & accessories': return Icons.pets_rounded;
       case 'real estate': return Icons.business_rounded;
       case 'services': return Icons.handyman_rounded;
       default: return Icons.category;
@@ -1299,7 +1300,8 @@ class _HomeTabState extends State<HomeTab> {
       case 'local events': return Colors.orange;
       case 'mobiles': return Colors.teal;
       case 'pets & animals accessories':
-      case 'pet & animal accessories': return Colors.amber;
+      case 'pet & animal accessories':
+      case 'pets & accessories': return Colors.amber;
       case 'real estate': return Colors.green;
       case 'services': return Colors.blueAccent;
       default: return AppTheme.primaryColor;
@@ -1447,7 +1449,7 @@ class _HomeTabState extends State<HomeTab> {
                 Icon(_getCategoryIcon(cat.name), size: 38, color: _getCategoryColor(cat.name)),
               const SizedBox(height: 6),
               Text(
-                cat.name == 'Beauty' ? 'Beauty & Wellness' : (cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : cat.name),
+                cat.name,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1652,7 +1654,7 @@ class _HomeTabState extends State<HomeTab> {
           ),
           const SizedBox(width: 15),
           _buildPromoCard(
-            title: "Beauty & Wellness",
+            title: "Beauty",
             subtitle: "Best products for your glow.",
             tag: "BEAUTY",
             imageUrl:

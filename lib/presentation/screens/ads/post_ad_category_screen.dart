@@ -56,7 +56,8 @@ class _PostAdCategoryScreenState extends State<PostAdCategoryScreen> {
       case 'local events': return Icons.event_available_rounded;
       case 'mobiles': return Icons.phone_iphone_rounded;
       case 'pets & animals accessories':
-      case 'pet & animal accessories': return Icons.pets_rounded;
+      case 'pet & animal accessories':
+      case 'pets & accessories': return Icons.pets_rounded;
       case 'real estate': return Icons.business_rounded;
       case 'services': return Icons.handyman_rounded;
       default: return Icons.category;
@@ -75,7 +76,8 @@ class _PostAdCategoryScreenState extends State<PostAdCategoryScreen> {
       case 'local events': return Colors.deepOrange;
       case 'mobiles': return Colors.green;
       case 'pets & animals accessories':
-      case 'pet & animal accessories': return Colors.orange;
+      case 'pet & animal accessories':
+      case 'pets & accessories': return Colors.orange;
       case 'real estate': return Colors.indigo;
       case 'services': return Colors.cyan;
       default: return AppTheme.secondaryColor;
@@ -254,7 +256,7 @@ class _PostAdCategoryScreenState extends State<PostAdCategoryScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
-                cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : (cat.name == 'Beauty' ? 'Beauty & Wellness' : cat.name),
+                cat.name,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
                 textAlign: TextAlign.center,
                 maxLines: 2,

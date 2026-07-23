@@ -129,9 +129,9 @@ class _BeautyDetailScreenState extends State<BeautyDetailScreen> {
         });
 
         if (product.categoryName != null) {
-          specsList.add({"label": "Category", "value": product.categoryName == 'Beauty' ? 'Beauty & Wellness' : product.categoryName!});
+          specsList.add({"label": "Category", "value": product.categoryName!});
         } else {
-          specsList.add({"label": "Category", "value": "Beauty & Wellness"});
+          specsList.add({"label": "Category", "value": "Beauty"});
         }
         specsList.add({"label": "Condition", "value": product.formattedCondition});
 

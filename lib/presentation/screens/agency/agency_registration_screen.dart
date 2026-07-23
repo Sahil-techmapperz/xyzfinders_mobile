@@ -9,6 +9,10 @@ import '../../../data/services/category_service.dart';
 import '../../../data/models/category_model.dart';
 import 'agency_login_screen.dart';
 import 'agency_registration_success_screen.dart';
+import '../../../core/config/api_service.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../widgets/common/location_search_sheet.dart';
+import '../../widgets/common/google_location_picker.dart';
 import '../../../core/theme/app_theme.dart';
 
 class AgencyRegistrationScreen extends StatefulWidget {
@@ -113,7 +117,7 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
     if (success && mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const AgencyRegistrationSuccessScreen()),
+        MaterialPageRoute(builder: (_) => AgencyRegistrationSuccessScreen()),
         (route) => false,
       );
     } else if (mounted) {
@@ -189,12 +193,12 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                _buildTextField(
+                GoogleLocationInlineField(
                   controller: _locationController,
-                  label: "Location",
-                  hint: "Kolkata, West Bengal",
+                  label: "Office Location",
+                  hint: "Search area, city, state...",
                   icon: Icons.location_on_outlined,
-                  validator: (v) => v!.isEmpty ? "Enter location" : null,
+                  validator: (v) => v == null || v.trim().isEmpty ? "Enter office location" : null,
                 ),
                 const SizedBox(height: 20),
 
@@ -375,6 +379,8 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
     required String hint,
     required IconData icon,
     bool obscure = false,
+    bool readOnly = false,
+    VoidCallback? onTap,
     Widget? suffixIcon,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
@@ -386,6 +392,8 @@ class _AgencyRegistrationScreenState extends State<AgencyRegistrationScreen> {
         TextFormField(
           controller: controller,
           obscureText: obscure,
+          readOnly: readOnly,
+          onTap: onTap,
           keyboardType: keyboardType,
           validator: validator,
           decoration: InputDecoration(

@@ -354,3 +354,210 @@ class _GoogleLocationSearchSheetState extends State<_GoogleLocationSearchSheet> 
     );
   }
 }
+
+class GoogleLocationInlineField extends StatefulWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final IconData icon;
+  final String? Function(String?)? validator;
+  final Function(String address)? onSelected;
+
+  const GoogleLocationInlineField({
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    required this.icon,
+    this.validator,
+    this.onSelected,
+  });
+
+  @override
+  State<GoogleLocationInlineField> createState() => _GoogleLocationInlineFieldState();
+}
+
+class _GoogleLocationInlineFieldState extends State<GoogleLocationInlineField> {
+  final Dio _dio = Dio();
+  List<dynamic> _suggestions = [];
+  bool _isLoading = false;
+  bool _showSuggestions = false;
+
+  void _onTextChanged(String query) async {
+    if (query.trim().length < 2) {
+      if (mounted) {
+        setState(() {
+          _suggestions = [];
+          _showSuggestions = false;
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _showSuggestions = true;
+    });
+
+    try {
+      final response = await _dio.get(
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json',
+        queryParameters: {
+          'input': query,
+          'key': googleMapsApiKey,
+          'components': 'country:in',
+        },
+      );
+
+      if (response.statusCode == 200 && mounted) {
+        final predictions = response.data['predictions'] as List<dynamic>? ?? [];
+        setState(() {
+          _suggestions = predictions;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching Google place suggestions: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
+          child: Text(
+            widget.label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+          ),
+        ),
+        TextFormField(
+          controller: widget.controller,
+          validator: widget.validator,
+          onChanged: _onTextChanged,
+          decoration: InputDecoration(
+            hintText: widget.hint,
+            prefixIcon: Icon(widget.icon, color: Colors.grey, size: 20),
+            suffixIcon: _isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                : (widget.controller.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                        onPressed: () {
+                          widget.controller.clear();
+                          setState(() {
+                            _suggestions = [];
+                            _showSuggestions = false;
+                          });
+                        },
+                      )
+                    : null),
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 1),
+            ),
+            contentPadding: const EdgeInsets.symmetric(vertical: 18),
+          ),
+        ),
+        if (_showSuggestions && _suggestions.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 220),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: _suggestions.length,
+                      separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey.shade100),
+                      itemBuilder: (context, index) {
+                        final item = _suggestions[index];
+                        final mainText = item['structured_formatting']?['main_text'] ?? item['description'] ?? '';
+                        final secondaryText = item['structured_formatting']?['secondary_text'] ?? '';
+
+                        return ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                          leading: Icon(Icons.location_on, color: Colors.grey.shade400, size: 20),
+                          title: RichText(
+                            text: TextSpan(
+                              style: const TextStyle(color: Colors.black87, fontSize: 13),
+                              children: [
+                                TextSpan(text: mainText, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                if (secondaryText.isNotEmpty)
+                                  TextSpan(text: ' $secondaryText', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.normal, fontSize: 12)),
+                              ],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () {
+                            final fullAddress = item['description'] as String;
+                            widget.controller.text = fullAddress;
+                            widget.onSelected?.call(fullAddress);
+                            setState(() {
+                              _suggestions = [];
+                              _showSuggestions = false;
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                    color: const Color(0xFFF8FAFC),
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text('powered by ', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+                        const Text('Google', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}

@@ -191,7 +191,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     
     // Condition handling with safety check for dropdown
     final conditionValue = _currentProduct.condition.toLowerCase();
-    final validConditions = ['new', 'used', 'refurbished', 'like new', 'good', 'fair'];
+    final validConditions = ['new', 'used', 'reconditioned', 'refurbished', 'like new', 'good', 'fair'];
     if (validConditions.contains(conditionValue)) {
       _condition = conditionValue[0].toUpperCase() + conditionValue.substring(1);
     } else {
@@ -713,7 +713,19 @@ class _EditProductScreenState extends State<EditProductScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel('Listing Title*'),
+        _buildLabel(
+          cat.contains('auto') || cat.contains('car')
+              ? 'Vehicle Title*'
+              : (cat.contains('property') || cat.contains('real estate')
+                  ? 'Property Title*'
+                  : (cat.contains('job')
+                      ? 'Job Title*'
+                      : (cat.contains('event')
+                          ? 'Event Title*'
+                          : (cat.contains('furniture')
+                              ? 'Item Title*'
+                              : 'Title*')))),
+        ),
         _buildTextField(_titleController, 'e.g. Title of your ad'),
         const SizedBox(height: 20),
         _buildLabel(isJob ? 'Salary (Monthly)*' : (isEducation ? 'Price (₹) (Optional)' : 'Price (₹)*')),
@@ -722,7 +734,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
         _buildLabel('Contact Number*'),
         _buildTextField(_phoneController, 'e.g. 9876543210', keyboardType: TextInputType.phone),
         const SizedBox(height: 20),
-        _buildLabel('Description*'),
+        _buildLabel('Description (Optional)'),
         _buildTextField(_descriptionController, 'Provide details about your listing...', maxLines: 4),
       ],
     );
@@ -920,9 +932,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Vehicle Type*'),
-          _buildSelectionGroup(['Car', 'Bike', 'Scooter', 'Commercial Vehicle', 'Bicycle'], _vehicleType, (val) => setState(() => _vehicleType = val)),
-          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, isBicycle ? 'e.g., Hero, Trek, Firefox' : 'e.g., Honda, Maruti, Hyundai')])),
@@ -946,7 +955,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
           _buildTextField(_ownersController, 'e.g., 1st Owner, 2nd Owner'),
           const SizedBox(height: 24),
           _buildLabel('Condition*'),
-          _buildSelectionGroup(['New', 'Used', 'Refurbished'], _condition, (val) => setState(() => _condition = val)),
+          _buildSelectionGroup(['New', 'Used', 'Reconditioned'], _condition, (val) => setState(() => _condition = val)),
           const SizedBox(height: 24),
           if (!isBicycle) ...[
             Row(
@@ -1022,7 +1031,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
         ),
         const SizedBox(height: 24),
         _buildLabel('Condition*'),
-        _buildSelectionGroup(['New', 'Used', 'Refurbished'], _condition, (val) => setState(() => _condition = val)),
+        _buildSelectionGroup(['New', 'Used', 'Reconditioned'], _condition, (val) => setState(() => _condition = val)),
         const SizedBox(height: 24),
         _buildLabel('Warranty Status'),
         _buildSelectionGroup(['In Warranty', 'Out of Warranty'], _warranty, (val) => setState(() => _warranty = val)),
@@ -1254,26 +1263,47 @@ class _EditProductScreenState extends State<EditProductScreen> {
     );
   }
 
-  Widget _buildDropdown(List<String> items, String current, Function(String?) onChanged) {
-    // Ensure current value is in items to avoid crash
-    String initialValue = items.contains(current) ? current : items.first;
-    
+  Widget _buildDropdown(List<String> items, String initialValue, ValueChanged<String?> onChanged) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.secondaryColor.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: initialValue,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          elevation: 4,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.black87, size: 22),
+          style: const TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.2,
+          ),
           items: items.map((String value) {
             return DropdownMenuItem<String>(
               value: value,
-              child: Text(value, style: const TextStyle(fontSize: 14)),
+              child: Text(
+                value,
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.2,
+                ),
+              ),
             );
           }).toList(),
           onChanged: onChanged,

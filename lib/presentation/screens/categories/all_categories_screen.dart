@@ -44,7 +44,8 @@ class AllCategoriesScreen extends StatelessWidget {
       case 'local events': return Icons.event_available_rounded;
       case 'mobiles': return Icons.phone_iphone_rounded;
       case 'pets & animals accessories':
-      case 'pet & animal accessories': return Icons.pets_rounded;
+      case 'pet & animal accessories':
+      case 'pets & accessories': return Icons.pets_rounded;
       case 'real estate': return Icons.business_rounded;
       case 'services': return Icons.handyman_rounded;
       default: return Icons.category;
@@ -63,7 +64,8 @@ class AllCategoriesScreen extends StatelessWidget {
       case 'local events': return Colors.orange;
       case 'mobiles': return Colors.teal;
       case 'pets & animals accessories':
-      case 'pet & animal accessories': return Colors.amber;
+      case 'pet & animal accessories':
+      case 'pets & accessories': return Colors.amber;
       case 'real estate': return Colors.green;
       case 'services': return Colors.blueAccent;
       default: return AppTheme.primaryColor;
@@ -228,7 +230,7 @@ class AllCategoriesScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: Text(
-                      cat.name == 'Pets & Animals Accessories' ? 'Pet & Animal Accessories' : (cat.name == 'Beauty' ? 'Beauty & Wellness' : cat.name),
+                      cat.name,
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

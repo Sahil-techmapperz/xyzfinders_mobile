@@ -324,6 +324,9 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
         return 'Furniture';
       case 'Mobiles & Tablets':
         return 'Mobiles';
+      case 'Pets & Accessories':
+      case 'Pet & Animal Accessories':
+        return 'Pets & Animals Accessories';
       default:
         return categoryName;
     }
@@ -705,7 +708,19 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Listing Title*'),
+          _buildLabel(
+            widget.category.toLowerCase().contains('auto') || widget.category.toLowerCase().contains('car')
+                ? 'Vehicle Title*'
+                : (widget.category.toLowerCase().contains('property') || widget.category.toLowerCase().contains('real estate')
+                    ? 'Property Title*'
+                    : (widget.category.toLowerCase().contains('job')
+                        ? 'Job Title*'
+                        : (widget.category.toLowerCase().contains('event')
+                            ? 'Event Title*'
+                            : (widget.category.toLowerCase().contains('furniture')
+                                ? 'Item Title*'
+                                : 'Title*')))),
+          ),
           _buildTextField(
             _titleController, 
             'e.g. Title of your ad',
@@ -735,12 +750,11 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
             },
           ),
           const SizedBox(height: 20),
-          _buildLabel('Description*'),
+          _buildLabel('Description (Optional)'),
           _buildTextField(
             _descriptionController, 
             'Provide details about your listing...', 
             maxLines: 4,
-            validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a description' : null,
           ),
         ],
       ),
@@ -749,29 +763,29 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
 
   List<String> _getSubcategories(String cat) {
     if (cat.contains('property') || cat.contains('real estate')) {
-      return ['Apartment', 'House', 'Villa', 'Plot', 'PG', 'Other'];
+      return ['For Sale', 'For Rent', 'PG'];
     } else if (cat.contains('gadget') || cat.contains('electronic')) {
-      return ['Laptops', 'Cameras', 'TVs', 'Audio', 'Accessories', 'Other'];
+      return ['Laptop', 'Camera', 'Gaming Console', 'Headphones', 'Smartwatch', 'Speaker', 'Other'];
     } else if (cat.contains('automobile') || cat.contains('car')) {
-      return ['Cars', 'Bikes', 'Scooters', 'Commercial Vehicles', 'Bicycles', 'Other'];
-    } else if (cat.contains('mobile') || cat.contains('tablet')) {
-      return ['Mobile Phones', 'Tablets', 'Accessories', 'Smartwatches', 'Other'];
+      return ['Car', 'Bike', 'Scooter', 'Commercial Vehicle', 'Bicycle'];
+    } else if (cat.contains('mobile') || cat.contains('tablet') || cat.contains('phone')) {
+      return ['Smartphone', 'Tablet', 'Feature Phone', 'Accessories'];
     } else if (cat.contains('furniture')) {
-      return ['Sofa', 'Bed', 'Wardrobe', 'Table', 'Chairs', 'Other'];
+      return ['Sofa & Chairs', 'Bed & Mattress', 'Tables & Desks', 'Wardrobes', 'Hardware', 'Kitchen Essentials', 'Other Furniture'];
     } else if (cat.contains('fashion') || cat.contains('lifestyle')) {
-      return ['Men', 'Women', 'Kids', 'Accessories', 'Footwear', 'Other'];
+      return ['Mens Clothing', 'Womens Clothing', 'Footwear', 'Watches & Accessories', 'Bags & Wallets', 'Jewellery', 'Kids Wear'];
     } else if (cat.contains('pet') || cat.contains('animal')) {
-      return ['Dogs', 'Cats', 'Fishes', 'Birds', 'Accessories', 'Food', 'Other'];
+      return ['Dog', 'Cat', 'Bird', 'Fish & Aquarium', 'Pet Accessory', 'Pet Food', 'Other'];
     } else if (cat.contains('event')) {
-      return ['Weddings', 'Parties', 'Corporate', 'Concerts', 'Other'];
+      return ['Concert', 'Workshop', 'Meetup', 'Party', 'Other'];
     } else if (cat.contains('beauty') || cat.contains('wellness')) {
-      return ['Makeup', 'Skincare', 'Haircare', 'Fragrances', 'Other'];
+      return ['Makeup', 'Hair Care', 'Skin Care', 'Spa & Massage', 'Other'];
     } else if (cat.contains('education') || cat.contains('learning')) {
-      return ['Tutoring', 'Courses', 'Workshops', 'Books', 'Other'];
+      return ['Tutoring', 'Course', 'Books', 'Other'];
     } else if (cat.contains('service')) {
-      return ['Cleaning', 'Plumbing', 'Electrical', 'Carpentry', 'Other'];
+      return ['Home Services', 'Professional Services', 'Tech & IT Services', 'Other Services'];
     } else if (cat.contains('job')) {
-      return ['IT', 'BPO', 'Sales', 'Marketing', 'Finance', 'Other'];
+      return ['Full-time', 'Part-time', 'Freelance', 'Internship', 'Contract'];
     }
     return ['General', 'Other'];
   }
@@ -785,7 +799,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Category / Sub-Category*'),
+          _buildLabel(cat.contains('job') ? 'Employment Type*' : 'Category*'),
           _buildDropdown(
             subcategories, 
             _selectedSubCategory ?? subcategories.first, 
@@ -918,13 +932,10 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     }
 
     if (cat.contains('automobile') || cat.contains('car')) {
-      final isBicycle = _vehicleType == 'Bicycle';
+      final isBicycle = (_selectedSubCategory ?? _vehicleType) == 'Bicycle';
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLabel('Vehicle Type*'),
-          _buildSelectionGroup(['Car', 'Bike', 'Scooter', 'Commercial Vehicle', 'Bicycle'], _vehicleType, (val) => setState(() => _vehicleType = val)),
-          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildLabel('Brand*'), _buildTextField(_brandController, isBicycle ? 'e.g., Hero, Trek, Firefox' : 'e.g., Honda, Maruti, Hyundai', validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null)])),
@@ -948,7 +959,7 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
           _buildTextField(_ownersController, 'e.g., 1st Owner, 2nd Owner'),
           const SizedBox(height: 24),
           _buildLabel('Condition*'),
-          _buildSelectionGroup(['New', 'Used', 'Refurbished'], _condition, (val) => setState(() => _condition = val)),
+          _buildSelectionGroup(['New', 'Used', 'Reconditioned'], _condition, (val) => setState(() => _condition = val)),
           const SizedBox(height: 24),
           if (!isBicycle) ...[
             Row(
@@ -1985,21 +1996,47 @@ class _PostAdFormScreenState extends State<PostAdFormScreen> {
     String safeValue = options.contains(current) ? current : options.first;
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.secondaryColor.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: safeValue,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.black54),
-          style: const TextStyle(color: Colors.black87, fontSize: 14),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          elevation: 4,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.black87, size: 22),
+          style: const TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.2,
+          ),
           onChanged: onSelect,
           items: options.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(value: value, child: Text(value));
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            );
           }).toList(),
         ),
       ),

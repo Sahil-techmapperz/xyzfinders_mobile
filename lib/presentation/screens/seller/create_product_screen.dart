@@ -206,20 +206,14 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             const SizedBox(height: 20),
 
             // Description
-            _buildLabel('Description'),
+            _buildLabel('Description (Optional)'),
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
-                hintText: 'Describe your product in detail',
+                hintText: 'Describe your product in detail (optional)',
                 prefixIcon: Icon(Icons.description),
                 alignLabelWithHint: true,
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a description';
-                }
-                return null;
-              },
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
             ),
